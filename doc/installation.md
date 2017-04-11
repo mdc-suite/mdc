@@ -17,8 +17,8 @@
     4. Details about the workspaces
         1. The “design time” workspace is the one containing the framework (Orcc and MDC) and it is the place where the framework itself could be modified
         2. The “run time” workspace is a running instance of the framework where it can be tested and debugged
-3. Checkout (it will be cloned after porting MDC from svn to git) mdcproject repository
-    1. svn checkout eolab.diee.unica.it/mdcproject
+3. Clone the MDC Git repository
+    1. git clone https://github.com/mdc-suite/mdc.git
 4. Import MDC plugins into Eclipse (in the same “design time” workspace where Orcc has been previously imported)
     1. Import MDC plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/trunk/ (check “Search for nested projects”)
     2. Import HLS (Xronos) plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/hls/ (check “Search for nested projects”)
