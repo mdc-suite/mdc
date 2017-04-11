@@ -1,4 +1,4 @@
 # mdc
 Welcome to the main reposirory of the **Multi-Dataflow Composer (MDC)** design suite.
 
-Further info to be added here.
+The _doc_ folder contains some useful documentation about **MDC**
