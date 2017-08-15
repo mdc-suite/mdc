@@ -2,7 +2,7 @@
  *
  */
  
-package it.mdc.tool.core.platformComposer
+package it.mdc.tool.prototyper
 
 import java.util.List
 import net.sf.orcc.df.Network
