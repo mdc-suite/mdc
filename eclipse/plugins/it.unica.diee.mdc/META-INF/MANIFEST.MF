@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mdc
-Bundle-SymbolicName: it.unica.diee.mdc;singleton:=true
+Bundle-SymbolicName: it.mdc.tool;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: it.mdc.tool.Activator
 Require-Bundle: org.eclipse.ui,
