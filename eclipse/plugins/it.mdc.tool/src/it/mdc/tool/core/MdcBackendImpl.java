@@ -1,4 +1,4 @@
-package it.mdc.tool;
+package it.mdc.tool.core;
 
 import org.xronos.orcc.backend.Xronos;
 

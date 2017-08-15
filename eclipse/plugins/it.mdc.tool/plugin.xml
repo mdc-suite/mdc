@@ -4,7 +4,7 @@
    <extension
          point="net.sf.orcc.backends.backends">
       <backend
-            class="it.mdc.tool.MdcBackendImpl"
+            class="it.mdc.tool.core.MdcBackendImpl"
             name="MDC">
          <option
                id="net.sf.orcc.plugins.compileXDFlist">
@@ -19,7 +19,7 @@
             thread="main"
             visible="true">
          <run
-               class="it.mdc.tool.MdcBackendImpl">
+               class="it.mdc.tool.core.MdcBackendImpl">
          </run>
       </application>
    </extension>

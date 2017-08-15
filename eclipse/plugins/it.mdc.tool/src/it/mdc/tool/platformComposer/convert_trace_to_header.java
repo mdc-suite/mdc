@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
-import it.mdc.tool.ConfigManager;
+import it.mdc.tool.core.ConfigManager;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.util.OrccLogger;
 

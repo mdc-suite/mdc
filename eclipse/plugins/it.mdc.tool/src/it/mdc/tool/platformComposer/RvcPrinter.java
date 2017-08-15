@@ -4,8 +4,8 @@ package it.mdc.tool.platformComposer;
 import java.util.List;
 import java.util.Map;
 
-import it.mdc.tool.ConfigManager;
 import it.mdc.tool.sboxManagement.*;
+import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.platformComposer.NetworkPrinterRVC;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.util.OrccLogger;

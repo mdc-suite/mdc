@@ -10,7 +10,7 @@ import net.sf.orcc.df.Network
 import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
-import net.sf.orcc.df.Portimport it.mdc.tool.ConfigManager
+import net.sf.orcc.df.Portimport it.mdc.tool.core.ConfigManager
 
 /*
  * Template Interface Layer 

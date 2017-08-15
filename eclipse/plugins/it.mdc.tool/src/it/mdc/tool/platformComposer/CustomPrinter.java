@@ -7,8 +7,8 @@ import java.util.Map;
 
 import net.sf.orcc.df.Network;
 import net.sf.orcc.util.OrccLogger;
-import it.mdc.tool.ConfigManager;
 import it.mdc.tool.sboxManagement.*;
+import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.platformComposer.NetworkPrinterCustom;
 import it.mdc.tool.platformComposer.SBoxPrinter;
 import it.mdc.tool.powerSaving.CpfPrinter;

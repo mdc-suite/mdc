@@ -11,7 +11,7 @@ import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
 import net.sf.orcc.df.Portimport net.sf.orcc.df.Actor
-import it.mdc.tool.ConfigManager
+import it.mdc.tool.core.ConfigManager
 
 /*
  * Vivado Template Interface Layer 

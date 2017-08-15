@@ -6,7 +6,7 @@ import java.util.List
 import net.sf.orcc.df.Network
 
 import it.mdc.tool.sboxManagement.SboxLut
-import it.mdc.tool.ConfigManager
+import it.mdc.tool.core.ConfigManager
 import java.util.ArrayList
 import java.util.Map
 import java.util.Set

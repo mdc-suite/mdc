@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.mdc.tool.ConfigManager;
 import it.mdc.tool.sboxManagement.*;
+import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.platformComposer.CgCellPrinter;
 import it.mdc.tool.platformComposer.ConfigPrinter;
 import it.mdc.tool.platformComposer.EnGenPrinter;
