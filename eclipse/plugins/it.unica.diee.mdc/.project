@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>it.unica.diee.mdc</name>
+	<comment></comment>
+	<projects>
+		<project>net.sf.graphiti.model</project>
+		<project>net.sf.graphiti.ui</project>
+		<project>net.sf.orcc.backends</project>
+		<project>net.sf.orcc.cal</project>
+		<project>net.sf.orcc.cal.tests</project>
+		<project>net.sf.orcc.cal.ui</project>
+		<project>net.sf.orcc.core</project>
+		<project>net.sf.orcc.models</project>
+		<project>net.sf.orcc.simulators</project>
+		<project>net.sf.orcc.ui</project>
+		<project>org.jgrapht</project>
+		<project>org.stringtemplate</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.xtext.ui.shared.xtextBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.pde.ManifestBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.pde.SchemaBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.pde.PluginNature</nature>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
+	</natures>
+</projectDescription>
