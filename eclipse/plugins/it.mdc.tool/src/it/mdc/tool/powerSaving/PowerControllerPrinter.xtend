@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.List
 import net.sf.orcc.df.Network
 
-import it.mdc.tool.sboxManagement.SboxLut
+import it.mdc.tool.core.sboxManagement.SboxLut
 import it.mdc.tool.core.ConfigManager
 import java.util.ArrayList
 import java.util.Map

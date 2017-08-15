@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.mdc.tool.sboxManagement.SboxLut;
 import it.mdc.tool.core.ConfigPrinterCal;
 import it.mdc.tool.core.SBoxPrinterCal;
+import it.mdc.tool.core.sboxManagement.SboxLut;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Argument;
 import net.sf.orcc.df.Connection;

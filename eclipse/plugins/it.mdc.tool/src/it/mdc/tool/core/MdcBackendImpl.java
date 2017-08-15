@@ -2,10 +2,17 @@ package it.mdc.tool.core;
 
 import org.xronos.orcc.backend.Xronos;
 
-import it.mdc.tool.multiDataflowGenerator.*;
+import it.mdc.tool.core.multiDataflowGenerator.*;
+import it.mdc.tool.core.platformComposer.CustomPrinter;
+import it.mdc.tool.core.platformComposer.LogicRegionFinder;
+import it.mdc.tool.core.platformComposer.LogicRegionMerger;
+import it.mdc.tool.core.platformComposer.NetworkPrinter;
+import it.mdc.tool.core.platformComposer.PlatformComposer;
+import it.mdc.tool.core.platformComposer.RvcPrinter;
+import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.platformComposer.*;
 import it.mdc.tool.profiling.*;
-import it.mdc.tool.sboxManagement.*;
+import it.mdc.tool.core.sboxManagement.*;
 import it.mdc.tool.utility.*;
 import it.mdc.tool.utility.FilesManagerMdc;
 

@@ -8,10 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.mdc.tool.multiDataflowGenerator.ActorManager;
-import it.mdc.tool.multiDataflowGenerator.Matcher;
-import it.mdc.tool.multiDataflowGenerator.Unifier;
-import it.mdc.tool.sboxManagement.*;
+import it.mdc.tool.core.multiDataflowGenerator.ActorManager;
+import it.mdc.tool.core.multiDataflowGenerator.Matcher;
+import it.mdc.tool.core.multiDataflowGenerator.Unifier;
+import it.mdc.tool.core.sboxManagement.SboxActorManager;
+import it.mdc.tool.core.sboxManagement.SboxLut;
+import it.mdc.tool.core.sboxManagement.SboxLutManager;
+import it.mdc.tool.core.sboxManagement.*;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Argument;
 import net.sf.orcc.df.DfFactory;
