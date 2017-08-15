@@ -1,0 +1,13 @@
+# Common rules for Eclipse projects
+# src-gen folders are ignored with a specific .gitignore inside each
+bin
+target
+xtend-gen
+src-gen
+.metadata
+.settings
+
+# Specific rules to ignore Xtext arifacts
+plugin.xml_gen
+#.antlr-generator-*.jar
+/eclipse/it.diee.mdc/model/generated
