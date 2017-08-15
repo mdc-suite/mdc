@@ -12,10 +12,7 @@ import java.util.Map
 import java.util.HashMap
 
 /*
- * Template Interface Layer 
- * Generic HW Accelerator Printer
- * 
- * @author Carlo Sau
+ * Printer for Template Interface Layer (TIL)
  */
 class TilPrinter {
 	

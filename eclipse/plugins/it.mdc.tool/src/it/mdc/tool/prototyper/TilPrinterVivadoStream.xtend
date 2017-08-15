@@ -14,10 +14,8 @@ import java.util.Map
 import java.util.HashMap
 
 /*
- * Vivado Template Interface Layer 
- * Stream HW Accelerator Printer
- * 
- * @author Carlo Sau
+ * Printer for Template Interface Layer (TIL)
+ * Stream Vivado Peripheral
  */
 class TilPrinterVivadoStream extends TilPrinter {
 	

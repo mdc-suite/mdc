@@ -14,10 +14,8 @@ import java.util.Map
 import java.util.HashMap
 
 /*
- * Vivado Template Interface Layer 
- * Memory-Mapped HW Accelerator Printer
- * 
- * @author Carlo Sau
+ * Printer for Template Interface Layer (TIL)
+ * Memory-Mapped Vivado Peripheral
  */
 class TilPrinterVivadoMm extends TilPrinter {
 	

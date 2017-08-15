@@ -14,10 +14,8 @@ import java.util.Map
 import java.util.HashMap
 
 /*
- * EDK Template Interface Layer 
- * Stream HW Accelerator Printer
- * 
- * @author Carlo Sau
+ * Printer for Template Interface Layer (TIL)
+ * Stream EDK Peripheral
  */
 class TilPrinterEdkStream extends TilPrinter{
 

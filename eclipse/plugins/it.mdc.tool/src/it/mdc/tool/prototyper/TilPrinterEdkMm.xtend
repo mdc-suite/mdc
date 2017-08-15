@@ -12,10 +12,8 @@ import java.util.ArrayList
 import java.util.Map
 
 /*
- * EDK Template Interface Layer 
- * Memory-Mapped HW Accelerator Printer
- * 
- * @author Carlo Sau
+ * Printer for Template Interface Layer (TIL)
+ * Memory-Mapped EDK Peripheral
  */
 class TilPrinterEdkMm extends TilPrinter{
 
