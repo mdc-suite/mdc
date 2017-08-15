@@ -81,7 +81,7 @@ import net.sf.orcc.graph.Vertex;
  * @author Carlo Sau
  * 
  */
-public class MdcBackendImpl extends AbstractBackend {
+public class MDCBackend extends AbstractBackend {
 
 	// General attributes
 	////////////////////////////////////////////////////////
