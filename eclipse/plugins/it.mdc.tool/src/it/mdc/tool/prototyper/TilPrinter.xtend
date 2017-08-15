@@ -1,16 +1,15 @@
 /*
- *
+ * Copyright info to be inserted
  */
  
 package it.mdc.tool.prototyper
-
-import java.util.List
+import it.mdc.tool.core.ConfigManager
 import net.sf.orcc.df.Network
-
+import net.sf.orcc.df.Port
+import java.util.List
 import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
-import net.sf.orcc.df.Portimport it.mdc.tool.core.ConfigManager
 
 /*
  * Template Interface Layer 

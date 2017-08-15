@@ -1,17 +1,17 @@
 /*
- *
+ * Copyright info to be inserted
  */
  
 package it.mdc.tool.prototyper
 
+import it.mdc.tool.core.ConfigManager
+import net.sf.orcc.df.Network
+import net.sf.orcc.df.Portimport net.sf.orcc.df.Actor
 import java.text.SimpleDateFormat
 import java.util.Date
-import net.sf.orcc.df.Network
 import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
-import net.sf.orcc.df.Portimport net.sf.orcc.df.Actor
-import it.mdc.tool.core.ConfigManager
 
 /*
  * Vivado Template Interface Layer 
