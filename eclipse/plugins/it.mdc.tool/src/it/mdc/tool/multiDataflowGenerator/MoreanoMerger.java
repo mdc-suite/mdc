@@ -1,4 +1,4 @@
-package it.mdc.tool.merging;
+package it.mdc.tool.multiDataflowGenerator;
 
 import static it.mdc.tool.sboxManagement.SboxLutManager.ALL_SECTIONS;
 

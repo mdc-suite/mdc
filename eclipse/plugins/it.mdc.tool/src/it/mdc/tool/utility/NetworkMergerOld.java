@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import it.mdc.tool.merging.ActorManager;
-import it.mdc.tool.merging.Matcher;
-import it.mdc.tool.merging.Unifier;
+import it.mdc.tool.multiDataflowGenerator.ActorManager;
+import it.mdc.tool.multiDataflowGenerator.Matcher;
+import it.mdc.tool.multiDataflowGenerator.Unifier;
 import it.mdc.tool.sboxManagement.*;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Argument;

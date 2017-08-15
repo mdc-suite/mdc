@@ -1,4 +1,4 @@
-package it.mdc.tool.merging;
+package it.mdc.tool.multiDataflowGenerator;
 import java.util.*;
 
 import dfg.DfgEdge;

@@ -2,7 +2,7 @@ package it.mdc.tool;
 
 import org.xronos.orcc.backend.Xronos;
 
-import it.mdc.tool.merging.*;
+import it.mdc.tool.multiDataflowGenerator.*;
 import it.mdc.tool.platformComposer.*;
 import it.mdc.tool.profiling.*;
 import it.mdc.tool.sboxManagement.*;

@@ -1,4 +1,4 @@
-package it.mdc.tool.merging;
+package it.mdc.tool.multiDataflowGenerator;
 
 import net.sf.orcc.df.Argument;
 import net.sf.orcc.df.Instance;

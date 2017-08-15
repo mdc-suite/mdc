@@ -1,4 +1,4 @@
-package it.mdc.tool.merging;
+package it.mdc.tool.multiDataflowGenerator;
 
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Port;
