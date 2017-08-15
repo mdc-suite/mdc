@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>it.unica.diee.mdc</name>
+	<name>it.mdc.tool</name>
 	<comment></comment>
 	<projects>
 		<project>net.sf.graphiti.model</project>
