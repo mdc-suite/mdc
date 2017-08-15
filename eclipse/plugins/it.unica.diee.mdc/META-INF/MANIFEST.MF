@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mdc
 Bundle-SymbolicName: it.unica.diee.mdc;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: it.unica.diee.mdc.Activator
+Bundle-Activator: it.mdc.tool.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  net.sf.orcc.backends;bundle-version="1.1.0",
@@ -13,7 +13,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.xtend.lib,
  com.google.guava,
  org.eclipse.xtext.xbase.lib,
- it.unica.diee.mdc.model,
+ it.mdc.model,
  org.xronos.orcc;bundle-version="2.1.2"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
