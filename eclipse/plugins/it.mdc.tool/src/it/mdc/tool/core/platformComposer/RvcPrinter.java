@@ -8,7 +8,7 @@ import net.sf.orcc.df.Network;
 import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
-import it.unica.diee.mdc.platformComposer.NetworkPrinterRVC;
+import it.mdc.tool.core.platformComposer.NetworkPrinterRVC;
 import it.mdc.tool.core.sboxManagement.*;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;

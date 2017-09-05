@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 import it.mdc.tool.core.sboxManagement.SboxLut;
-import it.unica.diee.mdc.ConfigPrinterCal;
-import it.unica.diee.mdc.SBoxPrinterCal;
+import it.mdc.tool.core.ConfigPrinterCal;
+import it.mdc.tool.core.SBoxPrinterCal;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Argument;
 import net.sf.orcc.df.Connection;
