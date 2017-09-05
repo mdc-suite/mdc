@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="net.sf.orcc.backends.backends">
+      <backend
+            class="it.unica.diee.mdc.MdcBackendImpl"
+            name="MDC">
+         <option
+               id="net.sf.orcc.plugins.compileXDFlist">
+         </option>
+      </backend>
+   </extension>
+   <extension
+         id="mdc"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="it.unica.diee.mdc.MdcBackendImpl">
+         </run>
+      </application>
+   </extension>
+   <extension
+         point="net.sf.orcc.core.options">
+      <option
+            defaultValue="2"
+            description="Number of networks to be compiled and merged"
+            id="it.unica.diee.mdc.xdfNum"
+            name="Number of Networks">
+         <textBox>
+            textBox body text
+         </textBox>
+      </option>
+      <option
+            description="List of XDF files to be compiled and merged."
+            id="it.unica.diee.mdc.xdfList"
+            name="XDF List of Files">
+         <selectNetworks>
+            selectNetworks body text
+         </selectNetworks>
+      </option>
+      <option
+            description="Custom communication protocol file to be used within the HDL part of the MDC backend. Syntax: CLOCK_NAME,clock [for sequential actors only]; EXT_SIGNAL_NAME EXT_SIGNAL_DIRECTION(&gt; or &lt;) EXT_SIGNAL_SIZE(only integers are allowed) [for sequential actors only]; SRC_SIGNAL_NAME SIGNAL_DIRECTION(&gt; or &lt;) SIGNAL_SIZE(integers or bufferSize are allowed) SIGNAL_DIRECTION(&gt; or &lt;) TGT_SIGNAL_NAME, SIGNAL_TYPE(sync for sequential, not_synch for combinational) [for both sequential and combinational actors, one for each port depending on its type]"
+            id="it.unica.diee.mdc.customProtocolFile"
+            name="Custom Communication Protocol File">
+         <browseFile
+               folder="false"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            description="Enable the computing of the multi-dataflow logic regions to perform power saving techniques."
+            id="it.unica.diee.mdc.computeLogicRegions"
+            name="Compute Logic Regions">
+         <checkBox>
+            <optionRef
+                  id="it.unica.diee.mdc.flowType"></optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.fpgaCgCells">
+            </optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.lrPowerSaving">
+            </optionRef></checkBox>
+      </option>
+      <option
+            description="Whether Orcc should compile the given hierarchical list of XDF networks."
+            id="net.sf.orcc.plugins.compileXDFlist"
+            name="List of Networks to be Compiled and Merged">
+         <checkBox>
+            <optionRef
+                  id="it.unica.diee.mdc.xdfNum">
+            </optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.xdfList">
+            </optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.mergingAlgorithm">
+            </optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.genCAL"></optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.genHDL">
+            </optionRef>
+            <option
+                  id="it.unica.diee.mdc.profile"
+                  name="Enable Profiling">
+               <checkBox>
+                  <optionRef
+                        id="it.unica.diee.mdc.areaFile">
+                  </optionRef>
+                  <optionRef
+                        id="it.unica.diee.mdc.powerFile">
+                  </optionRef>
+                  <optionRef
+                        id="it.unica.diee.mdc.timingFile">
+                  </optionRef>
+                  <option
+                        defaultValue="FREQUENCY"
+                        id="it.unica.diee.mdc.effort"
+                        name="Profiling effort">
+                     <comboBox>
+                        <comboBoxItem
+                              id="AREA/POWER">
+                        </comboBoxItem>
+                        <comboBoxItem
+                              id="FREQUENCY">
+                        </comboBoxItem>
+                     </comboBox>
+                  </option>
+               </checkBox>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            defaultValue="FPGA"
+            description="Type of design flow for the HDL part of MDC backend."
+            id="it.unica.diee.mdc.flowType"
+            name="Type of Design Flow">
+         <comboBox>
+            <comboBoxItem
+                  id="FPGA">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="ASIC">
+            </comboBoxItem>
+         </comboBox>
+      </option>
+      <option
+            description="Write the HDL top modules of the merged network"
+            id="it.unica.diee.mdc.genHDL"
+            name="Generate HDL multi-dataflow">
+         <checkBox>
+            <optionRef
+                  id="it.unica.diee.mdc.protocol">
+            </optionRef>
+            <option
+                  id="it.unica.diee.mdc.customProtocol"
+                  name="Specify a Custom Hardware Communication Protocol">
+               <checkBox>
+                  <optionRef
+                        id="it.unica.diee.mdc.customProtocolFile">
+                  </optionRef>
+               </checkBox>
+            </option>
+            <optionRef
+                  id="it.unica.diee.mdc.computeLogicRegions">
+            </optionRef>
+            <option
+                  defaultValue="false"
+                  id="it.unica.diee.mdc.importBufferSizeFileList"
+                  name="Import Buffer Size File List">
+               <checkBox>
+                  <optionRef
+                        id="it.unica.diee.mdc.it.unica.diee.mdc.bufferSizeFilesFolder">
+                  </optionRef>
+               </checkBox>
+            </option>
+            <option
+                  defaultValue="false"
+                  id="it.unica.diee.mdc.importClockDomainFileList"
+                  name="Import Clock Domain File List">
+               <checkBox>
+                  <optionRef
+                        id="it.unica.diee.mdc.it.unica.diee.mdc.clockDomainFilesFolder">
+                  </optionRef></checkBox>
+            </option>
+            <option
+                  defaultValue="false"
+                  id="it.unica.diee.mdc.genCopr"
+                  name="Generate Coprocessor Template Interface Layer (beta)">
+               <checkBox>
+                  <option
+                        defaultValue="MEMORY-MAPPED"
+                        description="Typology of the coprocessor TIL: it can be memory-mapped or stream-based."
+                        id="it.unica.diee.mdc.tilType"
+                        name="Type of Template Interface Layer">
+                     <comboBox>
+                        <comboBoxItem
+                              id="MEMORY-MAPPED">
+                        </comboBoxItem>
+                        <comboBoxItem
+                              id="STREAM">
+                        </comboBoxItem>
+                     </comboBox>
+                  </option>
+                  <option
+                        defaultValue="VIVADO"
+                        description="Vivado 2015.2 or ISE 14.7"
+                        id="it.unica.diee.mdc.tilEnv"
+                        name="Targeted Environment">
+                     <comboBox>
+                        <comboBoxItem
+                              id="VIVADO">
+                        </comboBoxItem>
+                        <comboBoxItem
+                              id="ISE">
+                        </comboBoxItem>
+                     </comboBox>
+                  </option></checkBox>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            description="File containing the area occupation data of all the actors in the merged networks"
+            id="it.unica.diee.mdc.areaFile"
+            name="Area Occupancy Data">
+         <browseFile
+               extension="*.txt"
+               folder="false"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            description="File containing the power consumption data of all the actors in the merged networks"
+            id="it.unica.diee.mdc.powerFile"
+            name="Power Consumption Data">
+         <browseFile
+               extension="*.txt"
+               folder="false"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            description="File containing the timing data of all the merged  networks"
+            id="it.unica.diee.mdc.timingFile"
+            name="Timing Data">
+         <browseFile
+               extension="*.txt"
+               folder="false"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            defaultValue="RVC"
+            description="It is possible to implement the RVC FIFO-based protocol or a custom protocol in the HDL multi-dataflow network"
+            id="it.unica.diee.mdc.protocol"
+            name="Preferred HDL protocol">
+         <comboBox>
+            <comboBoxItem
+                  id="CUSTOM">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="RVC">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="CUSTOM full (beta)">
+            </comboBoxItem>
+         </comboBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Enables the generation of the RVC-CAL multi-dataflow resulting network. All the outputs are stored within the selected project under the &quot;mdc&quot; package."
+            id="it.unica.diee.mdc.genCAL"
+            name="Generate RVC-CAL multi-dataflow">
+         <checkBox>
+            <option
+                  defaultValue="DUMMY"
+                  id="it.unica.diee.mdc.calType"
+                  name="CAL type">
+               <comboBox>
+                  <comboBoxItem
+                        id="DUMMY">
+                  </comboBoxItem>
+                  <comboBoxItem
+                        id="DYNAMIC">
+                  </comboBoxItem>
+                  <comboBoxItem
+                        id="STATIC">
+                  </comboBoxItem>
+               </comboBox>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            defaultValue="32"
+            description="Maximum number of dedicated cells to implement the selected power saving technique on the target FPGA device."
+            id="it.unica.diee.mdc.fpgaCgCells"
+            name="Number of FPGA Dedicated Power Saving Cells">
+         <textBox>
+            textBox body text
+         </textBox>
+      </option>
+      <option
+            description="The folder containing the buffer size files named buffers_config_&lt;NET_NAME&gt;, where NET_NAME is the name of a merged network."
+            id="it.unica.diee.mdc.it.unica.diee.mdc.bufferSizeFilesFolder"
+            name="Buffer Size Files Folder">
+         <browseFile
+               folder="true"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            description="The folder containing the clock domain files named report_partitioning_&lt;NET_NAME&gt;, where NET_NAME is the name of a merged network."
+            id="it.unica.diee.mdc.it.unica.diee.mdc.clockDomainFilesFolder"
+            name="Clock Domain Files Folder">
+         <browseFile
+               folder="true"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            defaultValue="NONE"
+            description="Kind of power saving technique implemented on the computed logic regions"
+            id="it.unica.diee.mdc.lrPowerSaving"
+            name="Logic Regions Power Saving Techique">
+         <comboBox>
+         	<comboBoxItem
+                  id="CLOCK_GATING">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="POWER_GATING">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="HYBRID">
+            </comboBoxItem>
+         </comboBox>
+      </option>
+      <option
+            defaultValue="EMPIRIC"
+            description="Algorithm adopted for the dataflow networks merging process."
+            id="it.unica.diee.mdc.mergingAlgorithm"
+            name="Merging Algorithm">
+         <comboBox>
+            <comboBoxItem
+                  id="EMPIRIC">
+            </comboBoxItem>
+            <comboBoxItem
+                  id="MOREANO">
+            </comboBoxItem>
+         </comboBox>
+      </option>
+   </extension>
+
+</plugin>
