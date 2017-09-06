@@ -20,12 +20,10 @@ public class Unifier {
 	/**
 	 * Verify if the existing actor instance is sharable with the candidate one.
 	 * 
-	 * @param candidate
-	 * 				the candidate actor instance
-	 * @param existing
-	 * 				the existing actor instance
+	 * 
+	 * @param i1
+	 * @param i2
 	 * @return
-	 * 		if the existing actor instance is sharable with the candidate one
 	 */
 	public boolean canUnify(Instance i1, Instance i2) {
 		if (i1.getActor() == i2.getActor()) {

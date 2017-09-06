@@ -64,7 +64,7 @@ public class Searcher {
 	 * Find the best sharable vertex that matches the candidate one.
 	 * If no vertex matches return null.
 	 * 
-	 * @param candiadate	
+	 * @param candidate	
 	 * 				the candidate vertex
 	 * @param sharables
 	 * 				the list of sharable vertices
@@ -169,6 +169,7 @@ public class Searcher {
 	 * 
 	 * @param candidate
 	 * 		the candidate connection
+	 * @param network
 	 * @return 
 	 * 		the existing sharable connection
 	 */
@@ -212,6 +213,9 @@ public class Searcher {
 	 * 
 	 * @param candidate
 	 * 		the candidate connection
+	 * @param network
+	 * @param luts
+	 * @param currentNetwork
 	 * @return 
 	 * 		the existing sharable connection
 	 */
@@ -255,6 +259,7 @@ public class Searcher {
 	 * 
 	 * @param candidate
 	 * 		the candidate vertex
+	 * @param network
 	 * @return 
 	 * 		the existing sharable vertex
 	 */
@@ -290,6 +295,7 @@ public class Searcher {
 	 * 
 	 * @param candidate
 	 * 		the candidate vertex
+	 * @param network
 	 * @return 
 	 * 		the existing sharable vertex
 	 */

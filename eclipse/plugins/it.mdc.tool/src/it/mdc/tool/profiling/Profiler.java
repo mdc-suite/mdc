@@ -328,10 +328,6 @@ public class Profiler {
 	/**
 	 * Write the profiling output file for the given network.
 	 * 
-	 * @param network
-	 * 		the given network
-	 * @return
-	 * 		the network profiling estimations
 	 */
 	private void writeProfilingOut(){
 		
@@ -412,7 +408,7 @@ public class Profiler {
 	/**
 	 * Calculate and return area estimation of the given network.
 	 * 
-	 * @param nework
+	 * @param network
 	 * 		the given network
 	 */
 	private Double calculateArea(Network network) {
@@ -463,7 +459,7 @@ public class Profiler {
 	/**
 	 * Calculate and return frequency estimation of the given network.
 	 * 
-	 * @param nework
+	 * @param network
 	 * 		the given network
 	 */
 	@Deprecated
@@ -521,7 +517,7 @@ public class Profiler {
 	/**
 	 * Calculate and return power estimation of the given network.
 	 * 
-	 * @param nework
+	 * @param network
 	 * 		the given network
 	 */
 	private Double calculatePower(Network network) {
@@ -585,7 +581,12 @@ public class Profiler {
 			countMap.put(0,0);
 		return countMap;
 	}
-	
+
+	/**
+	 * 
+	 * @param chainRoots
+	 * @return
+	 */
 private Map<Integer,List<Integer>> calculateSwitchPath(List<Vertex> chainRoots) {
 		
 		Map<Integer,List<Integer>> countMap = new HashMap<Integer,List<Integer>>();
@@ -831,7 +832,12 @@ private Map<Integer,List<Integer>> calculateSwitchPath(List<Vertex> chainRoots) 
 		}
 		return calculateSwitchPath_old(rootList);
 	}
-	
+
+	/**
+	 * 
+	 * @param network
+	 * @return
+	 */
 private Map<Integer, List<Integer>> countSwitch(Network network) {
 		
 		Boolean isRoot = true;
@@ -1053,7 +1059,6 @@ private Map<Integer, List<Integer>> countSwitch(Network network) {
 	 * 
 	 * @param overlappingMap
 	 * 		the given overlapping map
-	 * @param path
 	 */
 	public void writePreAnalyzeTab(Map<Network,Map<Network,Integer>> overlappingMap) {
 		

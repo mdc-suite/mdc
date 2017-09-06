@@ -148,10 +148,8 @@ public class CombinationsGenerator {
 	 * Calculate all the combinations of the design space.
 	 * The number of merged networks is less than 9 (no heuristic).
 	 * 
-	 * @param mergingNetworks
-	 * 		the networks to be merged together
-	 * @param dontMergeNetworks
-	 * 		the networks to be kept in parallel
+	 * @param inputNetworks
+	 * 		list of input network
 	 * @return
 	 * 		the list of the design space points
 	 */
@@ -377,7 +375,7 @@ public class CombinationsGenerator {
 	 * 
 	 * @param mergingNets
 	 * 		the list of merging networks
-	 * @param
+	 * @param i
 	 * 		the size of the networks sublists
 	 * @return
 	 * 		the list of the i-size sublists

@@ -101,7 +101,7 @@ public class SboxLutManager {
 
 	/**
 	 * Flatten the given network sbox LUT values to an unique value with section 
-	 * <ALL_SECTION> when are preserved multiple instances for the same actor
+	 * "ALL_SECTION" when are preserved multiple instances for the same actor
 	 * 
 	 * @param network
 	 */

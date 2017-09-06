@@ -163,7 +163,7 @@ public class LogicRegionMerger {
 	/**
 	 * Sort the LRs according with the given related sizes. 
 	 * 
-	 * @param setsSize
+	 * @param regionsSize
 	 * 		the map of sizes for each LR
 	 * @return
 	 * 		the sorted map of sizes for each LR
@@ -201,7 +201,7 @@ public class LogicRegionMerger {
 	/**
 	 * Sort the LRs according with the given related power. 
 	 * 
-	 * @param setsSize
+	 * @param regionsPower
 	 * 		the map of power for each LR
 	 * @return
 	 * 		the sorted map of power for each LR

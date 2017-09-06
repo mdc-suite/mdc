@@ -26,7 +26,7 @@ public class Printer {
 	/**
 	 * Print the given network on ORCC logger
 	 *
-	 * @param network
+	 * @param map
 	 */
 	public void printPermutations(Map<Integer,List<List<Network>>> map){
 		
@@ -60,8 +60,11 @@ public class Printer {
 	 * 		map of the input networks with the related merging order
 	 * @param multiDataflowNet
 	 * 		the generated multi-dataflow network
-	 * @param path
+	 * @param outPath
 	 * 		the path of the report file to be generated
+	 * @param genCopr
+	 * @param coprType
+	 * @param coprEnv
 	 */
 	public void printReport(Map<Network,Integer> inputNets, Network multiDataflowNet, String outPath, boolean genCopr, String coprType, String coprEnv){
 		

@@ -74,7 +74,8 @@ public class ConfigManager {
 	 * The constructor
 	 * 
 	 * @param outPath
-	 * 		the backend output path
+	 * 			the backend output path
+	 * @param rvcCalOutputFolder
 	 */
 	public ConfigManager(String outPath, String rvcCalOutputFolder) {
 		this.outPath = outPath;

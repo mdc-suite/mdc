@@ -33,7 +33,7 @@ import net.sf.orcc.util.OrccLogger;
 /**
  * Class able to merge a set of dataflow networks by sharing the
  * common actors and placing switching modules (SBoxes) in order 
- * to properly forward tokens such as the @multiDataflowNetwork 
+ * to properly forward tokens such as the multiDataflowNetwork 
  * implements all the merged dataflows.
  * The implemented merging algorithm is the Moreano's Heuristic.
  * 

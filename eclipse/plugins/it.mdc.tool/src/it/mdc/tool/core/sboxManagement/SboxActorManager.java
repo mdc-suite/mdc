@@ -64,8 +64,7 @@ public class SboxActorManager {
 	/**
 	 * Set SBox actors CAL files for graphic editor view
 	 * 
-	 * @param sbox1x2
-	 * @param sbox2x1
+	 * @param path
 	 * @throws IOException
 	 */
 	public void initializeSboxCalFiles(String path) throws IOException {

@@ -168,10 +168,7 @@ public abstract class PlatformComposer {
 	 * 
 	 * @param luts
 	 * 		configuration Look-Up Tables
-	 * @param enableClockGating
-	 * 		clock gating enabler
-	 * @param
-	 * 		size of the FIFO channels
+	 * @param options
 	 * @throws IOException
 	 */
 	public void generateTop (List<SboxLut> luts, Map<String,Object> options) throws IOException
@@ -182,6 +179,7 @@ public abstract class PlatformComposer {
 	/**
 	 * Generate the configurator top module
 	 * 
+	 * @param genCopr
 	 * @param luts
 	 * 		configuration Look-Up Tables
 	 * @throws IOException
@@ -874,6 +872,7 @@ public abstract class PlatformComposer {
 	/**
 	 * Get bufferSize parameter of the connection
 	 * 
+	 * @param signal
 	 * @param c
 	 * @return
 	 */

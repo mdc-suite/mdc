@@ -66,6 +66,7 @@ public class SearcherOld {
 	 * If no vertex matches returns null. Multiple instances of the same actor aren't preserved.
 	 * 
 	 * @param vertex
+	 * @param network
 	 * @return the existing vertex that matches candidate 
 	 */
 	public Vertex searchExistingVertex(Vertex vertex, Network network){
@@ -100,6 +101,7 @@ public class SearcherOld {
 	 * If no vertex matches returns null. Multiple instances of the same actor are preserved.
 	 * 
 	 * @param vertex
+	 * @param network
 	 * @return the existing vertex that matches candidate 
 	 */
 	public Vertex searchExistingVertexMultiple(Vertex vertex, Network network){
@@ -140,6 +142,7 @@ public class SearcherOld {
 	 * 
 	 * @param candidate
 	 * 				the candidate connection
+	 * @param network
 	 * @return the existing connection that matches candidate
 	 */
 	public Connection searchExistingConnection (Connection candidate, Network network) {
@@ -180,8 +183,11 @@ public class SearcherOld {
 	 * This method searches an existing connection that matches the candidate and return it.
 	 * If no connection matches return null. Multiple instances for the same actor are preserved.
 	 * 
-	 * @param candiadate	
+	 * @param candidate	
 	 * 				the candidate connection
+	 * @param network
+	 * @param luts
+	 * @param currentNetwork
 	 * @return the existing connection that matches candidate
 	 */
 	public Connection searchExistingConnectionMultiple (Connection candidate, Network network, List<SboxLut> luts, Network currentNetwork) {
@@ -253,7 +259,7 @@ public class SearcherOld {
 	 * This method searches the best vertex that matches the candidate and return it.
 	 * If no vertex matches return null.
 	 * 
-	 * @param candiadate	
+	 * @param candidate	
 	 * 				the candidate vertex
 	 * @param unifiables
 	 * 				all the vertices of the network that match candidate

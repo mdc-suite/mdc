@@ -37,7 +37,7 @@ public class ActorManager {
 	 * 
 	 * @param instance
 	 * 		the instance to be renamed
-	 * @param netwok
+	 * @param network
 	 * 		the given network
 	 */
 	public void renameInstance(Instance instance, Network network) {

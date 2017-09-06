@@ -233,8 +233,6 @@ public class NetworkMergerOld {
 	 * 				the source vertex
 	 * @param target
 	 * 				the target vertex
-	 * @param presMultInst
-	 * 				the preserving multiple instances choice signal
 	 * @return the list of connection between the source and the target vertex
 	 */
 	private List<Connection> candidateConnections(Vertex source, Vertex target){
@@ -705,6 +703,7 @@ public class NetworkMergerOld {
 	 * 
 	 * @param source
 	 * @param target
+	 * @param predecessorNumber
 	 */
 	private void mergeConnection(Vertex source, Vertex target, int predecessorNumber) {
 				
@@ -899,8 +898,6 @@ public class NetworkMergerOld {
 	 * 
 	 * @param candidate
 	 * 				the candidate vertex
-	 * @param vertices
-	 * 				the given vertex list
 	 */
 	private void mergeMultipleVertex(Vertex candidate) {
 		
@@ -1043,7 +1040,6 @@ public class NetworkMergerOld {
 	 * (or newly-created) port is added to portMap.
 	 * 
 	 * @param candidate
-	 * @param ports
 	 */
 	private void mergeInputPort(Port candidate) {
 		Port unifiable = null;
@@ -1065,7 +1061,6 @@ public class NetworkMergerOld {
 	 * (or newly-created) port is added to portMap.
 	 * 
 	 * @param candidate
-	 * @param ports
 	 */
 	private void mergeOutputPort(Port candidate) {
 		Port unifiable = null;
@@ -1088,8 +1083,6 @@ public class NetworkMergerOld {
 	 * 
 	 * @param candidate
 	 * 				the candidate vertex
-	 * @param vertices
-	 * 				the given vertex list
 	 */			
 	private void mergeVertex(Vertex candidate) {
 		
