@@ -11,10 +11,11 @@
         2. mvn install
 2. Setup the Orcc framework
     1. Open Eclipse (a “design time” workspace has to be selected)
-    2. Import Orcc plugins (File > Import > General > Existing Projects into Workspace > root directory orcc/eclipse/plugins (check “Search for nested projects” and uncheck “net.sf.orcc”))
-    3. Launch Orcc Workspace (right click on “net.sf.orcc.core” > Run As… > Eclipse Application).
+    2. Change text file encoding (Window > Preferences > General > Workspace : Text file encoding (select "Other : UTF-8"))
+    3. Import Orcc plugins (File > Import > General > Existing Projects into Workspace > root directory orcc/eclipse/plugins (check “Search for nested projects” and uncheck “net.sf.orcc”))
+    4. Launch Orcc Workspace (right click on “net.sf.orcc.core” > Run As… > Eclipse Application).
         1. To change “run time” workspace, in the “design time” workspace menu go on Run > Run Configurations… > create or identify an Eclipse Application instance and under select a new location for the field “Workspace Data”
-    4. Details about the workspaces
+    5. Details about the workspaces
         1. The “design time” workspace is the one containing the framework (Orcc and MDC) and it is the place where the framework itself could be modified
         2. The “run time” workspace is a running instance of the framework where it can be tested and debugged
 3. Clone the MDC Git repository
