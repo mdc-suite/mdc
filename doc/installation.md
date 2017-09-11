@@ -23,4 +23,4 @@
     1. git clone https://github.com/mdc-suite/mdc.git
 4. Import MDC plugins into Eclipse (in the same “design time” workspace where Orcc has been previously imported)
     1. Import MDC plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/trunk/ (check “Search for nested projects”)
-    2. Import HLS (Xronos) plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/hls/ (check “Search for nested projects”)
+    2. Import HLS (Xronos) plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/hls/ (check “Search for nested projects”))
