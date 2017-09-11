@@ -6,6 +6,7 @@ xtend-gen
 src-gen
 .metadata
 .settings
+.xdfdiag
 
 # Specific rules to ignore Xtext arifacts
 plugin.xml_gen
