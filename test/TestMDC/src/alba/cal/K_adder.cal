@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor K_adder(int DATA_SIZE=32,int CONST=10) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+end

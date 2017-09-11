@@ -1,0 +1,161 @@
+package it.diee.unica.alba.actors;
+
+actor Smear(int DATA_SIZE=32, int ADDR_SIZE=18) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3 ==> int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5 :
+
+	int(size=DATA_SIZE) h[ADDR_SIZE];
+	int(size=DATA_SIZE) tmp[ADDR_SIZE];
+	
+	uint(size=1<<ADDR_SIZE) idx := 0;
+	uint(size=1<<ADDR_SIZE) recvIdx := 1;
+	uint(size=ADDR_SIZE) vecSize := 0;
+	
+	bool hasSize := false;
+	bool doneFirstFor := false;
+	bool doneSecondFor := false;
+	bool doneThirdFor := false;
+	bool doneFourthFor := false;
+	bool doneSmear := true;
+	
+	getSize: action in1:[a] ==>
+	guard (not hasSize)
+	do
+		vecSize := a;
+		//println("size " + vecSize);
+		
+		hasSize := true;
+		doneSmear := false;
+	end
+	
+	firstFor: action in1:[a] ==>
+	guard hasSize and (not doneFirstFor)
+	do
+		//println("1st for " + idx);
+		h[idx] := a;
+		tmp[idx] := a;
+		
+		if idx < vecSize-1 then
+			idx := idx +1;
+		else
+			idx := 1;
+			doneFirstFor := true;
+		end
+		//println("end 1st for " + idx);
+		
+	end
+	
+	secondFor: action  ==> out1:[a], out2:[b]
+	guard doneFirstFor and not doneSecondFor and idx < vecSize
+	var int(size=DATA_SIZE) a,
+		int(size=DATA_SIZE) b
+	do
+		//println("2nd for " + idx);
+		a := h[idx-1];
+		b := h[idx];
+		
+		idx := idx +1;
+		
+	end
+	
+	recvSecondFor: action in2:[a]  ==> 
+	guard doneFirstFor and (not doneSecondFor)
+	do
+		//println("2nd recv " + recvIdx);
+		h[recvIdx] := a; 
+		
+		if recvIdx < vecSize-1 then
+			recvIdx := recvIdx+1;
+		else
+			recvIdx := vecSize-2;
+			idx := vecSize-2;
+			doneSecondFor := true;
+		end
+		
+	end
+	
+	
+	
+	thirdFor: action  ==> out1:[a], out2:[b]
+	guard doneSecondFor and not doneThirdFor and idx > 1 
+	var int(size=DATA_SIZE) a,
+		int(size=DATA_SIZE) b
+	do	
+		//println("3rd for " + idx);
+		a := h[idx+1];
+		b := h[idx];
+		
+		idx := idx-1;
+		
+	end
+	
+	recvThirdFor: action in2:[a]  ==> 
+	guard doneSecondFor and (not doneThirdFor)
+	do
+		//println("3rd recv " + recvIdx);
+		h[recvIdx] := a; 
+		
+		if recvIdx > 2 then
+			recvIdx := recvIdx-1;
+		else
+			recvIdx := 0;
+			idx := 0;
+			doneThirdFor := true;
+		end
+		
+	end
+ 
+ 	forthFor: action  ==> out3:[a], out4:[b]
+	guard doneThirdFor and not doneFourthFor and idx < vecSize 
+	var int(size=DATA_SIZE) a,
+		int(size=DATA_SIZE) b
+	do
+		//println("4th for " + idx);
+		a := tmp[idx];
+		b := h[idx];
+		
+		idx := idx+1;
+		
+	end
+	
+	recvForthFor: action in3:[a]  ==> 
+	guard doneThirdFor and (not doneFourthFor)
+	do
+		//println("4th recv " + recvIdx);
+		h[recvIdx] := a; 
+		
+		if recvIdx < vecSize-1 then
+			recvIdx := recvIdx+1;
+		else
+			idx := 0;
+			doneFourthFor := true;
+					end
+		
+	end
+	
+	sendResult: action  ==> out5:[a] 
+	guard doneFourthFor and not doneSmear
+	var int(size=DATA_SIZE) a
+	do
+		a := h[idx]; 
+		//println("sending result " + a );
+		if idx < vecSize-1 then
+			idx := idx+1;
+		else
+			doneSmear := true;
+			initVars();
+		end
+		
+	end
+	
+	procedure initVars()
+	begin
+		idx := 0;
+		recvIdx := 1;
+		
+		hasSize := false;
+		doneFirstFor := false;
+		doneSecondFor := false;
+		doneThirdFor := false;
+		doneFourthFor := false;
+	end
+
+end

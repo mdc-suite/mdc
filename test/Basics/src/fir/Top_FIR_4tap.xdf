@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Top_FIR_4tap">
+    <Instance id="src">
+        <Class name="fir.Source"/>
+    </Instance>
+    <Instance id="filter">
+        <Class name="fir.FIR_4tap"/>
+    </Instance>
+    <Instance id="tgt">
+        <Class name="fir.Target"/>
+    </Instance>
+    <Connection dst="filter" dst-port="data_in" src="src" src-port="data_in"/>
+    <Connection dst="filter" dst-port="acc_in" src="src" src-port="acc_in"/>
+    <Connection dst="filter" dst-port="c0" src="src" src-port="c0"/>
+    <Connection dst="filter" dst-port="c1" src="src" src-port="c1"/>
+    <Connection dst="filter" dst-port="c2" src="src" src-port="c2"/>
+    <Connection dst="filter" dst-port="c3" src="src" src-port="c3"/>
+    <Connection dst="tgt" dst-port="data" src="filter" src-port="data_out"/>
+    <Connection dst="tgt" dst-port="result" src="filter" src-port="acc_out"/>
+</XDF>

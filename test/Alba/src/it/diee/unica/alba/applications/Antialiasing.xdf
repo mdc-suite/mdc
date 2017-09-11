@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Antialiasing">
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.networks.MaxMin"/>
+    </Instance>
+    <Instance id="Application">
+        <Class name="it.diee.unica.alba.applications.AntialiasingCtrl"/>
+    </Instance>
+    <Instance id="Sorter">
+        <Class name="it.diee.unica.alba.networks.Sorter"/>
+    </Instance>
+    <Instance id="Corr">
+        <Class name="it.diee.unica.alba.networks.Corr"/>
+    </Instance>
+    <Instance id="Abs">
+        <Class name="it.diee.unica.alba.networks.Absolute"/>
+    </Instance>
+    <Instance id="Rgb2Ycc">
+        <Class name="it.diee.unica.alba.networks.Rgb2Ycc"/>
+    </Instance>
+    <Instance id="Ycc2Rgb">
+        <Class name="it.diee.unica.alba.networks.Ycc2Rgb"/>
+    </Instance>
+    <Connection dst="Sorter" dst-port="in1" src="Application" src-port="outSort"/>
+    <Connection dst="Application" dst-port="inSort" src="Sorter" src-port="out"/>
+    <Connection dst="Abs" dst-port="in1" src="Application" src-port="outAbs"/>
+    <Connection dst="Application" dst-port="inAbs" src="Abs" src-port="out"/>
+    <Connection dst="Corr" dst-port="in1" src="Application" src-port="outCorr"/>
+    <Connection dst="Application" dst-port="inCorr" src="Corr" src-port="out"/>
+    <Connection dst="MinMax" dst-port="in1" src="Application" src-port="outMinMax"/>
+    <Connection dst="Application" dst-port="inMinMax" src="MinMax" src-port="outMM"/>
+    <Connection dst="Rgb2Ycc" dst-port="in1" src="Application" src-port="outRgb2Ycc"/>
+    <Connection dst="Application" dst-port="inRgb2Ycc" src="Rgb2Ycc" src-port="out"/>
+    <Connection dst="Ycc2Rgb" dst-port="in1" src="Application" src-port="outYcc2Rgb"/>
+    <Connection dst="Application" dst-port="inYcc2Rgb" src="Ycc2Rgb" src-port="out"/>
+</XDF>

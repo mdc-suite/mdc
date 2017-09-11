@@ -1,0 +1,16 @@
+package test;
+
+actor Shifter(int SIZE=8)
+	int(size=SIZE) in1
+		 ==>
+	int(size=SIZE) out1
+:
+
+add: action in1:[a] ==> out1:[a>>1]
+do
+	println("Shifting " + a + ">>1=" + (a>>1));
+end
+
+
+
+end

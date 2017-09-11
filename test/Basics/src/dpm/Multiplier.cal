@@ -1,0 +1,14 @@
+package dpm;
+
+actor Multiplier(int SIZE=8)
+	int(size=SIZE) in1, 
+	int(size=SIZE) in2
+		 ==>
+	int(size=SIZE) out1
+:
+
+add1: action in1:[a], in2:[b] ==> out1:[a*b]
+end
+
+
+end

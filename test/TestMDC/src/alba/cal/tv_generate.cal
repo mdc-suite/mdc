@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor tv_generate(int DATA_SIZE=32, int ADDR_SIZE=10) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3, int(size=DATA_SIZE) in4, int(size=DATA_SIZE) in5, int(size=DATA_SIZE) in6, int(size=DATA_SIZE) in7, int(size=DATA_SIZE) in8 ==> int(size=DATA_SIZE) out :
+
+end

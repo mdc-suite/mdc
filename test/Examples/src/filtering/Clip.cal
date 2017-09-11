@@ -1,0 +1,19 @@
+package filtering;
+
+actor Clip()
+  int(size=16) dataIn ==>
+  uint(size=8) dataOut :
+  
+  action dataIn:[pelIn] ==> dataOut:[pelOut]
+  var uint(size=8) pelOut
+  do
+  	if pelIn > 255 then
+  		pelOut := 255;
+	elsif pelIn < 0 then
+		pelOut := 0;
+	else
+		pelOut := pelIn;
+	end
+  end
+
+end

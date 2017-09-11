@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Filter">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Memory">
+        <Class name="it.diee.unica.alba.actors.common.Memory"/>
+    </Instance>
+    <Instance id="FilterCtrl">
+        <Class name="it.diee.unica.alba.actors.FilterCtrl"/>
+    </Instance>
+    <Instance id="Shift">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="4"/>
+        </Parameter>
+        <Parameter name="LEFT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Abs1">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+    </Instance>
+    <Instance id="Abs2">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+    </Instance>
+    <Instance id="GenTV">
+        <Class name="it.diee.unica.alba.actors.GenerateTV"/>
+    </Instance>
+    <Instance id="Mul">
+        <Class name="it.diee.unica.alba.actors.common.Mul"/>
+    </Instance>
+    <Instance id="Add1">
+        <Class name="it.diee.unica.alba.actors.common.Add_2in"/>
+    </Instance>
+    <Instance id="OutLogic">
+        <Class name="it.diee.unica.alba.actors.OutLogic"/>
+    </Instance>
+    <Instance id="Add2">
+        <Class name="it.diee.unica.alba.actors.common.Add_2in"/>
+    </Instance>
+    <Instance id="VecRebld">
+        <Class name="it.diee.unica.alba.actors.VectorRebuild"/>
+    </Instance>
+    <Connection dst="Memory" dst-port="data_in" src="" src-port="in1"/>
+    <Connection dst="FilterCtrl" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="FilterCtrl" dst-port="in2" src="Memory" src-port="data_out"/>
+    <Connection dst="Memory" dst-port="address_in" src="FilterCtrl" src-port="addr_in"/>
+    <Connection dst="Memory" dst-port="address_out" src="FilterCtrl" src-port="addr_out"/>
+    <Connection dst="Sub1" dst-port="in2" src="FilterCtrl" src-port="out1"/>
+    <Connection dst="Sub1" dst-port="in1" src="FilterCtrl" src-port="out2"/>
+    <Connection dst="Sub2" dst-port="in1" src="FilterCtrl" src-port="out3"/>
+    <Connection dst="Sub2" dst-port="in2" src="FilterCtrl" src-port="out4"/>
+    <Connection dst="Abs1" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Abs2" dst-port="in1" src="Sub2" src-port="out"/>
+    <Connection dst="GenTV" dst-port="in2" src="Abs1" src-port="out"/>
+    <Connection dst="GenTV" dst-port="in3" src="Abs2" src-port="out"/>
+    <Connection dst="GenTV" dst-port="in1" src="FilterCtrl" src-port="out5"/>
+    <Connection dst="Mul" dst-port="in1" src="GenTV" src-port="out"/>
+    <Connection dst="OutLogic" dst-port="in1" src="Mul" src-port="out"/>
+    <Connection dst="Add1" dst-port="in1" src="Mul" src-port="out"/>
+    <Connection dst="OutLogic" dst-port="in2" src="Add1" src-port="out"/>
+    <Connection dst="Add2" dst-port="in1" src="OutLogic" src-port="out1"/>
+    <Connection dst="Add2" dst-port="in2" src="OutLogic" src-port="out4"/>
+    <Connection dst="Mul" dst-port="in2" src="OutLogic" src-port="out2"/>
+    <Connection dst="Add1" dst-port="in2" src="OutLogic" src-port="out3"/>
+    <Connection dst="Shift" dst-port="in1" src="Add2" src-port="out"/>
+    <Connection dst="VecRebld" dst-port="in2" src="Shift" src-port="out"/>
+    <Connection dst="VecRebld" dst-port="in1" src="FilterCtrl" src-port="out5"/>
+    <Connection dst="" dst-port="out" src="VecRebld" src-port="out"/>
+    <Connection dst="OutLogic" dst-port="in3" src="GenTV" src-port="out"/>
+    <Connection dst="GenTV" dst-port="in4" src="FilterCtrl" src-port="out6"/>
+</XDF>

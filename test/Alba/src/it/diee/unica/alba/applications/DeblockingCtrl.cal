@@ -1,0 +1,1201 @@
+package it.diee.unica.alba.applications;
+ 
+import it.diee.unica.alba.applications.Constants.*;
+import it.diee.unica.alba.applications.Data.*;
+import  std.video.Display.*;
+ 
+actor DeblockingCtrl (int DATA_SIZE=8,int ADDR_SIZE=6) uint(size=32)inRgb2Yuv, int(size=32)inInner, int(size=8)inSign, int(size=8)inClip, uint(size=((2*ADDR_SIZE)+(2*DATA_SIZE)))inMinMax,  uint(size=8)inYuv2Rgb, uint(size=8)inFilter, int(size=8)inMdiv ==> uint(size=8) outRgb2Yuv, uint(size=8)outInner, int(size=8)outSign, int(size=8)outClip, uint(size=8)outMinMax, uint(size=8)outYuv2Rgb, uint(size=8)outFilter, uint(size=8)outMdiv :
+ 
+ 	
+	int THR1 = 2;
+	int THR2 = 6;
+	
+	int DEBLOCKED = 0;
+	
+	uint Y_VALUE = 0;
+	uint U_VALUE = 1;
+	uint V_VALUE = 2;
+	
+	uint yuvIndex := 0;
+	
+	int MBSIZE = 16;
+	int BSIZE = 8; 
+		
+	uint (size=8) dU [ihsize*ivsize];
+	uint (size=8) dY [ihsize*ivsize];
+	uint (size=8) dV [ihsize*ivsize];
+	uint (size=8) output [ihsize*ivsize*colors];
+		
+	int ihsize = 2*TWIDTH_SMALL;
+	int ivsize = 2*THEIGHT_SMALL;
+	int colors = COLORS_2;
+	int QP= 10;
+		
+	uint(size=8) input [ihsize*ivsize*colors] := imageDblkSmall;
+	
+	
+	uint(size=8) rBufIn [ihsize*ivsize];	
+	uint(size=8) gBufIn [ihsize*ivsize];	
+	uint(size=8) bBufIn [ihsize*ivsize];
+	
+	uint(size=8) rBufOut [ihsize*ivsize];	
+	uint(size=8) gBufOut [ihsize*ivsize];	
+	uint(size=8) bBufOut [ihsize*ivsize];	
+	
+	int i := 0;
+	int j := 0;
+	
+	// deblocking
+	int offset := 0;
+	int  off5 := ihsize*5;
+	int  off4 := ihsize*4;
+	int  off3 := ihsize*3;
+	int  off2 := ihsize*2;
+	int  off1 := ihsize;
+	int v[10];
+	//int ptr[];
+	int d;
+	int mode;
+	int eq_cnt;
+	int a30;
+	int a31;
+	int a32;
+	int (size=8) pa30;
+    int(size=8) min;
+    int(size=8) max;
+    //int ii;
+	bool doMode1pre := false;
+	bool doMode1 := false;
+	bool doMode2pre := false;
+	bool doMode2 := false;
+	bool endDblk := false;
+	bool endDblk_h := false;
+	bool endDblk_v := false;
+	
+	int res_mmb_thr := 0;
+	int res_mmb_range := 0;
+	
+	
+	//deringing
+	int ibin := 0;
+	int ival := 0;
+	int bins[10];
+	int val[10];
+	
+	
+	
+	initDeblocking: action ==> 
+	do
+		println("Start deblocking!");
+		println("Start Rgb2Yuv!");
+	end
+	
+	send_max_code_1: action ==> outRgb2Yuv:[255]
+	guard (j<ihsize*ivsize)
+	do
+		//println("SENT MAX CODE!");
+	end
+		
+	send_rgb2yuv: action  ==> outRgb2Yuv:[dataR0,dataG0,dataB0,
+											dataR1,dataG1,dataB1,
+											dataR2,dataG2,dataB2,
+											dataR3,dataG3,dataB3]
+	guard (i<ihsize*ivsize)
+	var int(size=16) dataR0,int(size=16) dataG0,int(size=16) dataB0,
+		int(size=16) dataR1,int(size=16) dataG1,int(size=16) dataB1,
+		int(size=16) dataR2,int(size=16) dataG2,int(size=16) dataB2,
+		int(size=16) dataR3,int(size=16) dataG3,int(size=16) dataB3
+	do	
+		//println("SENT " + i);
+		dataR0 := input[i*3];
+		dataG0 := input[i*3+1];
+		dataB0 := input[i*3+2];
+		dataR1 := input[i*3+3];
+		dataG1 := input[i*3+4];
+		dataB1 := input[i*3+5];
+		dataR2 := input[i*3+6];
+		dataG2 := input[i*3+7];
+		dataB2 := input[i*3+8];
+		dataR3 := input[i*3+9];
+		dataG3 := input[i*3+10];
+		dataB3 := input[i*3+11];
+		
+		rBufIn[i] := input[i*3];
+		gBufIn[i] := input[i*3+1];
+		bBufIn[i] := input[i*3+2];
+		rBufIn[i+1] := input[i*3+3];
+		gBufIn[i+1] := input[i*3+4];
+		bBufIn[i+1] := input[i*3+5];
+		rBufIn[i+2] := input[i*3+6];
+		gBufIn[i+2] := input[i*3+7];
+		bBufIn[i+2] := input[i*3+8];
+		rBufIn[i+3] := input[i*3+9];
+		gBufIn[i+3] := input[i*3+10];
+		bBufIn[i+3] := input[i*3+11];
+		//if i=1628 or i+1=1628 or i+2=1628 or i+3 = 1628 then
+			/*println(rBufIn[i] + "," + gBufIn[i] + "," + bBufIn[i]);
+			println(rBufIn[i+1] + "," + gBufIn[i+1] + "," + bBufIn[i+1]);
+			println(rBufIn[i+2] + "," + gBufIn[i+2] + "," + bBufIn[i+2]);
+			println(rBufIn[i+3] + "," + gBufIn[i+3] + "," + bBufIn[i+3]);
+		*///end
+		i := i+4;
+	end
+	
+	recv_rgb2yuv: action inRgb2Yuv:[dataY0,dataU0,dataV0,
+									dataY1,dataU1,dataV1,
+									dataY2,dataU2,dataV2,
+									dataY3,dataU3,dataV3] ==>
+	guard (j<ihsize*ivsize)
+	do
+		dY[j] := dataY0;
+		dV[j] := dataU0;
+		dU[j] := dataV0;
+		dY[j+1] := dataY1;
+		dV[j+1] := dataU1;
+		dU[j+1] := dataV1;
+		dY[j+2] := dataY2;
+		dV[j+2] := dataU2;
+		dU[j+2] := dataV2;
+		dY[j+3] := dataY3;
+		dV[j+3] := dataU3;
+		dU[j+3] := dataV3;
+		
+		/*if(j<100)then	
+			println(dY[j] + "," + dU[j] + "," + dV[j]);
+			println(dY[j+1] + "," + dU[j+1] + "," + dV[j+1]);
+			println(dY[j+2] + "," + dU[j+2] + "," + dV[j+2]);
+			println(dY[j+3] + "," + dU[j+3] + "," + dV[j+3]);
+		end*/
+		//println("recv rgb2yuv " + j);	
+		/*if j=1628 or j+1=1628 or j+2=1628 or j+3 =1628 then
+			println(dY[j] + "," + dU[j] + "," + dV[j]);
+			println(dY[j+1] + "," + dU[j+1] + "," + dV[j+1]);
+			println(dY[j+2] + "," + dU[j+2] + "," + dV[j+2]);
+			println(dY[j+3] + "," + dU[j+3] + "," + dV[j+3]);
+		end*/
+		j := j+4;
+
+	end	
+	
+	end_rgb2yuv: action ==>
+	guard (j=ihsize*ivsize)
+	do
+		//displayYUV_init();
+		println("Finish Rgb2Yuv!");
+	end
+	
+	deblock_1: action ==>
+	do
+		//displayYUV_displayRGBPicture(rBufIn, gBufIn, bBufIn, ihsize, ivsize);
+		//println("Deblocking " + yuvIndex);
+		//deblock(dY,QP,ivsize,ihsize);
+		
+		//deblock(short[] Y, int QP, int ivsize, int ihsize) {
+		
+		endDblk_h := false;
+		endDblk_v := false;
+		
+		i := 8;
+		j := 0;
+		
+		/*perform horizontal filtering*/
+		/*for(i=8;i<ivsize;i+=8){
+			for(j=0;j<ihsize;j=j+1){
+				hdb_filter(Y, QP, ihsize, i , j, off1, off2, off3, off4, off5);
+			}
+		}*//*end horizontal filtering*/
+
+	end
+	
+	hdb_filter_1: action  ==>
+	guard not endDblk_h
+	do 	
+		offset := i*ihsize+j;
+		//ptr = dY;
+		//println("offset=" + offset + ", i=" + i + ", j="+j);
+		//ptr=(Y+i*ihsize+j);
+		if yuvIndex = Y_VALUE then
+			v[5] := dY[offset];//ptr[offset];//*(ptr);
+			v[6] := dY[offset+off1];//ptr[offset+off1];//*(ptr+off1);
+			v[7] := dY[offset+off2];//ptr[offset+off2];//*(ptr+off2);
+			v[8] := dY[offset+off3];//ptr[offset+off3];//*(ptr+off3);
+			v[9] := dY[offset+off4];//ptr[offset+off4];//*(ptr+off4);
+			v[4] := dY[offset-off1];//ptr[offset-off1];//*(ptr-off1);
+			v[3] := dY[offset-off2];//ptr[offset-off2];//*(ptr-off2);
+			v[2] := dY[offset-off3];//ptr[offset-off3];//*(ptr-off3);
+			v[1] := dY[offset-off4];//ptr[offset-off4];//*(ptr-off4);
+			v[0] := dY[offset-off5];//ptr[offset-off5];//*(ptr-off5);
+			/*if i=8 and j= 92 then
+				foreach int ggg in 0 .. 9 do
+					println(v[ggg]);
+				end
+			end*/
+		else if yuvIndex = U_VALUE then
+				v[5] := dU[offset];//ptr[offset];//*(ptr);
+				v[6] := dU[offset+off1];//ptr[offset+off1];//*(ptr+off1);
+				v[7] := dU[offset+off2];//ptr[offset+off2];//*(ptr+off2);
+				v[8] := dU[offset+off3];//ptr[offset+off3];//*(ptr+off3);
+				v[9] := dU[offset+off4];//ptr[offset+off4];//*(ptr+off4);
+				v[4] := dU[offset-off1];//ptr[offset-off1];//*(ptr-off1);
+				v[3] := dU[offset-off2];//ptr[offset-off2];//*(ptr-off2);
+				v[2] := dU[offset-off3];//ptr[offset-off3];//*(ptr-off3);
+				v[1] := dU[offset-off4];//ptr[offset-off4];//*(ptr-off4);
+				v[0] := dU[offset-off5];//ptr[offset-off5];//*(ptr-off5);
+		else if yuvIndex = V_VALUE then
+					v[5] := dV[offset];//ptr[offset];//*(ptr);
+					v[6] := dV[offset+off1];//ptr[offset+off1];//*(ptr+off1);
+					v[7] := dV[offset+off2];//ptr[offset+off2];//*(ptr+off2);
+					v[8] := dV[offset+off3];//ptr[offset+off3];//*(ptr+off3);
+					v[9] := dV[offset+off4];//ptr[offset+off4];//*(ptr+off4);
+					v[4] := dV[offset-off1];//ptr[offset-off1];//*(ptr-off1);
+					v[3] := dV[offset-off2];//ptr[offset-off2];//*(ptr-off2);
+					v[2] := dV[offset-off3];//ptr[offset-off3];//*(ptr-off3);
+					v[1] := dV[offset-off4];//ptr[offset-off4];//*(ptr-off4);
+					v[0] := dV[offset-off5];//ptr[offset-off5];//*(ptr-off5);
+				end
+			end
+		end
+
+		/*if i=40 and j=62 then
+			foreach int idx in 0 .. 9 do
+				println("\t" + v[idx]);
+			end
+		end*/
+
+		eq_cnt := PSI(v[0]-v[1],THR1)+PSI(v[1]-v[2],THR1)+PSI(v[2]-v[3],THR1)+	
+				PSI(v[3]-v[4],THR1)+PSI(v[4]-v[5],THR1)+PSI(v[5]-v[6],THR1)+
+				PSI(v[6]-v[7],THR1)+PSI(v[7]-v[8],THR1)+PSI(v[8]-v[9],THR1);
+
+	end
+	
+	db_filter_1: action ==>
+	do
+		
+		mode := 0;
+		d := 0;
+		//db_filter_mode(int *v,int QP,int eq_cnt, int* d, int* mode, int flag){
+    	if(eq_cnt<THR2) then
+			doMode1pre := true;
+			//a30=COPR_inner(v[3],v[4],v[5],v[6]);
+    	else
+			doMode2pre := true;
+			//max=COPR_max(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);
+        	//min=COPR_min(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);
+		end
+ 	end
+ 	
+ 	db_filter_2: action ==>
+ 	do
+ 		if doMode1pre then
+ 			if(abs(a30)<(QP<<3)) then
+				doMode1 := true;
+			end
+		else if doMode2pre then
+			if(abs(max-min)<(QP<<1)) then
+				doMode2 := true;
+        	end
+        end
+        end
+ 	end
+ 	
+ 	mode_dummy: action ==>
+ 	guard not doMode1pre and not doMode1 and  not doMode2pre and not doMode2
+ 	end
+ 	
+ 	mode1_dummy: action ==>
+ 	guard doMode1pre and not doMode1
+ 	end
+ 	
+ 	mode2_dummy: action ==>
+ 	guard doMode2pre and not doMode2
+ 	end
+ 	
+ 	mode1pre_send: action ==> outInner:[v[3],v[4],v[5],v[6]]
+ 	guard doMode1pre
+ 	do
+ 		/*if i=40 and j=62 then
+ 			println(v[3] + "," + v[4] + "," + v[5] + "," + v[6]);
+ 		end*/
+ 		//a30=COPR_inner(v[3],v[4],v[5],v[6]);
+ 	end
+ 	
+ 	mode1pre_recv: action inInner:[result] ==> 
+ 	guard doMode1pre
+ 	do
+ 		a30 := result;//a30=COPR_inner(v[3],v[4],v[5],v[6]);
+ 		/*if i=40 and j=62 then
+ 			println("inner res=" + result);
+ 		end*/
+ 	end
+ 	
+ 	mode1_send_1: action ==> outInner:[v[1],v[2],v[3],v[4],
+ 									   v[5],v[6],v[7],v[8]]
+ 	guard doMode1
+ 	do
+ 		/*if i=40 and j=62 then
+ 			println(v[1] + "," + v[2] + "," + v[3] + "," + v[4]);
+ 			println(v[5] + "," + v[6] + "," + v[7] + "," + v[8]);
+ 		end*/
+ 		//a30=COPR_inner(v[3],v[4],v[5],v[6]);
+ 		//a31=COPR_inner(v[1],v[2],v[3],v[4]);
+        //a32=COPR_inner(v[5],v[6],v[7],v[8]);
+	    //pa30=COPR_sign(a30)*COPR_min(abs(a30),abs(a31),abs(a32),-1234);
+        //*d=COPR_clip_f(COPR_mdiv(pa30,a30),(v[4]-v[5])/2);
+        //*mode = 1;
+ 	end
+ 	
+ 	mode1_recv_send_1: action inInner:[res1,res2] ==> outMinMax:[3,abs(a30),abs(res1),abs(res2)], outSign:[a30]
+ 	guard doMode1
+ 	do
+ 		a31 := res1;//a31=COPR_inner(v[1],v[2],v[3],v[4]);
+        a32 := res2;//a32=COPR_inner(v[5],v[6],v[7],v[8]);
+	    /*if i=40 and j=62 then
+ 			println("inner res1=" + res1);
+	    	println("inner res2=" + res2);
+	    end*/
+	    //println("MM input=" + abs(a30) +"," + abs(res1) + "," + abs(res2));
+	    //pa30=COPR_sign(a30)*COPR_min(abs(a30),abs(a31),abs(a32),-1234);
+        //*d=COPR_clip_f(COPR_mdiv(pa30,a30),(v[4]-v[5])/2);
+        //*mode = 1;
+ 	end
+ 	
+ 	mode1_recv_send_2: action inMinMax:[resMM], inSign:[resSign] ==> outMdiv:[pa30,a30]
+ 	guard doMode1
+ 	do
+ 		pa30 := resSign*(resMM>>(2*ADDR_SIZE));//pa30=COPR_sign(a30)*COPR_min(abs(a30),abs(a31),abs(a32),-1234);
+        //*d=COPR_clip_f(COPR_mdiv(pa30,a30),(v[4]-v[5])/2);
+        //*mode = 1;
+	    /*if i=40 and j=62 then
+ 			println("sign res=" + resSign);
+	    	println("pa30=" + pa30);
+ 		end*/
+ 	end
+ 	
+ 	mode1_recv_send_3: action inMdiv:[result] ==> outClip:[result,(v[4]-v[5])/2]
+ 	guard doMode1
+ 	do
+ 		/*if i=40 and j=62 then
+ 			println("mdiv res=" + result);
+	    end*/
+	    //println("clip input=" + result + "," + ((v[4]-v[5])/2));
+ 		//pa30 := resSign*(resMM>>(2*ADDR_SIZE));//pa30=COPR_sign(a30)*COPR_min(abs(a30),abs(a31),abs(a32),-1234);
+        //*d=COPR_clip_f(COPR_mdiv(pa30,a30),(v[4]-v[5])/2);
+        //*mode = 1;
+ 	end
+ 	
+ 	mode1_recv_1: action inClip:[result] ==> 
+ 	guard doMode1
+ 	do
+        d := result;//*d=COPR_clip_f(COPR_mdiv(pa30,a30),(v[4]-v[5])/2);
+        mode := 1;//*mode = 1;
+ 	end
+ 	
+ 	mode2pre_send: action ==> outMinMax:[8,v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8]]
+ 	guard doMode2pre
+ 	do
+ 		/*if i=16 and j= 92 then
+ 			foreach int jjj in 1 .. 8 do
+				println(v[jjj]);
+			end
+		end*/
+ 		//max=COPR_max(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);
+        //min=COPR_min(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);		
+ 	end
+ 	
+ 	mode2pre_recv: action inMinMax:[result] ==>
+ 	guard doMode2pre
+ 	do
+ 		//println("result " + result);
+ 		max := result>>(2*ADDR_SIZE+DATA_SIZE);//max=COPR_max(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);
+ 		//println("result " + result);
+        min := result>>(2*ADDR_SIZE);//min=COPR_min(v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],-1234);		
+ 		/*if i=16 and j= 92 then
+			println("max="+max+", min="+min+", QP="+QP);
+		end*/
+ 	end
+ 	
+ 	mode2_send: action ==> outFilter:[QP,v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9]]
+ 	guard doMode2
+ 	do
+ 		//COPR_filter(v,QP);
+		//*mode = 2;		
+ 	end
+ 	
+ 	mode2_recv: action inFilter:[res0,res1,res2,res3,res4,res5,res6,res7,res8,res9] ==>
+ 	guard doMode2
+ 	do
+ 		//println("sum="+(res0+res1+res2+res3+res4+res5+res6+res7+res8+res9));
+ 		v[0] := res0;
+ 		v[1] := res1;
+ 		v[2] := res2;
+ 		v[3] := res3;
+ 		v[4] := res4;
+ 		v[5] := res5;
+ 		v[6] := res6;
+ 		v[7] := res7;
+ 		v[8] := res8;
+ 		v[9] := res9;
+ 		mode := 2;
+ 		//COPR_filter(v,QP);
+		//*mode = 2;		
+ 	end
+		/*int[] res_db_filter_mode = db_filter_mode(v, QP, eq_cnt);//, &d, &mode);
+		d = res_db_filter_mode[0];
+		mode = res_db_filter_mode[1];
+		*/
+	hdb_filter_2: action ==>
+	guard not endDblk_h
+	do
+		//if(yuvIndex=0)then
+		//	println("mode="+mode);
+		//end
+		//println("i="+i+",j="+j +" --> " + mode + "," + d);
+		
+		if(mode = 1) then  /*default mode is applied*/
+			
+			if yuvIndex = Y_VALUE then
+				//println("i="+i+",j="+j+" --> d="+d);
+				dY[offset-off1] := dY[offset-off1] - d;//*(ptr-off1)-= d;
+				dY[offset] := dY[offset] + d;//*(ptr)+= d;
+			else if yuvIndex = U_VALUE then
+					//println("i="+i+",j="+j+" --> d="+d);
+					dU[offset-off1] := dU[offset-off1] - d;//*(ptr-off1)-= d;
+					dU[offset] := dU[offset] + d;//*(ptr)+= d;
+			else if yuvIndex = V_VALUE then
+						//println("i="+i+",j="+j+" --> d="+d);
+						dV[offset-off1] := dV[offset-off1] - d;//*(ptr-off1)-= d;
+						dV[offset] := dV[offset] + d;//*(ptr)+= d;
+					end
+				end
+			end
+		
+		else if(mode = 2) then/*DC offset mode is applied */
+			
+			if yuvIndex = Y_VALUE then
+				dY[offset] :=  v[5];//*(ptr);*(ptr)=v[5];
+				dY[offset+off1] :=  v[6];//*(ptr+off1)=(short int)v[6];
+				dY[offset+off2] :=  v[7];//*(ptr+off2)=(short int)v[7];
+				dY[offset+off3] :=  v[8];//*(ptr+off3)=(short int)v[8];
+				dY[offset+off4] :=  v[9];//*(ptr+off4)=(short int)v[9];
+				dY[offset-off1] :=  v[4];//*(ptr-off1)=(short int)v[4];
+				dY[offset-off2] :=  v[3];//*(ptr-off2)=(short int)v[3];
+				dY[offset-off3] :=  v[2];//*(ptr-off3)=(short int)v[2];
+				dY[offset-off4] :=  v[1];//*(ptr-off4)=(short int)v[1];
+				dY[offset-off5] :=  v[0];//*(ptr-off5)=(short int)v[0];
+				/*if offset=1628 or offset+off1=1628 or offset+off2=1628 or offset+off3=1628
+					or offset+off4=1628 or offset-off1=1628 or offset-off2=1628 or offset-off3=1628
+					or offset-off4=1628 or offset-off5=1628 then
+ 					println("*****************************************************");
+ 				end
+ 				 if i=8 and j= 92 then
+					foreach int ggg in 0 .. 9 do
+						println(v[ggg]);
+					end
+				end*/
+			else if yuvIndex = U_VALUE then
+					dU[offset] :=  v[5];//*(ptr);*(ptr)=v[5];
+					dU[offset+off1] :=  v[6];//*(ptr+off1)=(short int)v[6];
+					dU[offset+off2] :=  v[7];//*(ptr+off2)=(short int)v[7];
+					dU[offset+off3] :=  v[8];//*(ptr+off3)=(short int)v[8];
+					dU[offset+off4] :=  v[9];//*(ptr+off4)=(short int)v[9];
+					dU[offset-off1] :=  v[4];//*(ptr-off1)=(short int)v[4];
+					dU[offset-off2] :=  v[3];//*(ptr-off2)=(short int)v[3];
+					dU[offset-off3] :=  v[2];//*(ptr-off3)=(short int)v[2];
+					dU[offset-off4] :=  v[1];//*(ptr-off4)=(short int)v[1];
+					dU[offset-off5] :=  v[0];//*(ptr-off5)=(short int)v[0];
+			else if yuvIndex = V_VALUE then
+						dV[offset] :=  v[5];//*(ptr);*(ptr)=v[5];
+						dV[offset+off1] :=  v[6];//*(ptr+off1)=(short int)v[6];
+						dV[offset+off2] :=  v[7];//*(ptr+off2)=(short int)v[7];
+						dV[offset+off3] :=  v[8];//*(ptr+off3)=(short int)v[8];
+						dV[offset+off4] :=  v[9];//*(ptr+off4)=(short int)v[9];
+						dV[offset-off1] :=  v[4];//*(ptr-off1)=(short int)v[4];
+						dV[offset-off2] :=  v[3];//*(ptr-off2)=(short int)v[3];
+						dV[offset-off3] :=  v[2];//*(ptr-off3)=(short int)v[2];
+						dV[offset-off4] :=  v[1];//*(ptr-off4)=(short int)v[1];
+						dV[offset-off5] :=  v[0];//*(ptr-off5)=(short int)v[0];
+					end
+				end
+			end
+
+		end
+		end
+		
+		doMode1pre := false;
+		doMode1 := false;
+		doMode2pre := false;
+		doMode2 := false;
+        
+	end
+		
+	deblock_2: action ==>
+	do
+		
+		if j < ihsize-1 and i<ivsize then
+			j := j+1;
+			else if i<ivsize-8 then
+				i := i+8;
+				j := 0;
+			else
+				endDblk_h := true;
+			end 
+		end
+		
+	
+	end
+		
+	deblock_3: action ==>
+	guard endDblk_h and not endDblk_v
+	do
+		j := 8;
+		i := 0;
+		/*perform vertical filtering*/
+		/*for(j=8;j<ihsize;j+=8){
+			for(i=0;i<ivsize;i=i+1){
+				vdb_filter(Y, QP, ihsize, i, j);
+			}
+		}*//*end vertical filtering*/		
+	end
+	
+	vdb_filter_1: action ==>
+	guard endDblk_h and not endDblk_v
+	do
+		if yuvIndex = Y_VALUE then		
+			v[5] := dY[offset];//*(ptr);
+			v[6] := dY[offset+1];//*(ptr+1);
+			v[7] := dY[offset+2];//*(ptr+2);
+			v[8] := dY[offset+3];//*(ptr+3);
+			v[9] := dY[offset+4];//*(ptr+4);
+			v[4] := dY[offset-1];//*(ptr-1);
+			v[3] := dY[offset-2];//*(ptr-2);
+			v[2] := dY[offset-3];//*(ptr-3);
+			v[1] := dY[offset-4];//*(ptr-4);
+			v[0] := dY[offset-5];//*(ptr-5);
+		else if yuvIndex = U_VALUE then
+				v[5] := dU[offset];//*(ptr);
+				v[6] := dU[offset+1];//*(ptr+1);
+				v[7] := dU[offset+2];//*(ptr+2);
+				v[8] := dU[offset+3];//*(ptr+3);
+				v[9] := dU[offset+4];//*(ptr+4);
+				v[4] := dU[offset-1];//*(ptr-1);
+				v[3] := dU[offset-2];//*(ptr-2);
+				v[2] := dU[offset-3];//*(ptr-3);
+				v[1] := dU[offset-4];//*(ptr-4);
+				v[0] := dU[offset-5];//*(ptr-5);
+			else if yuvIndex = V_VALUE then
+					v[5] := dV[offset];//*(ptr);
+					v[6] := dV[offset+1];//*(ptr+1);
+					v[7] := dV[offset+2];//*(ptr+2);
+					v[8] := dV[offset+3];//*(ptr+3);
+					v[9] := dV[offset+4];//*(ptr+4);
+					v[4] := dV[offset-1];//*(ptr-1);
+					v[3] := dV[offset-2];//*(ptr-2);
+					v[2] := dV[offset-3];//*(ptr-3);
+					v[1] := dV[offset-4];//*(ptr-4);
+					v[0] := dV[offset-5];//*(ptr-5);
+				end
+			end
+		end
+				
+		
+
+		eq_cnt := PSI(v[0]-v[1],THR1)+PSI(v[1]-v[2],THR1)+PSI(v[2]-v[3],THR1)+	PSI(v[3]-v[4],THR1)+PSI(v[4]-v[5],THR1)+PSI(v[5]-v[6],THR1)+
+				PSI(v[6]-v[7],THR1)+PSI(v[7]-v[8],THR1)+PSI(v[8]-v[9],THR1);
+	
+	end
+	
+	vdb_filter_2: action ==>
+	guard endDblk_h and not endDblk_v
+	do
+		if (mode=1) then/*default mode is applied*/
+			
+			if yuvIndex = Y_VALUE then
+				dY[offset-1] := dY[offset-1] - d;//*(ptr-1)-= d;
+				dY[offset] := dY[offset] + d;//*(ptr)+= d;
+			else if yuvIndex = U_VALUE then
+					dU[offset-1] := dU[offset-1] - d;//*(ptr-1)-= d;
+					dU[offset] := dU[offset] + d;//*(ptr)+= d;
+				else if yuvIndex = V_VALUE then
+						dV[offset-1] := dV[offset-1] - d;//*(ptr-1)-= d;
+						dV[offset] := dV[offset] + d;//*(ptr)+= d;
+					end
+				end
+			end
+
+		else if (mode = 2) then /*DC offset mode is applied*/
+
+			if yuvIndex = Y_VALUE then
+			
+				dY[offset-5] := v[0];//*(ptr-5)=(short int)v[0];
+				dY[offset-4] := v[1];//*(ptr-4)=(short int)v[1];
+				dY[offset-3] := v[2];//*(ptr-3)=(short int)v[2];
+				dY[offset-2] := v[3];//*(ptr-2)=(short int)v[3];
+				dY[offset-1] := v[4];//*(ptr-1)=(short int)v[4];
+				dY[offset] := v[5];//*(ptr)=(short int)v[5];
+				dY[offset+1] := v[6];//*(ptr+1)=(short int)v[6];
+				dY[offset+2] := v[7];//*(ptr+2)=(short int)v[7];
+				dY[offset+3] := v[8];//*(ptr+3)=(short int)v[8];
+				dY[offset+4] := v[9];//*(ptr+4)=(short int)v[9];
+			else if yuvIndex = U_VALUE then
+					dU[offset-5] := v[0];//*(ptr-5)=(short int)v[0];
+					dU[offset-4] := v[1];//*(ptr-4)=(short int)v[1];
+					dU[offset-3] := v[2];//*(ptr-3)=(short int)v[2];
+					dU[offset-2] := v[3];//*(ptr-2)=(short int)v[3];
+					dU[offset-1] := v[4];//*(ptr-1)=(short int)v[4];
+					dU[offset] := v[5];//*(ptr)=(short int)v[5];
+					dU[offset+1] := v[6];//*(ptr+1)=(short int)v[6];
+					dU[offset+2] := v[7];//*(ptr+2)=(short int)v[7];
+					dU[offset+3] := v[8];//*(ptr+3)=(short int)v[8];
+					dU[offset+4] := v[9];//*(ptr+4)=(short int)v[9];
+				else if yuvIndex = V_VALUE then
+						dV[offset-5] := v[0];//*(ptr-5)=(short int)v[0];
+						dV[offset-4] := v[1];//*(ptr-4)=(short int)v[1];
+						dV[offset-3] := v[2];//*(ptr-3)=(short int)v[2];
+						dV[offset-2] := v[3];//*(ptr-2)=(short int)v[3];
+						dV[offset-1] := v[4];//*(ptr-1)=(short int)v[4];
+						dV[offset] := v[5];//*(ptr)=(short int)v[5];
+						dV[offset+1] := v[6];//*(ptr+1)=(short int)v[6];
+						dV[offset+2] := v[7];//*(ptr+2)=(short int)v[7];
+						dV[offset+3] := v[8];//*(ptr+3)=(short int)v[8];
+						dV[offset+4] := v[9];//*(ptr+4)=(short int)v[9];
+					end
+				end
+			end
+	
+		end
+	
+	end
+		
+		doMode1pre := false;
+		doMode1 := false;
+		doMode2pre := false;
+		doMode2 := false;
+		
+	end
+	
+	deblock_4: action ==>
+	guard endDblk_h and not endDblk_v
+	do
+		
+		if i < ivsize-1 and j<ihsize then
+			i := i+1;
+			else if j<ihsize-1 then
+				j := j+8;
+				i := 0;
+			else
+				endDblk_v := true;
+			end 
+		end
+		/*perform vertical filtering*/
+		/*for(j=8;j<ihsize;j+=8){
+			for(i=0;i<ivsize;i=i+1){
+				vdb_filter(Y, QP, ihsize, i, j);
+			}
+		}*//*end vertical filtering*/
+	
+	end
+	
+	deblock_5: action ==>
+	guard endDblk_h and endDblk_v and not endDblk
+	do
+
+		if yuvIndex < 1 then
+			yuvIndex := yuvIndex + 1;
+		else
+			endDblk := true; 
+		end
+		/*perform vertical filtering*/
+		/*for(j=8;j<ihsize;j+=8){
+			for(i=0;i<ivsize;i=i+1){
+				vdb_filter(Y, QP, ihsize, i, j);
+			}
+		}*//*end vertical filtering*/
+	
+	end
+	
+	dering: action ==>
+	guard endDblk
+	do
+		println("deringing Y");
+		deringY(dY, QP, ivsize, ihsize, DEBLOCKED);
+		println("deringing U");
+		yuvIndex := 8;
+		deringC(dU, QP, ivsize, ihsize, DEBLOCKED); 
+		yuvIndex := 0;
+		println("deringing V");
+		deringC(dV, QP, ivsize, ihsize, DEBLOCKED);
+		println("End dering!");
+		println("Start yuv2rgb!");
+		i := 0;
+		j := 0;
+	end
+	
+	procedure max_min_blk(int(size=8) C[ihsize*ivsize], int iB_mmb, int jB_mmb, int ihsize_mmb)
+	var //int mm_blk_result[2],
+		//int iii, int jjj,
+		int max_mmb, int min_mmb
+	begin
+		max_mmb := C[iB_mmb*ihsize_mmb+jB_mmb];
+		min_mmb := C[iB_mmb*ihsize_mmb+jB_mmb];
+
+		foreach int iii in iB_mmb ..iB_mmb+BSIZE-1 do // ;++i){
+			foreach int jjj in jB_mmb .. jB_mmb+BSIZE-1 do //;++j){
+				
+				if(C[iii*ihsize_mmb+jjj]>max_mmb) then 
+					max_mmb := C[iii*ihsize_mmb+jjj];
+				else if(C[iii*ihsize_mmb+jjj]<min_mmb) then
+					min_mmb := C[iii*ihsize_mmb+jjj];
+					end
+				end
+
+			end
+		end
+
+		res_mmb_thr := (max_mmb+min_mmb+1)>>1;//*thr = (max+min+1)>>1;
+		res_mmb_range := max_mmb-min_mmb;	//*range = max-min;//range dinamico di grigio
+		
+	end
+	
+		int thr [4];
+		int range[4]; /*range values for blocks inside macroblocks*/
+
+		int iMB; int jMB; 
+		int iB; int jB;
+		int k;
+		int max_diff; int max_range; int max_thr; int tresh;
+		int pel_i; int pel_j;
+		
+
+		int bin; //int ival; int ibin;
+	
+		procedure deringY(int(size=8) Y[ivsize*ihsize], int QP, int ivsize, int ihsize,int DEBLOCKED)
+		begin
+
+			max_diff := QP>>1;
+
+			foreach int iMB in 0 .. ivsize/MBSIZE-1 do//for(iMB=0;iMB<ivsize/MBSIZE;iMB+=1){ /*scanning thru macroblocks*/
+				foreach int jMB in 0 .. ihsize/MBSIZE-1 do//for(jMB=0;jMB<ihsize/MBSIZE;jMB+=1){
+
+					k:=0;/*indexs of blocks*/
+					max_range:=0;
+					max_thr:=0;
+
+				
+					iB:=iMB*MBSIZE;
+					while (iB<iMB*MBSIZE+MBSIZE) do// for(iB=iMB*MBSIZE;iB<iMB*MBSIZE+MBSIZE;iB+=BSIZE){ /*scan blocks*/
+						jB:=jMB*MBSIZE;	
+						while (jB<jMB*MBSIZE+MBSIZE) do //for(jB=jMB*MBSIZE;jB<jMB*MBSIZE+MBSIZE;jB+=BSIZE){
+								
+							max_min_blk(Y, iB, jB, /*&thr[k], &range[k],*/ ihsize);
+							thr[k] := res_mmb_thr;
+							range[k] := res_mmb_range;
+								
+							if(range[k]>=max_range) then
+								max_range := range[k];
+								max_thr := thr[k];
+							end
+								
+							k := k+1;/*move to next block*/
+							jB := jB + BSIZE;
+						end
+						iB := iB + BSIZE;
+					end/*end blocks scanned*/
+						
+					foreach int k in 0 .. 3 do
+							
+						if(range[k]<32 && max_range>=64) then
+							thr[k] := max_thr;
+						end
+						if(max_range<16) then
+							thr[k]:=0;
+						end
+					end
+		
+					k:=0;
+						
+					//for(iB=iMB*MBSIZE;iB<iMB*MBSIZE+MBSIZE;iB+=BSIZE){ /*scan blocks*/
+					//	for(jB=jMB*MBSIZE;jB<jMB*MBSIZE+MBSIZE;jB+=BSIZE){
+					iB:=iMB*MBSIZE;
+					while (iB<iMB*MBSIZE+MBSIZE) do// for(iB=iMB*MBSIZE;iB<iMB*MBSIZE+MBSIZE;iB+=BSIZE){ /*scan blocks*/
+						jB:=jMB*MBSIZE;	
+						while (jB<jMB*MBSIZE+MBSIZE) do //for(jB=jMB*MBSIZE;jB<jMB*MBSIZE+MBSIZE;jB+=BSIZE){
+								
+							tresh:=thr[k];
+		
+							if(not((DEBLOCKED=1) and tresh=0))then /*if deblocking has been done no filtering takes place*/
+									
+								if((iB-1)>=1)then
+									pel_i := (iB-1);
+								else
+									pel_i := 1;
+								end
+								
+								if((jB-1)>=1) then
+									pel_j := (jB-1);
+								else
+									pel_j := 1;
+								end
+		
+								i := pel_i;
+								while(i<iB+BSIZE-1-1) do//for(i=pel_i;i<iB+BSIZE-1;++i){//scandisco per righe di blocco in blocco
+								
+									j:=pel_j;
+									ival:=0; ibin:=0;
+			
+									bins_val_calc(Y,ihsize,ibin,ival,i-1,j-1,tresh/*,bins,val*/);
+										
+									ibin := ibin+1;
+									ival := ival+1;
+		
+									bins_val_calc(Y,ihsize,ibin,ival,i-1,j,tresh/*,bins,val*/);
+		
+					            	ibin := ibin+1;
+									ival := ival+1;
+		
+					            	while(j<jB+BSIZE-1-1)do//for(j=pel_j;j<jB+BSIZE-1;++j){//scandisco per colonne di blocco in blocco
+					            			
+					            		bins_val_calc(Y,ihsize,ibin,ival,i-1,j+1,tresh/*,bins,val*/);
+					            		bin:=bins[ibin-2]+bins[ibin-1]+bins[ibin];
+					            			
+					            		/*adaptive smoothing*/
+					            		if((bin=0) or (bin=9))then
+					            			adap_filter(Y,i,j,val,ival,ihsize,max_diff); // filtro applicato solo se gli indici binari sono tutti 1 o tutti 0
+					            		end
+					            			
+					            		ibin := ibin+1;
+										ival := ival+1;
+										
+										j := j+1;
+					            	end
+								
+									i:=i+1;
+								end/*block filtered*/
+		
+							end/*end testing if filtering has to be done*/
+		
+							k := k+1;
+							jB := jB+BSIZE;
+						end /*end block scanning*/
+						
+						iB := iB+BSIZE;
+					end
+
+				end/*end scan macroblocks*/
+
+			end
+		
+	end
+	
+	int thr_s := 0;
+	int range_s := 0;
+	
+	procedure deringC(int(size=8) C[ihsize*ivsize], int QP, int ivsize, int ihsize,int DEBLOCKING) 
+	begin
+		thr_s := 0;
+		range_s := 0; /*range values for blocks*/
+		iB := 0; jB := 0;
+		
+		max_diff := QP>>1;
+
+		
+		while(iB<ivsize)do//for(iB=0;iB<ivsize;iB+=BSIZE){ /*scanning thru blocks*/
+			while(jB<ihsize)do//for(jB=0;jB<ihsize;jB+=BSIZE){
+				
+				max_min_blk(C,iB,jB/*, &thr, &range*/,ihsize);
+				thr_s := res_mmb_thr;
+				range_s := res_mmb_range;
+				//System.out.println("iB=" + iB + ", jB=" + jB);
+				jB := jB + BSIZE;
+			end
+			iB := iB + BSIZE;
+		end
+
+		//TODO modified!!!
+		iB := iB -8;
+		jB := jB -8;
+		//System.out.println("iB=" + iB + ", jB=" + jB);
+		
+		tresh := thr_s;
+
+		if(range_s<4)then tresh:=0; end /*forcing filtering to be always done*/
+
+		//System.out.println("tresh=" + tresh);
+		
+		if(not(tresh=0 and (DEBLOCKING=1)))then//applico il filtro
+			
+			if((iB-1)>=1)then
+				pel_i := (iB-1);
+			else
+				pel_j := 1;//se è il primo o il secondo blocco (iB=0,1) comincia da 1
+			end
+			
+			if((jB-1)>=1)then
+				pel_j := (jB-1);
+			else
+				pel_j := 1;
+			end
+
+			foreach int i in pel_i .. iB+BSIZE-1-1 do//for(i=pel_i;i<iB+BSIZE-1;++i){//scandisco per righe di blocco in blocco
+				
+				j:=pel_j;
+				ival:=0;
+				ibin:=0;
+				
+				//System.out.println("pel_j=" + pel_j + ", jB=" + jB);
+				
+				bins_val_calc(C,ihsize,ibin,ival,i-1,j-1,tresh/*,bins,val*/);
+
+				ibin := ibin+1;
+				ival := ival+1;
+				
+				bins_val_calc(C,ihsize,ibin,ival,i-1,j,tresh/*,bins,val*/);
+
+				ibin := ibin+1;
+				ival := ival+1;
+
+				foreach int j in pel_j .. jB+BSIZE-1-1 do //for(j=pel_j;j<jB+BSIZE-1;++j){//scandisco per colonne di blocco in blocco
+					
+					bins_val_calc(C,ihsize,ibin,ival,i-1,j+1,tresh/*,bins,val*/);
+					bin:=bins[ibin-2]+bins[ibin-1]+bins[ibin];
+
+					if(bin=0 or bin=9)then
+						adap_filter(C,i,j,val,ival,ihsize,max_diff); // filtro applicato solo se gli indici binari sono tutti 1 o tutti 0
+					end
+
+					ival := ival+1;
+					ibin := ibin+1;
+
+				end
+
+			end/*block filtered*/
+
+		end
+				
+	end
+	
+	send_max_code_2: action ==> outYuv2Rgb:[255]
+	guard (j<ihsize*ivsize)
+	do
+		//println("smc2!");
+	end
+	
+	send_yuv2rgb: action  ==> outYuv2Rgb:[dataY0,dataU0,dataV0,
+											dataY1,dataU1,dataV1,
+											dataY2,dataU2,dataV2,
+											dataY3,dataU3,dataV3]
+	guard (i<ihsize*ivsize)
+	var int(size=16) dataY0,int(size=16) dataU0,int(size=16) dataV0,
+		int(size=16) dataY1,int(size=16) dataU1,int(size=16) dataV1,
+		int(size=16) dataY2,int(size=16) dataU2,int(size=16) dataV2,
+		int(size=16) dataY3,int(size=16) dataU3,int(size=16) dataV3
+	do	
+		//println("SENT " + i);
+		dataY0 := dY[i];
+		dataU0 := dU[i];
+		dataV0 := dV[i];
+		dataY1 := dY[i+1];
+		dataU1 := dU[i+1];
+		dataV1 := dV[i+1];
+		dataY2 := dY[i+2];
+		dataU2 := dU[i+2];
+		dataV2 := dV[i+2];
+		dataY3 := dY[i+3];
+		dataU3 := dU[i+3];
+		dataV3 := dV[i+3];
+		
+		
+		i := i+4;
+	end
+	
+	recv_yuv2rgb: action inYuv2Rgb:[dataR0,dataG0,dataB0,
+									dataR1,dataG1,dataB1,
+									dataR2,dataG2,dataB2,
+									dataR3,dataG3,dataB3] ==>
+	guard (j<ihsize*ivsize)
+	do
+		//println("RECV " + i);
+		output[j*3] := dataR0;
+		output[j*3+1] := dataG0;
+		output[j*3+2] := dataB0;
+		output[j*3+3] := dataR1;
+		output[j*3+4] := dataG1;
+		output[j*3+5] := dataB1;
+		output[j*3+6] := dataR2;
+		output[j*3+7] := dataG2;
+		output[j*3+8] := dataB2;
+		output[j*3+9] := dataR3;
+		output[j*3+10] := dataG3;
+		output[j*3+11] := dataB3;
+	
+	
+		rBufOut[j] := dataR0;
+		gBufOut[j] := dataG0;
+		bBufOut[j] := dataB0;
+		rBufOut[j+1] := dataR1;
+		gBufOut[j+1] := dataG1;
+		bBufOut[j+1] := dataB1;
+		rBufOut[j+2] := dataR2;
+		gBufOut[j+2] := dataG2;
+		bBufOut[j+2] := dataB2;
+		rBufOut[j+3] := dataR3;
+		gBufOut[j+3] := dataG3;
+		bBufOut[j+3] := dataB3;
+
+		//print("outDataflow=[");
+			println(rBufOut[j]+ ","+gBufOut[j]+ ","+bBufOut[j]+ ",");
+			println(rBufOut[j+1]+ ","+gBufOut[j+1]+ ","+bBufOut[j+1]+ ",");
+			println(rBufOut[j+2]+ ","+gBufOut[j+2]+ ","+bBufOut[j+2]+ ",");
+			println(rBufOut[j+3]+ ","+gBufOut[j+3]+ ","+bBufOut[j+3]+ ",");
+		//end
+
+		
+		//if (j<100) then
+			/*println(rBufOut[j] + "," + gBufOut[j] + "," + bBufOut[j]);
+			println(rBufOut[j+1] + "," + gBufOut[j+1] + "," + bBufOut[j+1]);
+			println(rBufOut[j+2] + "," + gBufOut[j+2] + "," + bBufOut[j+2]);
+			println(rBufOut[j+3] + "," + gBufOut[j+3] + "," + bBufOut[j+3]);*/
+		//end
+		j := j+4;
+	end	
+	
+	end_yuv2rgb: action ==>
+	guard (j=ihsize*ivsize)
+	do
+		println("Finish yuv2rgb!");
+		println("Finish deblocking!");
+		displayYUV_init();
+	end
+	
+	loop: action ==>
+	do
+		displayYUV_displayRGBPicture(rBufOut, gBufOut, bBufOut, ihsize, ivsize);
+	end
+	
+	function PSI(int a, int thr) --> int:
+		if((abs(a))<=(thr)) then
+			1
+		else
+			0
+		end
+	end
+
+
+	function abs(int tmp) --> int:
+		if(tmp>0) then
+			tmp
+		else
+			-tmp
+		end
+	end
+	
+	// TODO da modificare C --> dY,dU,dV
+	procedure adap_filter(int(size=8) C[ihsize*ivsize], int i, int j,int val[10],int ival,int ihsize,int max_diff)
+	var int sum
+	begin	
+		sum := (val[ival-2]+2*val[ival-1]+val[ival]+8)>>4;
+		
+	    if (abs(C[i*ihsize+j]-sum)> max_diff) then
+	        if(sum > C[i*ihsize+j]) then
+	            sum := C[i*ihsize+j] + max_diff;
+	        else
+	            sum := C[i*ihsize+j] - max_diff;
+	        end
+	    end
+	    
+    	C[i*ihsize+j] := sum;
+	end
+
+
+	procedure bins_val_calc(int(size=8) C[ihsize*ivsize],int ihsize,int ibin, int ival, int a, int b, int tresh/*,int *bins, int *val*/)
+	begin
+		//if(yuvIndex=8) then
+		//println("ibin=" + ibin + ", a=" + a + ", b="+b+ ", tresh=" + tresh );end
+		bins[ibin] := INDEX(C[a*ihsize+b],tresh) + 
+					INDEX(C[(a+1)*ihsize+b],tresh) +
+                   	INDEX(C[(a+2)*ihsize+b],tresh);
+		ibin := ibin+1;
+		
+		val[ival] := C[a*ihsize+b] + 2*C[(a+1)*ihsize+b] + C[(a+2)*ihsize+b];
+		ival := ival+1;
+    	
+	end
+	
+	
+	function INDEX(int x, int t) --> int :
+		if((x) >= (t)) then
+			1
+		else
+			0
+		end
+	end
+	
+	
+	schedule fsm init:
+		init (initDeblocking) --> wait_conv_1;
+		
+		wait_conv_1 (send_max_code_1) --> wait_send1_conv_1;
+		wait_send1_conv_1 (send_rgb2yuv) --> wait_send2_conv_1;
+		wait_send2_conv_1 (send_rgb2yuv) --> wait_send3_conv_1;
+		wait_send3_conv_1 (send_rgb2yuv) --> wait_send4_conv_1;
+		wait_send4_conv_1 (send_rgb2yuv) --> wait_recv1_conv_1;
+		wait_recv1_conv_1 (recv_rgb2yuv) --> wait_recv2_conv_1;
+		wait_recv2_conv_1 (recv_rgb2yuv) --> wait_recv3_conv_1;
+		wait_recv3_conv_1 (recv_rgb2yuv) --> wait_recv4_conv_1;
+		wait_recv4_conv_1 (recv_rgb2yuv) --> end_iter_conv_1;
+		
+		end_iter_conv_1 (send_max_code_1) --> wait_send1_conv_1;
+		end_iter_conv_1 (end_rgb2yuv) --> wait_deblock_1;
+		
+		wait_deblock_1 (deblock_1) --> wait_hdbf_1;
+		
+		wait_hdbf_1 (hdb_filter_1) --> wait_dbf_1;
+		wait_vdbf_1 (vdb_filter_1) --> wait_dbf_1;
+		
+		wait_dbf_1 (db_filter_1) --> dbf_1;
+		dbf_1 (mode1pre_send) --> dbf_mode1pre;
+		dbf_mode1pre (mode1pre_recv) --> wait_dbf_2;
+		dbf_1 (mode2pre_send) --> dbf_mode2pre;
+		dbf_mode2pre (mode2pre_recv) --> wait_dbf_2;
+		wait_dbf_2 (db_filter_2) --> dbf_2;
+		dbf_2 (mode1_send_1) --> dbf_mode1_1;
+		dbf_mode1_1 (mode1_recv_send_1) --> dbf_mode1_2;
+		dbf_mode1_2 (mode1_recv_send_2) --> dbf_mode1_3;
+		dbf_mode1_3 (mode1_recv_send_3) --> dbf_mode1_4;
+		dbf_mode1_4 (mode1_recv_1) --> wait_hvdbf_2;
+		dbf_2 (mode2_send) --> dbf_mode2_1;
+		dbf_mode2_1 (mode2_recv) -->  wait_hvdbf_2;
+		dbf_1 (mode_dummy) --> wait_hvdbf_2;
+		dbf_2 (mode1_dummy) --> wait_hvdbf_2;
+		dbf_2 (mode2_dummy) --> wait_hvdbf_2;
+				
+		wait_hvdbf_2 (hdb_filter_2) -->  wait_deblock_2;
+		wait_deblock_2 (deblock_2) -->  select_h;		
+		select_h (hdb_filter_1) -->  wait_dbf_1;	
+		select_h (deblock_3) -->  wait_vdbf_1;
+			
+		wait_hvdbf_2 (vdb_filter_2) -->  wait_deblock_4;
+		wait_deblock_4 (deblock_4) -->  select_v;
+		select_v (vdb_filter_1) --> wait_dbf_1;
+		select_v (deblock_5) --> wait_deblock_1;
+				
+		select_v (dering) --> wait_conv_2;
+		
+		wait_conv_2 (send_max_code_2) --> wait_send1_conv_2;
+		wait_send1_conv_2 (send_yuv2rgb) --> wait_send2_conv_2;
+		wait_send2_conv_2 (send_yuv2rgb) --> wait_send3_conv_2;
+		wait_send3_conv_2 (send_yuv2rgb) --> wait_send4_conv_2;
+		wait_send4_conv_2 (send_yuv2rgb) --> wait_recv1_conv_2;
+		wait_recv1_conv_2 (recv_yuv2rgb) --> wait_recv2_conv_2;
+		wait_recv2_conv_2 (recv_yuv2rgb) --> wait_recv3_conv_2;
+		wait_recv3_conv_2 (recv_yuv2rgb) --> wait_recv4_conv_2;
+		wait_recv4_conv_2 (recv_yuv2rgb) --> end_iter_conv_2;
+	
+		end_iter_conv_2 (send_max_code_2) --> wait_send1_conv_2;
+		end_iter_conv_2 (end_yuv2rgb) --> end_loop;
+		end_loop (loop) --> end_loop;
+		
+		
+	end
+	
+
+end

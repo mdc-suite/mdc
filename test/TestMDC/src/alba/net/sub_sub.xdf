@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="sub_sub">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="sub">
+        <Class name="alba.cal.subtractor"/>
+    </Instance>
+    <Instance id="sub2">
+        <Class name="alba.cal.subtractor"/>
+    </Instance>
+    <Connection dst="sub" dst-port="in1" src="" src-port="in1">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="sub" dst-port="in2" src="" src-port="in2">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="sub2" dst-port="in1" src="sub" src-port="out">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="sub2" dst-port="in2" src="" src-port="in1">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="" dst-port="out" src="sub2" src-port="out">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+</XDF>

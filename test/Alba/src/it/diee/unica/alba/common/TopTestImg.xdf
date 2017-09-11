@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="TopTestImg">
+    <Instance id="Source">
+        <Class name="it.diee.unica.alba.common.SourceImg"/>
+    </Instance>
+    <Instance id="TestNet">
+        <Class name="it.diee.unica.alba.networks.Rgb2Yuv"/>
+    </Instance>
+    <Instance id="Display">
+        <Class name="it.diee.unica.alba.common.Display"/>
+    </Instance>
+    <Connection dst="TestNet" dst-port="in1" src="Source" src-port="source1"/>
+    <Connection dst="Display" dst-port="result" src="TestNet" src-port="out"/>
+</XDF>

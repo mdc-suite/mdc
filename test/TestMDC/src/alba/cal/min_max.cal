@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor min_max(int DATA_SIZE=32,int ADDR_SIZE=5) int(size=DATA_SIZE) in1 ==> int(size=2*ADDR_SIZE+2*DATA_SIZE) result :
+
+end

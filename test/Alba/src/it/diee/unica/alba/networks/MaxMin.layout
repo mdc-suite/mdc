@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="80"/>
+		<vertex id="outMM" x="283" y="80"/>
+		<vertex id="MaxMin" x="153" y="70"/>
+	</vertices>
+</layout>

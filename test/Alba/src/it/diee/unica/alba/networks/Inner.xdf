@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Inner">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Inner">
+        <Class name="it.diee.unica.alba.actors.Inner"/>
+    </Instance>
+    <Instance id="Shift1">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+    </Instance>
+    <Instance id="Shift2">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Shift3">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Shift4">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+    </Instance>
+    <Instance id="Add1">
+        <Class name="it.diee.unica.alba.actors.common.Add_3in"/>
+    </Instance>
+    <Instance id="Add2">
+        <Class name="it.diee.unica.alba.actors.common.Add_3in"/>
+    </Instance>
+    <Instance id="Sub">
+    	<Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Buffer">
+        <Class name="it.diee.unica.alba.actors.common.BufferOut"/>
+    </Instance>
+    <Connection dst="Inner" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="Shift1" dst-port="in1" src="Inner" src-port="out1"/>
+    <Connection dst="Shift2" dst-port="in1" src="Inner" src-port="out2"/>
+    <Connection dst="Shift3" dst-port="in1" src="Inner" src-port="out3"/>
+    <Connection dst="Shift4" dst-port="in1" src="Inner" src-port="out4"/>
+    <Connection dst="Add1" dst-port="in1" src="Shift1" src-port="out"/>
+    <Connection dst="Add1" dst-port="in3" src="Shift3" src-port="out"/>
+    <Connection dst="Add2" dst-port="in1" src="Shift2" src-port="out"/>
+    <Connection dst="Add2" dst-port="in3" src="Shift4" src-port="out"/>
+    <Connection dst="Sub" dst-port="in1" src="Add1" src-port="out"/>
+    <Connection dst="Sub" dst-port="in2" src="Add2" src-port="out"/>
+    <Connection dst="Buffer" dst-port="in1" src="Sub" src-port="out"/>
+    <Connection dst="" dst-port="out" src="Buffer" src-port="out"/>
+    <Connection dst="Add2" dst-port="in2" src="Inner" src-port="out2"/>
+    <Connection dst="Add1" dst-port="in2" src="Inner" src-port="out3"/>
+</XDF>

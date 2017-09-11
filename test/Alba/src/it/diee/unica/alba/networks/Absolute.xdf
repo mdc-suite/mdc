@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Absolute">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Absolute">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="Absolute" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="" dst-port="out" src="Absolute" src-port="out"/>
+</XDF>

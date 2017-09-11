@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Sbwlabel">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Ctrl">
+        <Class name="it.diee.unica.alba.actors.SbwlabelCtrl"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Memory">
+        <Class name="it.diee.unica.alba.actors.common.Memory"/>
+        <Parameter name="WORD_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub3">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub4">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub5">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub6">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs1">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs2">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs3">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs4">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs5">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Abs6">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="HsumVsum">
+        <Class name="it.diee.unica.alba.actors.HsumVsum"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Add1">
+        <Class name="it.diee.unica.alba.actors.common.Add_3in"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Add2">
+        <Class name="it.diee.unica.alba.actors.common.Add_3in"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="Ctrl" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="Memory" dst-port="data_in" src="" src-port="in1"/>
+    <Connection dst="Memory" dst-port="address_in" src="Ctrl" src-port="addr_in"/>
+    <Connection dst="Memory" dst-port="address_out" src="Ctrl" src-port="addr_out"/>
+    <Connection dst="Ctrl" dst-port="in2" src="Memory" src-port="data_out"/>
+    <Connection dst="Sub1" dst-port="in1" src="Ctrl" src-port="out1"/>
+    <Connection dst="Sub1" dst-port="in2" src="Ctrl" src-port="out2"/>
+    <Connection dst="Sub2" dst-port="in1" src="Ctrl" src-port="out2"/>
+    <Connection dst="Sub2" dst-port="in2" src="Ctrl" src-port="out3"/>
+    <Connection dst="Sub3" dst-port="in1" src="Ctrl" src-port="out3"/>
+    <Connection dst="Sub3" dst-port="in2" src="Ctrl" src-port="out4"/>
+    <Connection dst="Abs1" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Abs2" dst-port="in1" src="Sub2" src-port="out"/>
+    <Connection dst="Abs3" dst-port="in1" src="Sub3" src-port="out"/>
+    <Connection dst="Abs5" dst-port="in1" src="Sub5" src-port="out"/>
+    <Connection dst="Abs4" dst-port="in1" src="Sub4" src-port="out"/>
+    <Connection dst="Abs6" dst-port="in1" src="Sub6" src-port="out"/>
+    <Connection dst="Sub4" dst-port="in1" src="Ctrl" src-port="out5"/>
+    <Connection dst="Sub4" dst-port="in2" src="Ctrl" src-port="out6"/>
+    <Connection dst="Sub5" dst-port="in1" src="Ctrl" src-port="out6"/>
+    <Connection dst="Sub5" dst-port="in2" src="Ctrl" src-port="out7"/>
+    <Connection dst="Sub6" dst-port="in1" src="Ctrl" src-port="out7"/>
+    <Connection dst="Sub6" dst-port="in2" src="Ctrl" src-port="out8"/>
+    <Connection dst="Add1" dst-port="in1" src="Abs1" src-port="out"/>
+    <Connection dst="Add1" dst-port="in2" src="Abs2" src-port="out"/>
+    <Connection dst="Add1" dst-port="in3" src="Abs3" src-port="out"/>
+    <Connection dst="Add2" dst-port="in1" src="Abs4" src-port="out"/>
+    <Connection dst="Add2" dst-port="in2" src="Abs5" src-port="out"/>
+    <Connection dst="Add2" dst-port="in3" src="Abs6" src-port="out"/>
+    <Connection dst="HsumVsum" dst-port="in1" src="Add1" src-port="out"/>
+    <Connection dst="HsumVsum" dst-port="in2" src="Add2" src-port="out"/>
+    <Connection dst="" dst-port="out" src="HsumVsum" src-port="out"/>
+</XDF>

@@ -1,0 +1,112 @@
+package it.diee.unica.alba.actors;
+
+actor GenerateTV(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3, int(size=DATA_SIZE) in4 ==>  int(size=DATA_SIZE) out :
+
+	int(size=DATA_SIZE) p1 := 0;
+	int(size=DATA_SIZE) p2 := 0;
+	
+	int(size=DATA_SIZE) QP := 8; 
+
+	int(size=DATA_SIZE) tv[16];
+	int(size=DATA_SIZE) v[16];
+
+	uint(size=4) index := 0;
+	uint(size=4) i := 0;
+	uint(size=4) j := 0;
+	
+	bool recvQP := false;
+	bool p1Done := false;
+	bool p2Done := false;
+	bool endTV := false;
+
+	receiveQP: action in4:[a] ==>
+	guard not recvQP
+	do
+		//println("QP=" + QP);
+		QP := a;
+		recvQP := true;
+	end
+
+	recvV: action in1:[a] ==>
+	guard recvQP
+	do
+		//println("received v["+index+"]=" + a);	
+		v[index] := a;
+		index := index + 1;	
+	end
+
+	recvP1: action in2:[a] ==>
+	guard recvQP
+	do
+		//println("a1=" + a);
+		if a < QP then
+			p1 := v[0];
+		else
+			p1 := v[1];
+		end
+		//println("p1=" + p1);
+		p1Done := true;
+	end
+
+	recvP2: action in3:[a] ==>
+	guard recvQP
+	do
+		//println("a2=" + a);
+		if a < QP then
+			p2 := v[9];
+		else
+			p2 := v[8];
+		end
+		//println("p2=" + p2);
+		p2Done := true;
+
+	end
+	
+	updTV: action ==>
+	guard p1Done and p2Done and not endTV and recvQP
+	do
+		foreach int i in 0 .. 15 do
+			if i<4 then
+				tv[i] := p1;
+				tv[12+i] := p2;
+			else if i<12 then
+					tv[i] := v[i-3];
+				 end
+			end
+		end	
+		
+		//foreach int i in 0 .. 15 do
+		//	println("tv[" + i + "]=" +tv[i] );
+		//end
+		
+		endTV := true;
+		
+	end
+
+	iter: action ==> out:[tvData]
+	guard endTV and recvQP
+	var int(size=DATA_SIZE) tvData
+	do
+		tvData := tv[i+j];
+		
+		if j<8 then
+			j := j+1;
+		else if i<7 then
+				j := 0;
+				i := i+1;
+			else
+				j := 0;
+				i := 0;
+				endTV := false;
+				p1Done := false;
+				p2Done := false;
+				recvQP := false;
+				index := 0;
+			end
+		end
+		
+	end
+	
+	
+
+end

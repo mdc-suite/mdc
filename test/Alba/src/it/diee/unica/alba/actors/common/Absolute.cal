@@ -1,0 +1,15 @@
+package it.diee.unica.alba.actors.common;
+
+actor Absolute(int DATA_SIZE=32) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+	int(size=DATA_SIZE) abs_a;
+
+	action in1:[a] ==> out:[abs_a]
+	do	
+		if a>0 then	abs_a:=a;
+		else abs_a:=-a;
+		end
+		//println("abs(" + a + ")=" + abs_a);
+	end
+	
+end

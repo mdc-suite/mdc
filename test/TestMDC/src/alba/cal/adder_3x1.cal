@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor adder_3x1(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3 ==> int(size=DATA_SIZE) out :
+
+end

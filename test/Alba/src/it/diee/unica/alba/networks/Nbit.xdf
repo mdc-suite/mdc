@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Nbit">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Nbit">
+        <Class name="it.diee.unica.alba.actors.Nbit"/>
+    </Instance>
+    <Connection dst="Nbit" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="" dst-port="out" src="Nbit" src-port="out"/>
+</XDF>

@@ -1,0 +1,29 @@
+package common;
+import common.Constants.*;
+
+actor IdProducer(int ID=0)
+
+		 ==>
+	int(size=8) ID
+:
+
+bool done := false;
+
+produce: action  ==> ID:[a]
+guard not done
+var int(size=8) a
+do
+	a := ID;
+	if(ID=1) then
+		println("Configuring ADD");
+	else if(ID=2) then
+		println("Configuring DOUBLE_ADD");
+	else if(ID=3) then
+		println("Configuring PARALLEL_ADD");
+	end
+	end
+	end
+	done := true;
+end
+
+end

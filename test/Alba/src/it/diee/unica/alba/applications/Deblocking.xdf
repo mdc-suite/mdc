@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Deblocking">
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.networks.MaxMin"/>
+    </Instance>
+    <Instance id="Application">
+        <Class name="it.diee.unica.alba.applications.DeblockingCtrl"/>
+    </Instance>
+    <Instance id="Rgb2Yuv">
+        <Class name="it.diee.unica.alba.networks.Rgb2Yuv"/>
+    </Instance>
+    <Instance id="Yuv2Rgb">
+        <Class name="it.diee.unica.alba.networks.Yuv2Rgb"/>
+    </Instance>
+    <Instance id="Filter">
+        <Class name="it.diee.unica.alba.networks.Filter"/>
+    </Instance>
+    <Instance id="Mdiv">
+        <Class name="it.diee.unica.alba.networks.Mdiv"/>
+    </Instance>
+    <Instance id="Clip">
+        <Class name="it.diee.unica.alba.networks.ClipF"/>
+    </Instance>
+    <Instance id="Sign">
+        <Class name="it.diee.unica.alba.networks.Sign"/>
+    </Instance>
+    <Instance id="Inner">
+        <Class name="it.diee.unica.alba.networks.Inner"/>
+    </Instance>
+    <Connection dst="MinMax" dst-port="in1" src="Application" src-port="outMinMax"/>
+    <Connection dst="Application" dst-port="inMinMax" src="MinMax" src-port="outMM"/>
+    <Connection dst="Application" dst-port="inRgb2Yuv" src="Rgb2Yuv" src-port="out"/>
+    <Connection dst="Application" dst-port="inYuv2Rgb" src="Yuv2Rgb" src-port="out"/>
+    <Connection dst="Filter" dst-port="in1" src="Application" src-port="outFilter"/>
+    <Connection dst="Application" dst-port="inFilter" src="Filter" src-port="out"/>
+    <Connection dst="Application" dst-port="inMdiv" src="Mdiv" src-port="out"/>
+    <Connection dst="Mdiv" dst-port="in1" src="Application" src-port="outMdiv"/>
+    <Connection dst="Clip" dst-port="in1" src="Application" src-port="outClip"/>
+    <Connection dst="Application" dst-port="inClip" src="Clip" src-port="out"/>
+    <Connection dst="Application" dst-port="inSign" src="Sign" src-port="out"/>
+    <Connection dst="Sign" dst-port="in1" src="Application" src-port="outSign"/>
+    <Connection dst="Application" dst-port="inInner" src="Inner" src-port="out"/>
+    <Connection dst="Inner" dst-port="in1" src="Application" src-port="outInner"/>
+    <Connection dst="Yuv2Rgb" dst-port="in1" src="Application" src-port="outYuv2Rgb"/>
+    <Connection dst="Rgb2Yuv" dst-port="in1" src="Application" src-port="outRgb2Yuv"/>
+</XDF>

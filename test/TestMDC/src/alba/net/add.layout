@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="109" y="52"/>
+		<vertex id="in2" x="101" y="133"/>
+		<vertex id="adder" x="227" y="81"/>
+		<vertex id="out" x="425" y="75"/>
+	</vertices>
+</layout>

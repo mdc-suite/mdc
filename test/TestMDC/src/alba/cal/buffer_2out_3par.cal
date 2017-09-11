@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor buffer_2out_3par () int parms ==> int parm1, int parm2 :
+
+end

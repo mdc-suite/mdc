@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor control_8out_0par(int DATA_SIZE=32,int ADDR_SIZE=10) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5, int(size=DATA_SIZE) out6, int(size=DATA_SIZE) out7, int(size=DATA_SIZE) out8 :
+
+end

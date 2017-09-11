@@ -1,0 +1,66 @@
+package it.diee.unica.alba.actors.common;
+
+actor MinMax(int DATA_SIZE=16,int ADDR_SIZE=6) uint(size=DATA_SIZE) in1 ==> uint(size=((2*ADDR_SIZE)+(2*DATA_SIZE))) result :
+
+
+uint(size=ADDR_SIZE) idx := 0;
+uint(size=DATA_SIZE) min := (1<<DATA_SIZE)-1;
+uint(size=DATA_SIZE) max := 0;//-(1<<(DATA_SIZE-1));
+uint(size=ADDR_SIZE) min_idx := 0;
+uint(size=ADDR_SIZE) max_idx := 0;
+uint(size=((2*ADDR_SIZE)+(2*DATA_SIZE))) res;
+
+bool hasSize := false;
+uint(size=ADDR_SIZE) vecSize := 0;
+
+getSize: action in1:[a] ==>
+guard not hasSize
+do
+	vecSize := a;
+	hasSize := true;
+end
+
+updateNone: action in1:[a] ==>
+guard hasSize and idx < vecSize
+do	
+	//println("next item (min=" + min + "(" +DATA_SIZE + "),max=" + max + ") " + a);
+	if a>max then
+		//println("\tupdating max");
+		max := a;
+		max_idx := idx;
+	end 
+	if a<min then
+		//println("\tupdating min");
+		min := a;
+		min_idx := idx;
+	end
+	idx := idx + 1;
+end
+
+endMinMax: action  ==> result:[res]
+guard idx = vecSize and hasSize
+var int(size=2*ADDR_SIZE+DATA_SIZE) tmpMin,
+    int(size=2*ADDR_SIZE+2*DATA_SIZE) minMask
+    //,int(size=DATA_SIZE) newMin
+do
+	res := 0;
+	tmpMin := min<<(2*ADDR_SIZE);
+	minMask := ((1<<(DATA_SIZE))-1) << (2*ADDR_SIZE);
+	res := res | (max<<(DATA_SIZE+2*ADDR_SIZE)) | ( minMask & tmpMin) | max_idx<<ADDR_SIZE | min_idx;
+	//newMin :=res>>(2*ADDR_SIZE);
+	//println("end MM (" + res +"): min=" + min + ", max=" + max );
+	initializeVars();
+end
+
+ procedure initializeVars() 
+ 	begin 
+ 		idx := 0;
+		min := (1<<DATA_SIZE)-1;
+		max := 0;//-(1<<(DATA_SIZE-1));
+		min_idx := 0;
+		max_idx := 0;
+		hasSize := false;
+		vecSize := 0;
+	end
+
+end

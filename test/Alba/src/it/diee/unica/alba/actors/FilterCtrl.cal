@@ -1,0 +1,84 @@
+package it.diee.unica.alba.actors;
+
+actor FilterCtrl(int DATA_SIZE=32,int ADDR_SIZE=8) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5, int(size=DATA_SIZE) out6 :
+	
+	uint(size=4) index := 0;
+
+	bool sentQP := false;
+	bool endStore := false;
+	bool sentData := false;
+
+
+	forwardQP: action in1:[a] ==> addr_in:[10],out6:[a]
+	guard not sentQP
+	do
+		sentQP := true;
+	end
+
+	
+	genAddr: action in1:[a] ==> addr_in:[address]
+	guard not endStore and sentQP
+	var int(size=ADDR_SIZE) address
+	do
+		address := index;
+		//println("saving " + a + " on address " + address);
+		if index < 9 then
+			index := index + 1;
+		else 
+			index := 0;
+			endStore := true;
+		end
+	end
+	
+	sendData: action ==> addr_out:[address]
+	guard endStore and not sentData and sentQP
+	var int(size=ADDR_SIZE) address
+	do
+		address := index;
+		//println("send " + address);
+		sentData := true;
+	end
+	
+	recvData1: action in2:[data] ==> out1:[data], out5:[data]
+	guard sentData and index = 0 and sentQP
+	do
+		//println("forward(" + index + ")=" + data);
+		index := index + 1;	
+		sentData := false;
+	end
+	
+	recvData2: action in2:[data] ==> out2:[data], out5:[data]
+	guard sentData and index = 1 and sentQP
+	do
+		//println("forward(" + index + ")=" + data);
+		index := index + 1;
+		sentData := false;
+	end
+	
+	recvData8: action in2:[data] ==> out3:[data], out5:[data]
+	guard sentData and index = 8 and sentQP
+	do
+		//println("forward(" + index + ")=" + data);
+		index := index + 1;
+		sentData := false;
+	end
+	
+	recvData9: action in2:[data] ==> out4:[data], out5:[data]
+	guard sentData and index = 9 and sentQP
+	do
+		//println("forward(" + index + ")=" + data);
+		index := 0;
+		endStore := false;
+		sentQP := false;
+		sentData := false;
+	end
+	
+	recvData: action in2:[data] ==> out5:[data]
+	guard sentData and not (index<2 or index=8 or index=9) and sentQP
+ 	do
+		//println("forward(" + index + ")=" + data);
+ 		index := index + 1;
+		sentData := false;
+	end
+
+end

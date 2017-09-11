@@ -1,0 +1,28 @@
+package it.diee.unica.alba.applications;
+ 
+unit Constants :
+ 
+ 	int TWIDTH = 128;
+ 	int THEIGHT = 128;
+ 	int TWIDTH_SMALL = 32;
+ 	int THEIGHT_SMALL = 32;
+ 	int COLORS_2 = 3;
+ 
+ 	int ADDR_SIZE = 8;
+ 
+    int HPF_MODE = 2;
+	int FRAMEWIDTH = 18;
+	int FRAMEHEIGTH = 14;
+	int COLORS = 1;
+	int NFRAMEWIDTH = 18;
+	int NFRAMEHEIGTH = 14;
+	int NCOLORS = 1;
+  	int CIF_W = 18;
+	int CIF_H = 14;
+	int FRAC_BIT = 16;
+	int BIT_PER_PIXEL = 8;
+
+	int FILTER_RESOLUTION = (BIT_PER_PIXEL+2);
+	int LAST_SHIFT = (FILTER_RESOLUTION);
+	
+end

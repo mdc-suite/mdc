@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Corr">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Memory">
+        <Class name="it.diee.unica.alba.actors.common.Memory"/>
+    </Instance>
+    <Instance id="CorrCtrl">
+        <Class name="it.diee.unica.alba.actors.CorrCtrl"/>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Abs1">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+    </Instance>
+    <Instance id="Abs2">
+        <Class name="it.diee.unica.alba.actors.common.Absolute"/>
+    </Instance>
+    <Instance id="CntCorr">
+        <Class name="it.diee.unica.alba.actors.CountCorr"/>
+    </Instance>
+    <Connection dst="Memory" dst-port="data_in" src="" src-port="in1"/>
+    <Connection dst="CorrCtrl" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="CorrCtrl" dst-port="in2" src="Memory" src-port="data_out"/>
+    <Connection dst="Memory" dst-port="address_in" src="CorrCtrl" src-port="addr_in"/>
+    <Connection dst="Memory" dst-port="address_out" src="CorrCtrl" src-port="addr_out"/>
+    <Connection dst="Sub1" dst-port="in1" src="CorrCtrl" src-port="out1"/>
+    <Connection dst="Sub1" dst-port="in2" src="CorrCtrl" src-port="out2"/>
+    <Connection dst="Sub2" dst-port="in1" src="CorrCtrl" src-port="out3"/>
+    <Connection dst="Sub2" dst-port="in2" src="CorrCtrl" src-port="out4"/>
+    <Connection dst="Abs1" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Abs2" dst-port="in1" src="Sub2" src-port="out"/>
+    <Connection dst="CntCorr" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="CntCorr" dst-port="in2" src="Sub2" src-port="out"/>
+    <Connection dst="CntCorr" dst-port="in3" src="Abs1" src-port="out"/>
+    <Connection dst="CntCorr" dst-port="in4" src="Abs2" src-port="out"/>
+    <Connection dst="CntCorr" dst-port="in5" src="CorrCtrl" src-port="out5"/>
+    <Connection dst="" dst-port="out" src="CntCorr" src-port="out"/>
+</XDF>

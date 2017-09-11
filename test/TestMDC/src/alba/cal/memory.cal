@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor memory (int ADDR_SIZE=5,int WORD_SIZE=32) int(size=WORD_SIZE) data_in, int(size=ADDR_SIZE) address_in, int(size=ADDR_SIZE) address_out ==> int(size=WORD_SIZE) data_out :
+
+end

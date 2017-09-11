@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Top_DoubleAddition">
+    <Instance id="src1">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="src2">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="1"/>
+        </Parameter>
+    </Instance>
+    <Instance id="add1">
+        <Class name="addition.DoubleAddition"/>
+    </Instance>
+    <Instance id="tgt1">
+        <Class name="common.Consumer"/>
+        <Parameter name="ID">
+            <Expr kind="Literal" literal-kind="Integer" value="3"/>
+        </Parameter>
+    </Instance>
+    <Instance id="src3">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="add1" dst-port="in2" src="src2" src-port="out1"/>
+    <Connection dst="add1" dst-port="in1" src="src1" src-port="out1"/>
+    <Connection dst="tgt1" dst-port="in1" src="add1" src-port="out1"/>
+    <Connection dst="add1" dst-port="in3" src="src3" src-port="out1"/>
+</XDF>

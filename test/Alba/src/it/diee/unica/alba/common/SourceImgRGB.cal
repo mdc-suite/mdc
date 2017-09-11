@@ -1,0 +1,31 @@
+package it.diee.unica.alba.common;
+
+import it.diee.unica.alba.common.Constants.H_SIZE;
+import it.diee.unica.alba.common.Constants.V_SIZE;
+import it.diee.unica.alba.common.Data.IMAGE;
+import it.diee.unica.alba.common.Data.IMAGE2;
+ 
+actor SourceImgRGB () ==> int(size=8)R, int(size=8)G, int(size=8)B, int SizeOfImage :
+  
+    int i := 0;
+    bool sentSize := false;
+    
+    sendSize: action ==> SizeOfImage:[H_SIZE*V_SIZE]
+    guard not sentSize
+    do
+    	sentSize := true;
+    end
+    
+    sendData: action ==> R:[ OutR ], G:[ OutG ], B:[ OutB ]
+    guard sentSize and i < (H_SIZE*V_SIZE*3)
+    var
+        uint(size=8) OutR,
+        uint(size=8) OutG,
+        uint(size=8) OutB
+    do
+        OutR := IMAGE[i];
+        OutG := IMAGE[i+1];
+        OutB := IMAGE[i+2];
+        i := i+3;
+    end 
+end

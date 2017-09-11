@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="filter">
+	<Port kind="Input" name="in1">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Port kind="Output" name="out">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Instance id="RAM">
+		<Class name="alba.cal.memory"/>
+		<Parameter name="WORD_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="control">
+		<Class name="alba.cal.control_1out_5par"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="tv_gen">
+		<Class name="alba.cal.tv_generate"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="out_log">
+		<Class name="alba.cal.out_logic"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="v_reb">
+		<Class name="alba.cal.vec_rebuild"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="sub1">
+		<Class name="alba.cal.subtractor"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="sub2">
+		<Class name="alba.cal.subtractor"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="abs1">
+		<Class name="alba.cal.abs"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="abs2">
+		<Class name="alba.cal.abs"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="add1">
+		<Class name="alba.cal.adder"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="add2">
+		<Class name="alba.cal.adder"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="mul">
+		<Class name="alba.cal.mul_2x1"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shifter">
+		<Class name="alba.cal.shifter_kernel"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="4"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="0"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Connection dst="control" dst-port="in2" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="data_in" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_in" src="control" src-port="addr_in">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_out" src="control" src-port="addr_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="control" dst-port="in1" src="RAM" src-port="data_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in1" src="control" src-port="parms1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in2" src="control" src-port="parms2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in3" src="control" src-port="parms3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in4" src="control" src-port="parms4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in7" src="control" src-port="parms5">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in8" src="control" src-port="out1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub1" dst-port="in1" src="control" src-port="parms2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub1" dst-port="in2" src="control" src-port="parms1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub2" dst-port="in1" src="control" src-port="parms3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub2" dst-port="in2" src="control" src-port="parms4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="v_reb" dst-port="in1" src="control" src-port="parms1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="v_reb" dst-port="in2" src="control" src-port="parms4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="abs1" dst-port="in1" src="sub1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="abs2" dst-port="in1" src="sub2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in5" src="abs1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="tv_gen" dst-port="in6" src="abs2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="mul" dst-port="in1" src="tv_gen" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="out_log" dst-port="in2" src="tv_gen" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add2" dst-port="in1" src="out_log" src-port="out1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="mul" dst-port="in2" src="out_log" src-port="out2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add1" dst-port="in2" src="out_log" src-port="out3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add2" dst-port="in2" src="out_log" src-port="out4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add1" dst-port="in1" src="mul" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="out_log" dst-port="in3" src="mul" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="out_log" dst-port="in1" src="add1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shifter" dst-port="in1" src="add2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="v_reb" dst-port="in3" src="shifter" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="" dst-port="out" src="v_reb" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+</XDF>

@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor shifter_kernel_div (int DATA_SIZE=32, int CONST=10, int LEFT=0) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+end

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="filter1D_5tap">
+    <Port kind="Input" name="inPel">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="SOI">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="outPel">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="del_1">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_2">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_3">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_4">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="mul_0">
+        <Class name="filtering.Multiplier"/>
+    </Instance>
+    <Instance id="mul_1">
+        <Class name="filtering.Multiplier"/>
+    </Instance>
+    <Instance id="mul_2">
+        <Class name="filtering.Multiplier"/>
+    </Instance>
+    <Instance id="mul_3">
+        <Class name="filtering.Multiplier"/>
+    </Instance>
+    <Instance id="mul_4">
+        <Class name="filtering.Multiplier"/>
+    </Instance>
+    <Instance id="coeffs">
+        <Class name="filtering.CoeffsLuma_5tap"/>
+        <Parameter name="MX">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Instance id="acc_1">
+        <Class name="filtering.Adder2x1"/>
+    </Instance>
+    <Instance id="acc_2">
+        <Class name="filtering.Adder2x1"/>
+    </Instance>
+    <Instance id="acc_3">
+        <Class name="filtering.Adder2x1"/>
+    </Instance>
+    <Instance id="acc_4">
+        <Class name="filtering.Adder2x1"/>
+    </Instance>
+    <Instance id="shift">
+        <Class name="filtering.RightShift"/>
+    </Instance>
+    <Instance id="clip">
+        <Class name="filtering.Clip"/>
+    </Instance>
+    <Instance id="fwd">
+        <Class name="filtering.Forward"/>
+        <Parameter name="DELAY">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Instance id="aln">
+        <Class name="filtering.Align"/>
+        <Parameter name="DELAY">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="del_2" dst-port="dataIn" src="del_1" src-port="dataOut"/>
+    <Connection dst="del_3" dst-port="dataIn" src="del_2" src-port="dataOut"/>
+    <Connection dst="del_4" dst-port="dataIn" src="del_3" src-port="dataOut"/>
+    <Connection dst="mul_0" dst-port="opA" src="fwd" src-port="outY"/>
+    <Connection dst="del_1" dst-port="dataIn" src="fwd" src-port="outY"/>
+    <Connection dst="mul_1" dst-port="opA" src="del_1" src-port="dataOut"/>
+    <Connection dst="mul_2" dst-port="opA" src="del_2" src-port="dataOut"/>
+    <Connection dst="mul_3" dst-port="opA" src="del_3" src-port="dataOut"/>
+    <Connection dst="mul_4" dst-port="opA" src="del_4" src-port="dataOut"/>
+    <Connection dst="acc_1" dst-port="opB" src="mul_0" src-port="prod"/>
+    <Connection dst="acc_1" dst-port="opA" src="mul_1" src-port="prod"/>
+    <Connection dst="acc_2" dst-port="opA" src="mul_2" src-port="prod"/>
+    <Connection dst="acc_2" dst-port="opB" src="acc_1" src-port="sum"/>
+    <Connection dst="acc_3" dst-port="opB" src="acc_2" src-port="sum"/>
+    <Connection dst="acc_3" dst-port="opA" src="mul_3" src-port="prod"/>
+    <Connection dst="acc_4" dst-port="opA" src="mul_4" src-port="prod"/>
+    <Connection dst="acc_4" dst-port="opB" src="acc_3" src-port="sum"/>
+    <Connection dst="coeffs" dst-port="synch" src="fwd" src-port="outY"/>
+    <Connection dst="mul_0" dst-port="opB" src="coeffs" src-port="c0"/>
+    <Connection dst="mul_1" dst-port="opB" src="coeffs" src-port="c1"/>
+    <Connection dst="mul_2" dst-port="opB" src="coeffs" src-port="c2"/>
+    <Connection dst="mul_3" dst-port="opB" src="coeffs" src-port="c3"/>
+    <Connection dst="mul_4" dst-port="opB" src="coeffs" src-port="c4"/>
+    <Connection dst="clip" dst-port="dataIn" src="shift" src-port="dataOut"/>
+    <Connection dst="aln" dst-port="inY" src="clip" src-port="dataOut"/>
+    <Connection dst="fwd" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="aln" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="fwd" dst-port="inY" src="" src-port="inPel"/>
+    <Connection dst="" dst-port="outPel" src="aln" src-port="outY"/>
+    <Connection dst="shift" dst-port="dataIn" src="acc_4" src-port="sum"/>
+</XDF>

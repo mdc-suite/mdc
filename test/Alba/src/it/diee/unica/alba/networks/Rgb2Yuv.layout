@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="101"/>
+		<vertex id="out" x="958" y="1081"/>
+		<vertex id="Memory" x="301" y="71"/>
+		<vertex id="Ctrl" x="118" y="338"/>
+		<vertex id="Mul_R1" x="301" y="226"/>
+		<vertex id="Mul_G1" x="301" y="341"/>
+		<vertex id="Mul_B1" x="301" y="456"/>
+		<vertex id="Mul_R2" x="301" y="571"/>
+		<vertex id="Mul_G2" x="301" y="686"/>
+		<vertex id="Mul_B2" x="301" y="801"/>
+		<vertex id="Mul_R3" x="301" y="916"/>
+		<vertex id="Mul_G3" x="301" y="1031"/>
+		<vertex id="Mul_B3" x="301" y="1146"/>
+		<vertex id="Add1" x="470" y="392"/>
+		<vertex id="Add2" x="470" y="771"/>
+		<vertex id="Add3" x="470" y="1041"/>
+		<vertex id="Shift1" x="708" y="841"/>
+		<vertex id="Shift2" x="708" y="956"/>
+		<vertex id="Shift3" x="708" y="1071"/>
+		<vertex id="MaxColor" x="827" y="1041"/>
+		<vertex id="Add4" x="589" y="627"/>
+		<vertex id="Add5" x="589" y="879"/>
+		<vertex id="Add6" x="589" y="1071"/>
+		<vertex id="ParmBuffer" x="301" y="1261"/>
+	</vertices>
+</layout>

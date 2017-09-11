@@ -1,0 +1,29 @@
+package it.diee.unica.alba.common;
+
+import it.diee.unica.alba.common.Constants.H_SIZE;
+import it.diee.unica.alba.common.Constants.V_SIZE;
+import it.diee.unica.alba.common.Data.IMAGE;
+import it.diee.unica.alba.common.Data.IMAGE2;
+ 
+actor SourceImg () ==> int(size=32)source1 :
+  
+    int i := 0;
+    bool sentMC := false;
+    
+    sendMaxCode: action ==> source1:[255]
+    guard not sentMC
+    do
+    	sentMC := true;
+    end
+ 	
+    sendData: action ==> source1:[ Out ]
+    guard
+        i < (H_SIZE*V_SIZE*3) and sentMC
+    var
+        uint(size=8) Out
+    do
+    	//println("Input["+ i + "] is " + IMAGE2[i]);
+        Out := IMAGE[i];
+        i := i+1;
+    end 
+end

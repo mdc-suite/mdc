@@ -1,0 +1,29 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor BufferOut(int DATA_SIZE=32/*, int CONST=1*/) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+	//bool hasSize := false;
+	//int (size=16) vecSize := 0;
+	//uint(size=16) i := 0;
+
+/*	getSize: action in1:[a] ==>
+	guard not hasSize 
+	do
+		vecSize := a;
+	end
+*/
+	putData: action in1:[a] ==> out:[a]
+	do
+		//println("a="+a);
+	//guard hasSize
+	/*do
+		if i<vecSize then
+			i := i+CONST;
+		else
+			i := 0;
+			//hasSize := false;
+		end*/
+	end
+		
+end

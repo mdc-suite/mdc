@@ -1,0 +1,13 @@
+package filtering;
+
+actor RightShift()
+  int(size=16) dataIn ==>
+  int(size=16) dataOut :
+  
+  action dataIn:[pelIn] ==> dataOut:[pelOut]
+  var int(size=16) pelOut
+  do
+  	pelOut := pelIn>>6;
+  end
+
+end

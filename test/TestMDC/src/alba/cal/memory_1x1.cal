@@ -1,0 +1,4 @@
+package alba.cal;
+
+actor memory_1x1() int in1 ==> int out :
+end

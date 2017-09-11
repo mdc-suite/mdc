@@ -1,0 +1,25 @@
+package common;
+
+actor Consumer(int SIZE=8, int ID=0)
+	int(size=SIZE) in1
+		 ==>
+:
+
+consume: action in1:[a] repeat 4 ==> 
+do
+	/*if(ID=1) then
+		println("ADD computed");
+	else if(ID=2) then
+		println("DOUBLE_ADD computed");
+	else if(ID=3) then
+		println("PARALLEL_ADD computed");
+	end
+	end
+	end*/
+	println("Consuming " + a[0]);
+	println("Consuming " + a[1]);
+	println("Consuming " + a[2]);
+	println("Consuming " + a[3]);
+end
+
+end

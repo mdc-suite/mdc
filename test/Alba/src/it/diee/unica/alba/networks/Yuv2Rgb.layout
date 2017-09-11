@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="100"/>
+		<vertex id="out" x="1196" y="166"/>
+		<vertex id="Memory" x="301" y="70"/>
+		<vertex id="Ctrl" x="153" y="263"/>
+		<vertex id="Sub1" x="470" y="196"/>
+		<vertex id="Sub2" x="470" y="331"/>
+		<vertex id="Mul1" x="589" y="206"/>
+		<vertex id="Mul2" x="589" y="91"/>
+		<vertex id="Mul3" x="589" y="321"/>
+		<vertex id="Mul4" x="589" y="551"/>
+		<vertex id="Add1" x="708" y="291"/>
+		<vertex id="Add2" x="708" y="136"/>
+		<vertex id="Add3" x="708" y="426"/>
+		<vertex id="Add4" x="827" y="286"/>
+		<vertex id="Add5" x="827" y="156"/>
+		<vertex id="Add6" x="827" y="411"/>
+		<vertex id="Shift2" x="946" y="271"/>
+		<vertex id="Shift3" x="946" y="156"/>
+		<vertex id="Shift4" x="946" y="386"/>
+		<vertex id="Shift1" x="589" y="436"/>
+		<vertex id="ParmBuffer" x="301" y="225"/>
+		<vertex id="MaxColor" x="1065" y="126"/>
+	</vertices>
+</layout>

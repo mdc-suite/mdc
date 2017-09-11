@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="507"/>
+		<vertex id="out" x="301" y="70"/>
+		<vertex id="Sub1" x="301" y="165"/>
+		<vertex id="Memory" x="301" y="477"/>
+		<vertex id="Sub2" x="301" y="321"/>
+		<vertex id="Abs1" x="470" y="253"/>
+		<vertex id="Abs2" x="470" y="409"/>
+		<vertex id="Chgb" x="153" y="271"/>
+	</vertices>
+</layout>

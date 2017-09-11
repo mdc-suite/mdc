@@ -1,0 +1,42 @@
+package it.diee.unica.alba.actors;
+
+actor Mdiv(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=(DATA_SIZE)) in2, int(size=DATA_SIZE) in3 ==> int(size=(DATA_SIZE)) out1, int(size=(DATA_SIZE)) out2, int(size=(DATA_SIZE)) out3, int(size=(DATA_SIZE)) out4 :
+
+	bool recvdPa30 := false;
+	bool recvdA30 := false;
+
+	recvPa30: action in1:[pa30] ==> out1:[pa30]
+	guard not recvdPa30 and not recvdA30
+	do
+		//println("pa30="+pa30);
+		recvdPa30 := true;
+	end
+
+	recvA30: action in1:[a30] ==> out2:[a30]
+	guard recvdPa30 and not recvdA30
+	do
+		//println("a30="+a30);
+		recvdA30 := true;
+	end
+	
+	sendConst: action  ==> out4:[64]
+	guard recvdPa30 and recvdA30
+	do
+		//println("const="+1);
+		recvdA30 := false;
+		recvdPa30 := false;
+	end
+	
+	evaluateA: action in2:[addOut], in3:[subOut] ==> out3:[res]
+	var int(size=DATA_SIZE) res
+	do
+		if ((addOut-64)<0) then
+			res := subOut;
+		else
+			res := addOut;
+		end
+		//println("evaluate "+addOut+","+ subOut+"="+res);
+	end
+
+
+end

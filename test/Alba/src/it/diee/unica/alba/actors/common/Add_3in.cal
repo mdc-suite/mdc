@@ -1,0 +1,11 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor Add_3in(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3 ==> int(size=DATA_SIZE) out :
+
+action in1:[a], in2:[b], in3:[c] ==> out:[a+b+c]
+do
+		//println("adding " + a + "+" + b + "+" + c);
+end
+		
+end

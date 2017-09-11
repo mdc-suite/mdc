@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Cubic">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Memory">
+        <Class name="it.diee.unica.alba.actors.common.Memory"/>
+        <Parameter name="WORD_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="CubicCtrl">
+        <Class name="it.diee.unica.alba.actors.CubicCtrl"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Shift">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="4"/>
+        </Parameter>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Parameter name="LEFT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Kmul1">
+        <Class name="it.diee.unica.alba.actors.common.KMul"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="9"/>
+        </Parameter>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Kmul2">
+        <Class name="it.diee.unica.alba.actors.common.KMul"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="9"/>
+        </Parameter>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Add">
+        <Class name="it.diee.unica.alba.actors.common.Add_2in"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Buffer">
+        <Class name="it.diee.unica.alba.actors.common.BufferOut"/>
+        <Parameter name="DATA_SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="Memory" dst-port="data_in" src="" src-port="in1"/>
+    <Connection dst="CubicCtrl" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="CubicCtrl" dst-port="in2" src="Memory" src-port="data_out"/>
+    <Connection dst="Memory" dst-port="address_in" src="CubicCtrl" src-port="addr_in"/>
+    <Connection dst="Memory" dst-port="address_out" src="CubicCtrl" src-port="addr_out"/>
+    <Connection dst="Sub1" dst-port="in2" src="CubicCtrl" src-port="out1"/>
+    <Connection dst="Kmul1" dst-port="in1" src="CubicCtrl" src-port="out2"/>
+    <Connection dst="Sub1" dst-port="in1" src="Kmul1" src-port="out"/>
+    <Connection dst="Kmul2" dst-port="in1" src="CubicCtrl" src-port="out3"/>
+    <Connection dst="Sub2" dst-port="in1" src="Kmul2" src-port="out"/>
+    <Connection dst="Sub2" dst-port="in2" src="CubicCtrl" src-port="out4"/>
+    <Connection dst="Add" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Add" dst-port="in2" src="Sub2" src-port="out"/>
+    <Connection dst="Shift" dst-port="in1" src="Add" src-port="out"/>
+    <Connection dst="Buffer" dst-port="in1" src="Shift" src-port="out"/>
+    <Connection dst="" dst-port="out" src="Buffer" src-port="out"/>
+</XDF>

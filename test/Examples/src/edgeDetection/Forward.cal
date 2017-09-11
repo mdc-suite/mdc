@@ -1,0 +1,42 @@
+package edgeDetection;
+
+actor Forward()
+  uint(size=16) SOI,
+  uint(size=8) inY 
+  ==>
+  uint(size=8) outY :
+
+  uint(size=16) width := 0;
+  uint(size=16) height := 0;
+  uint(size=16) x := 0;
+  uint(size=16) y := 0;
+    
+  recvSOI: action SOI:[w,h] ==>
+  guard x=0 and y=0
+  do
+  	width := w;
+  	height := h;
+  end  
+    
+  fwdY: action inY:[iny] ==> outY:[iny]
+  guard x<width and y<height 	
+  do
+  	x := x+1; 
+  end
+
+  dummyY: action ==> outY:[0]
+  guard  x=width or y=height
+  do
+  	if x = width then
+  		x := 0;
+		if y = height then
+			y := 0;
+		else
+			y := y+1;
+		end
+	else
+		x := x+1;
+  	end
+  end
+  
+end

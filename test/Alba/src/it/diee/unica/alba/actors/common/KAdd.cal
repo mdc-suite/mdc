@@ -1,0 +1,11 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor KAdd(int DATA_SIZE=32, int CONST=1) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+	action in1:[a] ==> out:[a+CONST]
+	do
+		//println("adding " + a);
+	end
+		
+end

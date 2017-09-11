@@ -1,0 +1,12 @@
+package edgeDetection;
+
+actor Subtractor()
+  uint(size=32) opA,
+  uint(size=32) opB 
+  ==>
+  int(size=32) sub :
+    
+  action opA:[a], opB:[b] ==> sub:[a-b]
+  end
+
+end

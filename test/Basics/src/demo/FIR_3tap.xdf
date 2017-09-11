@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="FIR_3tap">
+    <Port kind="Input" name="data_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="acc_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="acc_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="mac_0">
+        <Class name="demo.MAC"/>
+    </Instance>
+    <Instance id="mac_1">
+        <Class name="demo.MAC"/>
+    </Instance>
+    <Instance id="mac_2">
+        <Class name="demo.MAC"/>
+    </Instance>
+    <Instance id="del_0">
+        <Class name="demo.Delay"/>
+    </Instance>
+    <Instance id="del_1">
+        <Class name="demo.Delay"/>
+    </Instance>
+    <Connection dst="mac_1" dst-port="acc_in" src="mac_0" src-port="acc_out"/>
+    <Connection dst="mac_2" dst-port="acc_in" src="mac_1" src-port="acc_out"/>
+    <Connection dst="mac_0" dst-port="data_in" src="" src-port="data_in"/>
+    <Connection dst="mac_0" dst-port="acc_in" src="" src-port="acc_in"/>
+    <Connection dst="" dst-port="acc_out" src="mac_2" src-port="acc_out"/>
+    <Connection dst="mac_0" dst-port="coef" src="" src-port="c0"/>
+    <Connection dst="mac_1" dst-port="coef" src="" src-port="c1"/>
+    <Connection dst="mac_2" dst-port="coef" src="" src-port="c2"/>
+    <Connection dst="del_0" dst-port="in1" src="" src-port="data_in"/>
+    <Connection dst="mac_1" dst-port="data_in" src="del_0" src-port="out1"/>
+    <Connection dst="del_1" dst-port="in1" src="del_0" src-port="out1"/>
+    <Connection dst="mac_2" dst-port="data_in" src="del_1" src-port="out1"/>
+</XDF>

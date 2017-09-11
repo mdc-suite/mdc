@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Mdiv">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Mdiv">
+        <Class name="it.diee.unica.alba.actors.Mdiv"/>
+    </Instance>
+    <Instance id="Shift1">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="7"/>
+        </Parameter>
+        <Parameter name="LEFT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Buffer">
+        <Class name="it.diee.unica.alba.actors.common.BufferOut"/>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Add">
+        <Class name="it.diee.unica.alba.actors.common.Add_2in"/>
+    </Instance>
+    <Instance id="Mul">
+        <Class name="it.diee.unica.alba.actors.common.KMul"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="10"/>
+        </Parameter>
+    </Instance>
+    <Connection dst="Mdiv" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="Shift1" dst-port="in1" src="Mdiv" src-port="out3"/>
+    <Connection dst="" dst-port="out" src="Buffer" src-port="out"/>
+    <Connection dst="Buffer" dst-port="in1" src="Shift1" src-port="out"/>
+    <Connection dst="Sub1" dst-port="in1" src="Mdiv" src-port="out1"/>
+    <Connection dst="Sub1" dst-port="in2" src="Mdiv" src-port="out2"/>
+    <Connection dst="Mul" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Sub2" dst-port="in1" src="Mul" src-port="out"/>
+    <Connection dst="Add" dst-port="in1" src="Mul" src-port="out"/>
+    <Connection dst="Sub2" dst-port="in2" src="Mdiv" src-port="out4"/>
+    <Connection dst="Add" dst-port="in2" src="Mdiv" src-port="out4"/>
+    <Connection dst="Mdiv" dst-port="in2" src="Add" src-port="out"/>
+    <Connection dst="Mdiv" dst-port="in3" src="Sub2" src-port="out"/>
+</XDF>

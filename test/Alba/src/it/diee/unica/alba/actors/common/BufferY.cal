@@ -1,0 +1,32 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor BufferY(int DATA_SIZE=32) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2 :
+	
+	bool doubleDone := false;
+	uint (size=4) i := 0;
+
+	doubleForward: action in1:[maxCode] ==> out1:[parm1], out2:[parm2]
+	guard not doubleDone
+	var int(size=DATA_SIZE) parm1,
+		int(size=DATA_SIZE) parm2
+	do
+		parm1 := (maxCode+1)>>1;
+		parm2 := maxCode;
+		doubleDone := true;
+	end
+	
+	singleForward: action in1:[maxCode] ==> out1:[parm1]
+	guard doubleDone
+	var int(size=DATA_SIZE) parm1
+	do
+		parm1 := (maxCode+1)>>1;
+		if i<15 then 
+			i := i+1;
+		else
+			i := 0;
+			doubleDone := false;
+		end
+	end
+		
+end

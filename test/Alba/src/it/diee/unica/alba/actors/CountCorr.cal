@@ -1,0 +1,116 @@
+package it.diee.unica.alba.actors;
+
+actor CountCorr(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2,int(size=DATA_SIZE) in3, int(size=DATA_SIZE) in4, int(size=DATA_SIZE) in5 ==>  int(size=DATA_SIZE) out :
+
+	int(size=DATA_SIZE) diff1 := 0;
+	int(size=DATA_SIZE) diff2 := 0; 
+	int(size=DATA_SIZE) absDiff1 := 0;
+	int(size=DATA_SIZE) absDiff2 := 0;
+	int(size=DATA_SIZE) T := 0;
+	int(size=DATA_SIZE) par := 0;
+	
+	int(size=DATA_SIZE) correlation[25];
+	int(size=DATA_SIZE) countCorr :=0;
+	
+	uint(size=5) index := 0;
+	
+	bool recvdT := false;
+	bool endCountCorr := false;
+
+	recvDiff1: action in1:[a] ==>
+	do
+		diff1 :=  a;
+	end
+
+	recvDiff2: action in2:[a] ==>
+	do
+		diff2 := a;
+	end
+	
+	recvAbsDiff1: action in3:[a] ==>
+	do
+		absDiff1 :=  a;
+	end
+
+	recvAbsDiff2: action in4:[a] ==>
+	do
+		absDiff2 := a;
+	end
+	
+	recvT: action in5:[a] ==>
+	guard not recvdT
+	do
+		T := a;
+		recvdT := true;
+	end
+	
+	recvPar: action in5:[a] ==>
+	guard recvdT
+	do
+		par := a;
+		recvdT := false;
+	end
+	
+	evaluate: action  ==> 
+	guard not endCountCorr
+	do
+		//println("ev corr " + index);
+		if absDiff1<T and absDiff2<T then
+			correlation[index] := 0;
+		else 
+			if diff1>=0 then
+				correlation[index] := 1;
+			else
+				correlation[index] := -1;
+			end
+			if diff2>=0 then
+				correlation[index] := correlation[index]*1;
+			else
+				correlation[index] := correlation[index]*-1;
+			end	
+		end
+		
+		if par=1 then
+			if correlation[index]=0 or correlation[index]=1 then
+				countCorr := countCorr + 1;
+			end
+		else if par=2 then
+				if correlation[index]=-1 or correlation[index]=0 then
+					countCorr := countCorr + 1;
+				end
+			 end 
+		end
+		
+		if index<24 then
+			index := index + 1;
+		else
+			index := 0;
+			endCountCorr := true;
+		end
+	
+	end
+	
+	endCC: action ==> out:[res]
+	guard endCountCorr
+	var int (size=DATA_SIZE) res
+	do
+		res := countCorr;
+		countCorr := 0;
+		recvdT := false;
+		endCountCorr := false;
+	end
+	
+	schedule fsm init:
+	    init (recvT) --> waitPar;
+	    waitPar (recvPar) --> waitC;
+	    waitC (recvDiff1) --> d2;
+	    d2 (recvDiff2) --> ad1;
+	    ad1 (recvAbsDiff1) --> ad2;
+	    ad2 (recvAbsDiff2) --> eval;
+	    eval (evaluate) --> wait;
+	    wait (recvDiff1) --> d2;
+	    wait (endCC) --> init;
+  	end
+	
+
+end

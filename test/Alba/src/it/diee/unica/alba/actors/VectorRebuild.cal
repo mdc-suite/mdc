@@ -1,0 +1,34 @@
+package it.diee.unica.alba.actors;
+
+actor VectorRebuild(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==>  int(size=DATA_SIZE) out :
+
+	uint(size=4) i := 0;
+	bool endFilter := false;
+	
+	recvOriginal: action in1:[vData] ==> out:[vData]
+	guard i=0 or i>8 and not endFilter
+	do	
+		//println("recv orig i(" + i + ")=" + vData);			
+		i := i+1;
+		if i=10 then
+			endFilter := true;
+		end
+	end
+	
+	recvFiltered: action in1:[vData],in2:[fData] ==> out:[fData]
+	guard i>0 and i<9 and not endFilter
+	do
+		//println("recv filtered i(" + i + ")=" + fData);
+		i := i+1;
+	end
+	
+	endFIlter: action ==>
+	guard endFilter
+	do
+		i := 0;
+		endFilter := false;
+	end
+
+
+	
+end

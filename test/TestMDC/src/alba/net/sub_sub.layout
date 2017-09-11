@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="166" y="62"/>
+		<vertex id="in2" x="158" y="216"/>
+		<vertex id="sub" x="374" y="130"/>
+		<vertex id="sub2" x="596" y="112"/>
+		<vertex id="out" x="711" y="119"/>
+	</vertices>
+</layout>

@@ -1,0 +1,20 @@
+package it.diee.unica.alba.common;
+ 
+actor TargetMM(int DATA_SIZE=32,int ADDR_SIZE=4) int(size=2*ADDR_SIZE+2*DATA_SIZE)result ==> :
+  
+  int(size= DATA_SIZE) min:=0;
+  int(size= DATA_SIZE) max:=0;
+  uint(size= ADDR_SIZE) min_idx:=0;
+  uint(size= ADDR_SIZE) max_idx:=0;
+  
+  action result:[a] ==>
+  do
+  	println("Received data " + a);   
+  	min := a>>2*ADDR_SIZE;
+  	max := a>>(2*ADDR_SIZE+DATA_SIZE);
+  	min_idx := a;
+  	max_idx := a>>ADDR_SIZE;
+  	println("The min is " + min + " with index " + min_idx);
+  	println("The max is " + max + " with index " + max_idx);
+  end
+end

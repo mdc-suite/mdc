@@ -1,0 +1,4 @@
+package alba.cal;
+
+actor memory_1x1b() int in1 ==> int parms1, int parms2, int parms3, int parms4, int parms5, int out1 :
+end

@@ -1,0 +1,849 @@
+package it.diee.unica.alba.applications;
+ 
+ import  std.video.Display.*;
+//import it.diee.unica.alba.common.Data.SRC1;
+//import it.diee.unica.alba.common.Data.INPUT_SIZE;
+import it.diee.unica.alba.applications.Constants.*;
+
+import it.diee.unica.alba.applications.Data.imageZoom;
+ 
+actor AntialiasingCtrl (int DATA_SIZE=16,int ADDR_SIZE=6) int(size=32)inRgb2Ycc, int(size=32)inYcc2Rgb, int(size=32)inSort, int(size=((2*ADDR_SIZE)+(2*DATA_SIZE)))inMinMax,  int(size=32)inAbs, int(size=32)inCorr==> int(size=32)outRgb2Ycc, int(size=32)outYcc2Rgb, int(size=32)outSort, int(size=32)outMinMax, int(size=32)outAbs, int(size=32)outCorr :
+  
+	int thsize := TWIDTH;
+	int tvsize := THEIGHT;
+	int tcolors := COLORS_2;
+	int sizeout := (thsize-4)*(tvsize-4)*tcolors;
+	int sizein := (thsize)*(tvsize)*tcolors;
+	int MAXcode := (1<<8)-1;	// 255
+
+	//int (size=16) image[sizein];
+	int (size=16) ycc[sizein];
+	int (size=16) aliasingfree[sizeout];
+	int (size=16) rgb[sizeout];
+	//int (size=16) outimage0[sizeout];
+	
+	int offset := (MAXcode + 1)<<9;
+	int i := 0; 
+	int j := 0;
+	
+	uint(size=8) rBufIn[(thsize)*(tvsize)];
+	uint(size=8) gBufIn[(thsize)*(tvsize)];
+	uint(size=8) bBufIn[(thsize)*(tvsize)];
+	
+	// weighted
+	int (size=16) Cr[25];
+	int (size=16) Cb[25];
+	int (size=16) luMINance[25];
+	int (size=16) orderedCr[25];
+	int (size=16) orderedCb[25];
+	int (size=16)  orderedluMINance[25];
+	int iptr; int optr; int mptr;
+	int medianCr5x5; int medianCb5x5; int originalCr; int originalCb; 
+	int(size=DATA_SIZE) CR; int(size=DATA_SIZE) CB;
+	int D; int DCr; int DCb; int sigma; int Y;
+	int Linear_LUT[256];
+	int T := 50 >>  (10-8);   // threshold for 10 bit images
+	bool doCorrCrLum := false;
+	bool doCorrCbLum := false;
+	bool doCorrCrCb := false;
+	int countcorr := 0;
+	bool doAbsLumLum := false;
+	bool doMinMaxY := false;
+	bool doMinMaxCrCb := false;
+	int weight[25];
+	
+	bool endAA := false;
+	
+	initApp: action  ==>
+	do
+		println("Start antialiasing!");
+		displayYUV_init();
+		println("Rgb2Ycc started!");
+	end
+	
+	send_max_code: action ==> outRgb2Ycc:[255]
+	guard (j<thsize*tvsize)
+	do
+	end
+		
+	send_rgb2ycc: action  ==> outRgb2Ycc:[dataR0,dataG0,dataB0,
+											dataR1,dataG1,dataB1,
+											dataR2,dataG2,dataB2,
+											dataR3,dataG3,dataB3]
+	guard (i<thsize*tvsize)
+	var int(size=16) dataR0,int(size=16) dataG0,int(size=16) dataB0,
+		int(size=16) dataR1,int(size=16) dataG1,int(size=16) dataB1,
+		int(size=16) dataR2,int(size=16) dataG2,int(size=16) dataB2,
+		int(size=16) dataR3,int(size=16) dataG3,int(size=16) dataB3
+	do	
+		//println("SENT " + i);
+		dataR0 := imageZoom[i*3];
+		dataG0 := imageZoom[i*3+1];
+		dataB0 := imageZoom[i*3+2];
+		dataR1 := imageZoom[i*3+3];
+		dataG1 := imageZoom[i*3+4];
+		dataB1 := imageZoom[i*3+5];
+		dataR2 := imageZoom[i*3+6];
+		dataG2 := imageZoom[i*3+7];
+		dataB2 := imageZoom[i*3+8];
+		dataR3 := imageZoom[i*3+9];
+		dataG3 := imageZoom[i*3+10];
+		dataB3 := imageZoom[i*3+11];
+		
+		rBufIn[i] := imageZoom[i*3];
+		gBufIn[i] := imageZoom[i*3+1];
+		bBufIn[i] := imageZoom[i*3+2];
+		rBufIn[i+1] := imageZoom[i*3+3];
+		gBufIn[i+1] := imageZoom[i*3+4];
+		bBufIn[i+1] := imageZoom[i*3+5];
+		rBufIn[i+2] := imageZoom[i*3+6];
+		gBufIn[i+2] := imageZoom[i*3+7];
+		bBufIn[i+2] := imageZoom[i*3+8];
+		rBufIn[i+3] := imageZoom[i*3+9];
+		gBufIn[i+3] := imageZoom[i*3+10];
+		bBufIn[i+3] := imageZoom[i*3+11];
+		i := i+4;
+	end
+	
+	recv_rgb2ycc: action inRgb2Ycc:[dataY0,dataCr0,dataCb0,
+									dataY1,dataCr1,dataCb1,
+									dataY2,dataCr2,dataCb2,
+									dataY3,dataCr3,dataCb3] ==>
+	guard (j<thsize*tvsize)
+	do
+		ycc[j*3] := dataY0;
+		ycc[j*3+1] := dataCr0;
+		ycc[j*3+2] := dataCb0;
+		ycc[j*3+3] := dataY1;
+		ycc[j*3+4] := dataCr1;
+		ycc[j*3+5] := dataCb1;
+		ycc[j*3+6] := dataY2;
+		ycc[j*3+7] := dataCr2;
+		ycc[j*3+8] := dataCb2;
+		ycc[j*3+9] := dataY3;
+		ycc[j*3+10] := dataCr3;
+		ycc[j*3+11] := dataCb3;
+		
+		
+		j := j+4;
+
+	end	
+	
+	finishRgb2Ycc: action  ==>
+	guard j=thsize*tvsize
+	do	
+		foreach int uu in 128*128-20 .. 128*128-1 do
+			println("rgb[" + uu + "]=" + rBufIn[uu]);
+		end
+		displayYUV_displayRGBPicture(rBufIn, gBufIn, bBufIn, 128, 128);
+		
+		println("Rgb2Ycc finished!");
+		
+	end
+	//main_YCCAA(image, outimage0, thsize, tvsize, 8, FLAG);
+	//main_YCCAA(unsigned short *input, unsigned short *output, int ihsize, int ivsize, int bitwidth, int flag)
+	
+	//new(unsigned short *input, unsigned short *output, int ihsize, int ivsize, int icolors, int bitwidth, int flag)
+	//new(ycc,aliasingfree,ihsize,ivsize,3,bitwidth,flag);
+
+	procedure linear(int D, int sigma, int bitrange)
+	var int MAXval, int val
+	begin
+		MAXval := (1<<bitrange)-1;
+		val := 0;
+
+		if( D > (3*sigma) ) then
+			Linear_LUT[D] := 0;
+		else if( D <= (sigma>>1)) then
+				val :=  -(((MAXval*(D<<4))/(5*sigma))>>4) + MAXval;
+				Linear_LUT[D] := val;
+
+			else if ( (D>(sigma<<1)) && (D <= (3*sigma)) ) then
+					MAXval := (1<<bitrange);
+					val :=  -(((MAXval*(D<<4))/(10*sigma))>>4) + ((MAXval*3)/10);
+					Linear_LUT[D] := (val);
+				else if ( (D>(sigma>>1)) && (D <= (sigma<<1)) ) then
+						MAXval := (1<<bitrange)-1;
+						val :=  ( -((MAXval * 8 *(D<<4) )/(sigma*15)) + ((MAXval*7<<4)/6))>>4 ;
+						Linear_LUT[D] := (val);
+					end
+				end
+			end
+		end
+
+		 Linear_LUT[D] := val;
+	end
+
+	
+	init_antialiasing: action ==>
+	do
+		sigma := 10;
+		foreach int i in 0 .. 255 do
+			linear(i,sigma,16);
+			//println("lut[" + i + "]=" + Linear_LUT[i]);
+		end
+		iptr := 2*thsize*3 +2*3;//pixel in basso a destra del primo blocco
+		optr := 0;
+		mptr := 0;
+		
+		i := 2;
+		j := 2;
+		
+	end
+	
+	for_antialiasing_1: action ==>
+	guard not endAA
+	do
+		/***   passaggio di *input -----> OK!   *****/
+		//foreach int i in 2 .. (tvsize-3) do// scansione riga per riga
+		//	foreach int j in 2 .. (thsize-3) do// scansione colonna per colonna      		
+				
+		
+		//println("j=" + j);	
+		//CrCbL(Cr,Cb,luMINance,image, thsize, iptr, colors);/*crea i tre vettori di crominanza e luminanza*/
+		foreach int a in 0 .. 4 do
+	    	foreach int b in 0 .. 4 do
+				offset := (a-2)*thsize*tcolors+(b-2)*tcolors;
+				Cb[5*a+b] := ycc[iptr + offset + 2];
+	        	Cr[5*a+b] := ycc[iptr + offset + 1];
+	        	luMINance[5*a+b] := ycc[iptr + offset];
+	       	end
+	    end
+
+		//println("iptr=" + iptr);
+		//println("Cb[11]=" + Cb[11]);
+
+		//memcpy
+		foreach int k in 0 .. 24 do
+			orderedCr[k] := Cr[k];
+			orderedCb[k] := Cb[k];
+			orderedluMINance[k] := luMINance[k];
+		end
+			
+		//foreach int kk in 0 .. 24 do
+		//	println("LUMPre["+kk+"]=" + luMINance[kk]);
+		//end	
+		
+		originalCr := Cr[12];
+		originalCb := Cb[12];
+				
+		//end
+	//end		
+	end
+	
+	send_sort_Cr: action  ==> outSort:[25,orderedCr[0],orderedCr[1],orderedCr[2],orderedCr[3],orderedCr[4],
+										orderedCr[5],orderedCr[6],orderedCr[7],orderedCr[8],orderedCr[9],
+										orderedCr[10],orderedCr[11],orderedCr[12],orderedCr[13],orderedCr[14],
+										orderedCr[15],orderedCr[16],orderedCr[17],orderedCr[18],orderedCr[19],
+										orderedCr[20],orderedCr[21],orderedCr[22],orderedCr[23],orderedCr[24]]
+										
+	do
+		//foreach int kk in 0 .. 24 do
+		//	println("ordCr[" + kk + "]=" + orderedCr[kk]);
+		//end
+		//println("send sort cr");
+	end
+	
+	recv_sort_Cr: action inSort:[Cr0,Cr1,Cr2,Cr3,Cr4,
+								 Cr5,Cr6,Cr7,Cr8,Cr9,
+								 Cr10,Cr11,Cr12,Cr13,Cr14,
+								 Cr15,Cr16,Cr17,Cr18,Cr19,
+								 Cr20,Cr21,Cr22,Cr23,Cr24] ==>
+	do
+		//println("recv sort cr");
+		orderedCr[0] := Cr0;
+		orderedCr[1] := Cr1;
+		orderedCr[2] := Cr2;
+		orderedCr[3] := Cr3;
+		orderedCr[4] := Cr4;
+		orderedCr[5] := Cr5;
+		orderedCr[6] := Cr6;
+		orderedCr[7] := Cr7;
+		orderedCr[8] := Cr8;
+		orderedCr[9] := Cr9;
+		orderedCr[10] := Cr10;
+		orderedCr[11] := Cr11;
+		orderedCr[12] := Cr12;
+		orderedCr[13] := Cr13;
+		orderedCr[14] := Cr14;
+		orderedCr[15] := Cr15;
+		orderedCr[16] := Cr16;
+		orderedCr[17] := Cr17;
+		orderedCr[18] := Cr18;
+		orderedCr[19] := Cr19;
+		orderedCr[20] := Cr20;
+		orderedCr[21] := Cr21;
+		orderedCr[22] := Cr22;
+		orderedCr[23] := Cr23;
+		orderedCr[24] := Cr24;					
+	end
+	
+	send_sort_Cb: action  ==> outSort:[25,orderedCb[0],orderedCb[1],orderedCb[2],orderedCb[3],orderedCb[4],
+										orderedCb[5],orderedCb[6],orderedCb[7],orderedCb[8],orderedCb[9],
+										orderedCb[10],orderedCb[11],orderedCb[12],orderedCb[13],orderedCb[14],
+										orderedCb[15],orderedCb[16],orderedCb[17],orderedCb[18],orderedCb[19],
+										orderedCb[20],orderedCb[21],orderedCb[22],orderedCb[23],orderedCb[24]]
+										
+	do
+		
+		//println("send sort cb");
+	end
+	
+	recv_sort_luMINance: action inSort:[luMINance0,luMINance1,luMINance2,luMINance3,luMINance4,
+								 luMINance5,luMINance6,luMINance7,luMINance8,luMINance9,
+								 luMINance10,luMINance11,luMINance12,luMINance13,luMINance14,
+								 luMINance15,luMINance16,luMINance17,luMINance18,luMINance19,
+								 luMINance20,luMINance21,luMINance22,luMINance23,luMINance24] ==>
+	do
+		orderedluMINance[0] := luMINance0;
+		orderedluMINance[1] := luMINance1;
+		orderedluMINance[2] := luMINance2;
+		orderedluMINance[3] := luMINance3;
+		orderedluMINance[4] := luMINance4;
+		orderedluMINance[5] := luMINance5;
+		orderedluMINance[6] := luMINance6;
+		orderedluMINance[7] := luMINance7;
+		orderedluMINance[8] := luMINance8;
+		orderedluMINance[9] := luMINance9;
+		orderedluMINance[10] := luMINance10;
+		orderedluMINance[11] := luMINance11;
+		orderedluMINance[12] := luMINance12;
+		orderedluMINance[13] := luMINance13;
+		orderedluMINance[14] := luMINance14;
+		orderedluMINance[15] := luMINance15;
+		orderedluMINance[16] := luMINance16;
+		orderedluMINance[17] := luMINance17;
+		orderedluMINance[18] := luMINance18;
+		orderedluMINance[19] := luMINance19;
+		orderedluMINance[20] := luMINance20;
+		orderedluMINance[21] := luMINance21;
+		orderedluMINance[22] := luMINance22;
+		orderedluMINance[23] := luMINance23;
+		orderedluMINance[24] := luMINance24;
+		//foreach int ff in 0 .. 24 do
+		//	println("LUM[" + ff + "]=" + orderedluMINance[ff]);
+		//end				
+	end
+	
+	send_sort_luMINance: action  ==> outSort:[25,orderedluMINance[0],orderedluMINance[1],orderedluMINance[2],orderedluMINance[3],orderedluMINance[4],
+										orderedluMINance[5],orderedluMINance[6],orderedluMINance[7],orderedluMINance[8],orderedluMINance[9],
+										orderedluMINance[10],orderedluMINance[11],orderedluMINance[12],orderedluMINance[13],orderedluMINance[14],
+										orderedluMINance[15],orderedluMINance[16],orderedluMINance[17],orderedluMINance[18],orderedluMINance[19],
+										orderedluMINance[20],orderedluMINance[21],orderedluMINance[22],orderedluMINance[23],orderedluMINance[24]]
+	do	
+		//foreach int ff in 0 .. 24 do
+		//	println("LUMPre[" + ff + "]=" + orderedluMINance[ff]);
+		//end										
+	end
+	
+	recv_sort_Cb: action inSort:[Cb0,Cb1,Cb2,Cb3,Cb4,
+								 Cb5,Cb6,Cb7,Cb8,Cb9,
+								 Cb10,Cb11,Cb12,Cb13,Cb14,
+								 Cb15,Cb16,Cb17,Cb18,Cb19,
+								 Cb20,Cb21,Cb22,Cb23,Cb24] ==>
+	do
+		//println("recv sort cb");
+		orderedCb[0] := Cb0;
+		orderedCb[1] := Cb1;
+		orderedCb[2] := Cb2;
+		orderedCb[3] := Cb3;
+		orderedCb[4] := Cb4;
+		orderedCb[5] := Cb5;
+		orderedCb[6] := Cb6;
+		orderedCb[7] := Cb7;
+		orderedCb[8] := Cb8;
+		orderedCb[9] := Cb9;
+		orderedCb[10] := Cb10;
+		orderedCb[11] := Cb11;
+		orderedCb[12] := Cb12;
+		orderedCb[13] := Cb13;
+		orderedCb[14] := Cb14;
+		orderedCb[15] := Cb15;
+		orderedCb[16] := Cb16;
+		orderedCb[17] := Cb17;
+		orderedCb[18] := Cb18;
+		orderedCb[19] := Cb19;
+		orderedCb[20] := Cb20;
+		orderedCb[21] := Cb21;
+		orderedCb[22] := Cb22;
+		orderedCb[23] := Cb23;
+		orderedCb[24] := Cb24;
+		/*println("recv sort");
+		println("\t" + Cb0 + " " + Cb1 + " " + Cb2 + " " + Cb3 + " " + Cb4);
+		println("\t" + Cb5 + " " + Cb6 + " " + Cb7 + " " + Cb8 + " " + Cb9);
+		println("\t" + Cb10 + " " + Cb11 + " " + Cb12 + " " + Cb13 + " " + Cb14);
+		println("\t" + Cb15 + " " + Cb16 + " " + Cb17 + " " + Cb18 + " " + Cb19);
+		println("\t" + Cb20 + " " + Cb21 + " " + Cb22 + " " + Cb23 + " " + Cb24);*/					
+	end
+	
+	send_abs: action  ==> outAbs:[dataCr, dataCb, dataluMINance]
+	var int(size=16) dataCr,int(size=16) dataCb,int(size=16) dataluMINance
+	do
+		//println("send abs ycc");
+		dataCr := orderedCr[24] - orderedCr[0];
+		dataCb := orderedCb[24] - orderedCb[0];
+		dataluMINance := orderedluMINance[24] - orderedluMINance[0];
+		
+	end
+	
+	recv_abs: action  inAbs:[dataCr, dataCb, dataluMINance] ==> 
+	do
+		DCr :=dataCr;
+		DCb := dataCb;
+		Y := dataluMINance;
+	end
+	
+	for_antialiasing_2: action  ==>
+	do
+		//println("DCr=" + DCr);
+		//println("DCb=" + DCb);
+		//println("Y=" + Y);
+		if ((Y<DCr) or (Y<DCb) and not ((Y<DCr) and (Y<DCb))) then //dev'essere verificata solo una delle due
+			if (Y<DCr) then //calcola la crosscorrelazione tra Luminanza e Cr per evitare i falsi colori dei contorni
+				//println("cc1");
+				doCorrCrLum := true;
+			    //countcorr = COPR_corr(Cr,luMINance,1, T); count_corr++;
+			else //calcola la crosscorrelazione tra Luminanza e Cb per evitare i falsi colori dei contorni
+				//println("cc2");
+				doCorrCbLum := true;
+				//countcorr = COPR_corr(Cb,luMINance,1, T); count_corr++;
+	        end
+	    end
+	end
+	
+	no_corr_CY: action ==>
+	guard not doCorrCrLum and not doCorrCbLum
+	end
+	
+	send_corr_CrLum: action ==> outCorr:[T,1,Cr[0],Cr[1],Cr[2],Cr[3],Cr[4],
+										Cr[5],Cr[6],Cr[7],Cr[8],Cr[9],
+										Cr[10],Cr[11],Cr[12],Cr[13],Cr[14],
+										Cr[15],Cr[16],Cr[17],Cr[18],Cr[19],
+										Cr[20],Cr[21],Cr[22],Cr[23],Cr[24],
+										luMINance[0],luMINance[1],luMINance[2],luMINance[3],luMINance[4],
+										luMINance[5],luMINance[6],luMINance[7],luMINance[8],luMINance[9],
+										luMINance[10],luMINance[11],luMINance[12],luMINance[13],luMINance[14],
+										luMINance[15],luMINance[16],luMINance[17],luMINance[18],luMINance[19],
+										luMINance[20],luMINance[21],luMINance[22],luMINance[23],luMINance[24]]
+	guard doCorrCrLum
+	do		
+		//println("send corr cr lumia");
+	end
+
+	recv_corr_CrLum: action inCorr:[corr] ==>
+	guard doCorrCrLum
+	do		
+		//println("recv corr cr lumia");
+		countcorr := corr;
+		//println("countcorr=" + countcorr);
+	end
+	
+	send_corr_CbLum: action ==> outCorr:[T,1,Cb[0],Cb[1],Cb[2],Cb[3],Cb[4],
+										Cb[5],Cb[6],Cb[7],Cb[8],Cb[9],
+										Cb[10],Cb[11],Cb[12],Cb[13],Cb[14],
+										Cb[15],Cb[16],Cb[17],Cb[18],Cb[19],
+										Cb[20],Cb[21],Cb[22],Cb[23],Cb[24],
+										luMINance[0],luMINance[1],luMINance[2],luMINance[3],luMINance[4],
+										luMINance[5],luMINance[6],luMINance[7],luMINance[8],luMINance[9],
+										luMINance[10],luMINance[11],luMINance[12],luMINance[13],luMINance[14],
+										luMINance[15],luMINance[16],luMINance[17],luMINance[18],luMINance[19],
+										luMINance[20],luMINance[21],luMINance[22],luMINance[23],luMINance[24]]
+	guard doCorrCbLum
+	do		
+		//println("send corr cb lumia");
+	end
+
+	recv_corr_CbLum: action inCorr:[corr] ==>
+	guard doCorrCbLum
+	do		
+		//println("recv corr cb lumia");
+		countcorr := corr;
+	end
+	
+	for_antialiasing_3: action  ==>
+	do		
+		//println("for 3");
+		doCorrCrLum := false;
+		doCorrCbLum := false;
+		
+		if countcorr>=22 then
+			//println("cc3");
+			doCorrCrCb := true;
+		end
+		
+	end
+	
+	no_corr_CC: action  ==>
+	guard not doCorrCrCb
+	end
+	
+	send_corr_CrCb: action ==> outCorr:[T,2,Cr[0],Cr[1],Cr[2],Cr[3],Cr[4],
+										Cr[5],Cr[6],Cr[7],Cr[8],Cr[9],
+										Cr[10],Cr[11],Cr[12],Cr[13],Cr[14],
+										Cr[15],Cr[16],Cr[17],Cr[18],Cr[19],
+										Cr[20],Cr[21],Cr[22],Cr[23],Cr[24],
+										Cb[0],Cb[1],Cb[2],Cb[3],Cb[4],
+										Cb[5],Cb[6],Cb[7],Cb[8],Cb[9],
+										Cb[10],Cb[11],Cb[12],Cb[13],Cb[14],
+										Cb[15],Cb[16],Cb[17],Cb[18],Cb[19],
+										Cb[20],Cb[21],Cb[22],Cb[23],Cb[24]]
+	guard doCorrCrCb
+	do		
+		//println("send corr cr cb");
+	end
+
+	recv_corr_CrCb: action inCorr:[corr] ==>
+	guard doCorrCrCb
+	do		
+		//println("recv corr cr cb");
+		countcorr := corr;
+	end
+	
+	for_antialiasing_4: action  ==>
+	do			
+		//println("ordCr[24]=" + orderedCr[24]);
+		//println("ordCr[0]=" + orderedCr[0]);
+		//println("DCr=" + DCr);
+		//println("ordCb[24]=" + orderedCb[24]);
+		//println("ordCb[0]=" + orderedCb[0]);
+		//println("DCb=" + DCb);
+		//println("Y=" + Y);
+		//println("countcorr=" + countcorr);	
+		//println("for 4");
+		doCorrCrCb := false;
+		
+		DCr := DCr>>(8-8);
+		DCb := DCb>>(8-8);
+		Y   := Y  >>(8-8);
+
+		if ((((Y<DCr) or (Y<DCb)) and not ((Y<DCr) or (Y<DCb))) and
+		  (countcorr>=22) and (DCr>64 or DCb>64)) then
+            doAbsLumLum := true;
+        else
+        	medianCr5x5 := orderedCr[12];
+			medianCb5x5 := orderedCb[12];
+			if (not (((Y<DCr) or (Y<DCb)) and not ((Y<DCr) and (Y<DCb)))) then
+				D := Y;
+			else
+				doMinMaxY := true;
+			end
+			doMinMaxCrCb := true;
+		end
+	end
+	
+	sendAbsLumLum: action ==> outAbs:[luMINance[0],luMINance[12],luMINance[1],luMINance[12],luMINance[2],luMINance[12],
+									luMINance[3],luMINance[12],luMINance[4],luMINance[12],luMINance[5],luMINance[12],
+									luMINance[6],luMINance[12],luMINance[7],luMINance[12],luMINance[8],luMINance[12],
+									luMINance[9],luMINance[12],luMINance[10],luMINance[12],luMINance[11],luMINance[12],
+									luMINance[12],luMINance[12],luMINance[13],luMINance[12],luMINance[14],luMINance[12],
+									luMINance[15],luMINance[12],luMINance[16],luMINance[12],luMINance[17],luMINance[12],
+									luMINance[18],luMINance[12],luMINance[19],luMINance[12],luMINance[20],luMINance[12],
+									luMINance[21],luMINance[12],luMINance[22],luMINance[12],luMINance[23],luMINance[12],
+									luMINance[24],luMINance[12]]
+	guard doAbsLumLum
+	do		
+		//println("send abs lumia lumia");
+	end
+	
+	sendMinMaxYCbCr_1: action ==> outMinMax:[3,DCr,DCb,Y,
+				2,(((medianCr5x5<<16) + Linear_LUT[D]*(originalCr - medianCr5x5))>>16),0,
+				2,(((medianCb5x5<<16) + Linear_LUT[D]*(originalCb - medianCb5x5))>>16),0]
+	guard doMinMaxY and doMinMaxCrCb
+	do		
+		//println("send mm ycc");
+	end
+	
+	recvMinMaxYCbCr_1: action inMinMax:[dataY, dataCr, dataCb] ==> outMinMax:[2,max_dataCr,MAXcode,
+																				2,max_dataCb,MAXcode]
+	guard doMinMaxY and doMinMaxCrCb
+	var int max_dataCr, int max_dataCb
+	do
+		D := dataY>>(2*ADDR_SIZE+DATA_SIZE);
+		max_dataCr := dataCr>>(2*ADDR_SIZE+DATA_SIZE);
+		max_dataCb := dataCb>>(2*ADDR_SIZE+DATA_SIZE);		
+		//println("recv mm ycc maxCb=" + max_dataCb + " maxCr=" + max_dataCr);
+	end
+	
+	recvMinMaxCbCr_2: action inMinMax:[dataCr, dataCb] ==> 
+	guard doMinMaxCrCb
+	do
+		CR := dataCr>>(2*ADDR_SIZE);
+		CB := dataCb>>(2*ADDR_SIZE);		
+		//println("recv mm CR(" + dataCr + ")=" + CR + " CB(" + dataCb + ")=" + CB);
+	end
+	
+	sendMinMaxCbCr_1: action ==> outMinMax:[2,(((medianCr5x5<<16) + Linear_LUT[D]*(originalCr - medianCr5x5))>>16),0,
+										  2,(((medianCb5x5<<16) + Linear_LUT[D]*(originalCb - medianCb5x5))>>16),0]
+	guard not doMinMaxY and doMinMaxCrCb
+	do
+		//println("cb median=" + medianCb5x5);
+		//println("send Cb median=" + (medianCb5x5<<16) + " lut=" +  Linear_LUT[D] + " sottr=" + (originalCb - medianCb5x5));
+		//println("send maxCr=" + (((medianCr5x5<<16) + Linear_LUT[D]*(originalCr - medianCr5x5))>>16) + " maxCb=" + (((medianCb5x5<<16) + Linear_LUT[D]*(originalCb - medianCb5x5))>>16));
+	end
+	
+	recvMinMaxCbCr_1: action inMinMax:[dataCr, dataCb] ==> outMinMax:[2,max_dataCr,MAXcode,
+																	 2,max_dataCb,MAXcode]
+	guard not doMinMaxY and doMinMaxCrCb
+	var int max_dataCr, int max_dataCb
+	do
+		max_dataCr := dataCr>>(2*ADDR_SIZE+DATA_SIZE);
+		max_dataCb := dataCb>>(2*ADDR_SIZE+DATA_SIZE);
+		//println("recv maxCr=" + max_dataCr + " maxCb=" + max_dataCb);
+	end
+	
+	recvAbsLumLum: action inAbs:[abs0,abs1,abs2,abs3,abs4,
+								 abs5,abs6,abs7,abs8,abs9,
+								 abs10,abs11,abs12,abs13,abs14,
+								 abs15,abs16,abs17,abs18,abs19,
+								 abs20,abs21,abs22,abs23,abs24] ==>
+	guard doAbsLumLum
+	do
+		//println("recv abs lumia lumia");
+		weight[0] := (1<<16)/(abs0+1);
+		weight[1] := (1<<16)/(abs1+1);
+		weight[2] := (1<<16)/(abs2+1);
+		weight[3] := (1<<16)/(abs3+1);
+		weight[4] := (1<<16)/(abs4+1);
+		weight[5] := (1<<16)/(abs5+1);
+		weight[6] := (1<<16)/(abs6+1);
+		weight[7] := (1<<16)/(abs7+1);
+		weight[8] := (1<<16)/(abs8+1);
+		weight[9] := (1<<16)/(abs9+1);
+		weight[10] := (1<<16)/(abs10+1);
+		weight[11] := (1<<16)/(abs11+1);
+		weight[12] := (1<<16)/(abs12+1);
+		weight[13] := (1<<16)/(abs13+1);
+		weight[14] := (1<<16)/(abs14+1);
+		weight[15] := (1<<16)/(abs15+1);
+		weight[16] := (1<<16)/(abs16+1);
+		weight[17] := (1<<16)/(abs17+1);
+		weight[18] := (1<<16)/(abs18+1);
+		weight[19] := (1<<16)/(abs19+1);
+		weight[20] := (1<<16)/(abs20+1);
+		weight[21] := (1<<16)/(abs21+1);
+		weight[22] := (1<<16)/(abs22+1);
+		weight[23] := (1<<16)/(abs23+1);
+		weight[24] := (1<<16)/(abs24+1);	
+	end
+
+	
+	
+	
+	for_antialiasing_5: action  ==>
+	var int sumweight, int count, int centralweight
+	do		
+		if doAbsLumLum then
+	   		sumweight := 0;
+        	count := 0;	
+			foreach int k in 0 .. 24 do
+            	if ((weight[k]*3) > (5<<16)) then
+                	count := count+1;
+                end
+            end
+           
+        	if count>1 then
+            	centralweight := 1;
+        	else
+				centralweight := 0;
+			end
+		
+			foreach int k in 0 .. 24 do
+            	if (not (k=12) or (centralweight=1)) then
+                	sumweight := sumweight + weight[k];
+				end
+			end
+
+        	sumweight := sumweight>>8;
+			CR := 0;
+			CB := 0;
+			//println("a");
+			foreach int k in 0 .. 24 do
+				if (not (k=12) or (centralweight=1)) then
+                	CR := CR + ((weight[k]*Cr[k]/sumweight)>>8);
+					CB := CB + ((weight[k]*Cb[k]/sumweight)>>8);
+				end
+			end
+			
+			doAbsLumLum := false;
+			
+		else
+			doMinMaxY := false;
+			doMinMaxCrCb := false;
+		end
+		
+		//println("CR=" + CR);
+		//println("CB=" + CB);
+
+		aliasingfree[optr] := ycc[iptr];
+		aliasingfree[optr+1] := CR;
+		aliasingfree[optr+2] := CB;
+
+		//println("antialiasingfree[" + optr + "]=" + aliasingfree[optr]);
+		//println("antialiasingfree[" + (optr+1) + "]=" + aliasingfree[optr+1]);
+		//println("antialiasingfree[" + (optr+2) + "]=" + aliasingfree[optr+2]);
+
+  		ycc[iptr] := aliasingfree[optr];
+		ycc[iptr+1] := aliasingfree[optr+1];
+		ycc[iptr+2] := aliasingfree[optr+2];
+
+		iptr := iptr + 3;
+		optr := optr + 3;
+		mptr := mptr + 1;
+		
+		if j<tvsize-3 then
+			j := j+1;
+		else if i<thsize-3 then
+				println("i=" + i);
+				j := 2;
+				i := i+1;
+				iptr := iptr + 12;
+			else
+				println("finish for");
+				foreach int jj in 0 .. (thsize-4)*(tvsize-4)*3-1 do
+					//println("" + aliasingfree[jj]);
+				end
+				endAA := true;
+				j := 0;
+				i := 0;
+			end
+		end
+	
+	end
+	
+	send_max_code_2: action ==> outYcc2Rgb:[255]
+	guard (j<(thsize-4)*(tvsize-4)) and endAA
+	do
+		//println("max code 2");
+	end
+	
+	send_ycc2rgb: action  ==> outYcc2Rgb:[dataY0,dataCb0,dataCr0,
+											dataY1,dataCb1,dataCr1,
+											dataY2,dataCb2,dataCr2,
+											dataY3,dataCb3,dataCr3]
+	guard endAA and (i<(thsize-4)*(tvsize-4))
+	var int(size=16) dataY0,int(size=16) dataCr0,int(size=16) dataCb0,
+		int(size=16) dataY1,int(size=16) dataCr1,int(size=16) dataCb1,
+		int(size=16) dataY2,int(size=16) dataCr2,int(size=16) dataCb2,
+		int(size=16) dataY3,int(size=16) dataCr3,int(size=16) dataCb3
+	do	
+		dataY0  := aliasingfree[i*3];
+		dataCb0 := aliasingfree[i*3+1];
+		dataCr0 := aliasingfree[i*3+2];
+		dataY1  := aliasingfree[i*3+3];
+		dataCb1 := aliasingfree[i*3+4];
+		dataCr1 := aliasingfree[i*3+5];
+		dataY2  := aliasingfree[i*3+6];
+		dataCb2 := aliasingfree[i*3+7];
+		dataCr2 := aliasingfree[i*3+8];
+		dataY3  := aliasingfree[i*3+9];
+		dataCb3 := aliasingfree[i*3+10];
+		dataCr3 := aliasingfree[i*3+11];
+		
+		i := i+4;
+	end
+
+	recv_ycc2rgb: action inYcc2Rgb:[dataR0,dataG0,dataB0,
+									dataR1,dataG1,dataB1,
+									dataR2,dataG2,dataB2,
+									dataR3,dataG3,dataB3] ==>
+	guard (j<(thsize-4)*(tvsize-4)) and endAA
+	do
+		//println("recv rgb " + j);	
+		rgb[j*3] := dataR0;
+		rgb[j*3+1] := dataG0;
+		rgb[j*3+2] := dataB0;
+		rgb[j*3+3] := dataR1;
+		rgb[j*3+4] := dataG1;
+		rgb[j*3+5] := dataB1;
+		rgb[j*3+6] := dataR2;
+		rgb[j*3+7] := dataG2;
+		rgb[j*3+8] := dataB2;
+		rgb[j*3+9] := dataR3;
+		rgb[j*3+10] := dataG3;
+		rgb[j*3+11] := dataB3;
+		j := j+4;
+	end	
+	
+	finishYcc2Rgb: action  ==>
+	guard (j=(thsize-4)*(tvsize-4)) and endAA
+	do
+		println("Ycc2Rgb finished!");
+	end				
+    
+    endApp: action  ==>
+	do
+		println("Finish antialiasing!");
+		i:=0;
+		while i<(thsize-4)*(tvsize-4) do
+			println(rgb[i*3]);
+			println(rgb[i*3+1]);
+			println(rgb[i*3+2]);
+			i := i+1;
+		end
+	end
+	
+	endLoop: action ==>
+	end
+	
+	schedule fsm init:
+		init (initApp) --> pre_sendRgb;
+		pre_sendRgb (send_max_code) --> sendRgb;
+		sendRgb (send_rgb2ycc) --> sendRtoY_1;
+		sendRtoY_1 (send_rgb2ycc) --> sendRtoY_2;
+		sendRtoY_2 (send_rgb2ycc) --> sendRtoY_3;
+		sendRtoY_3 (send_rgb2ycc) --> recvYcc;
+		recvYcc (recv_rgb2ycc) --> recvRtoY_1;
+		recvRtoY_1 (recv_rgb2ycc) --> recvRtoY_2;
+		recvRtoY_2 (recv_rgb2ycc) --> recvRtoY_3;
+		recvRtoY_3 (recv_rgb2ycc) --> pre_sendRgb;
+		pre_sendRgb (finishRgb2Ycc) --> initAntialiasing;
+		
+		initAntialiasing (init_antialiasing) --> goAntialiasing;
+		goAntialiasing (for_antialiasing_1) --> sortCr;
+		sortCr (send_sort_Cr) --> waitSortCr;
+		waitSortCr (recv_sort_Cr) --> sortCb;
+		sortCb (send_sort_Cb) --> waitSortCb;
+		waitSortCb (recv_sort_Cb) --> sortY;
+		sortY (send_sort_luMINance) --> waitSortY;
+		waitSortY (recv_sort_luMINance) --> absAll;
+		absAll (send_abs) --> waitAbsAll;
+		waitAbsAll (recv_abs) --> antialiasing2;
+		antialiasing2 (for_antialiasing_2) --> wait2;
+		wait2 (no_corr_CY) --> antialiasing3;
+		wait2 (send_corr_CrLum) --> corr_CrY;
+		corr_CrY (recv_corr_CrLum) --> antialiasing3;
+		wait2 (send_corr_CbLum) --> corr_CbY;
+		corr_CbY (recv_corr_CbLum) --> antialiasing3;
+		antialiasing3 (for_antialiasing_3) --> wait3;
+		wait3 (no_corr_CC) --> antialiasing4;
+		wait3 (send_corr_CrCb) --> corr_CrCb;
+		corr_CrCb (recv_corr_CrCb) --> antialiasing4;
+		antialiasing4 (for_antialiasing_4) --> wait4;
+		wait4 (sendAbsLumLum) --> absLL;
+		absLL (recvAbsLumLum) --> antialiasing_5;
+		wait4 (sendMinMaxYCbCr_1) --> mmYCC;
+		mmYCC (recvMinMaxYCbCr_1) --> mmCC2;
+		mmCC2 (recvMinMaxCbCr_2) --> antialiasing_5;
+		wait4 (sendMinMaxCbCr_1) --> mmCC;
+		mmCC (recvMinMaxCbCr_1) --> mmCC2;
+		antialiasing_5 (for_antialiasing_5) --> wait5;
+		wait5 (for_antialiasing_1) --> sortCr;
+		
+		wait5 (send_max_code_2) --> sendYcc;
+		pre_sendYcc (send_max_code_2) --> sendYcc;
+		sendYcc (send_ycc2rgb) --> sendYtoR_1;
+		sendYtoR_1 (send_ycc2rgb) --> sendYtoR_2;
+		sendYtoR_2 (send_ycc2rgb) --> sendYtoR_3;
+		sendYtoR_3 (send_ycc2rgb) --> recvRgb;	
+		recvRgb (recv_ycc2rgb) --> recvYtoR_1;
+		recvYtoR_1 (recv_ycc2rgb) --> recvYtoR_2;
+		recvYtoR_2 (recv_ycc2rgb) --> recvYtoR_3;
+		recvYtoR_3 (recv_ycc2rgb) --> pre_sendYcc;
+		pre_sendYcc (finishYcc2Rgb) --> endAntialiasing;
+		
+		endAntialiasing (endApp) --> endLoopAA;
+		endLoopAA (endLoop) --> endLoopAA;
+		
+	end
+
+end

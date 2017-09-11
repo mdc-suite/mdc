@@ -1,0 +1,20 @@
+package it.diee.unica.alba.common;
+ 
+import it.diee.unica.alba.common.Data.SRCMM;
+import it.diee.unica.alba.common.Data.INPUT_SIZE_MM;
+ 
+actor SourceMM () ==> int(size=8)source1 :
+  
+    int i := 0;
+ 
+    sendData: action ==> source1:[ Out ]
+    guard
+        i < INPUT_SIZE_MM
+    var
+        uint(size=8) Out
+    do
+    	println("Sending data " + SRCMM[i] + " with index " + (i-1));
+        Out := SRCMM[i];
+        i := i+1;
+    end 
+end

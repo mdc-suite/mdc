@@ -1,0 +1,9 @@
+package common;
+ 
+unit Constants :
+ 
+ 	int (size=8) input1[4] = [10, 11, 12, 13];
+ 	int (size=8) input2[4] = [20, 21, 22, 23];
+ 	int (size=8) input3[4] = [30, 31, 32, 33];
+ 	
+end

@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor vec_rebuild(int DATA_SIZE=32,int ADDR_SIZE=10) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3 ==> int(size=DATA_SIZE) out :
+
+end

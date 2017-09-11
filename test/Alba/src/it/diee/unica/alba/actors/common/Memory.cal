@@ -1,0 +1,19 @@
+package it.diee.unica.alba.actors.common;
+
+actor Memory(int WORD_SIZE=32, int ADDR_SIZE=8) uint(size=WORD_SIZE) data_in, uint(size=ADDR_SIZE) address_in, uint(size=ADDR_SIZE) address_out ==> uint(size=WORD_SIZE) data_out :
+
+	int(size=WORD_SIZE) mem [1<<ADDR_SIZE];
+	
+	writeData: action data_in:[data], address_in:[address] ==> 
+	do	
+		mem[address] := data;
+	end
+	
+		
+	readData: action address_out:[address] ==> data_out:[data]
+	var int(size=WORD_SIZE) data
+	do	
+		data := mem[address];
+	end
+		
+end

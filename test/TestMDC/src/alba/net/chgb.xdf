@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="chgb">
+	<Port kind="Input" name="in1">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Port kind="Output" name="out">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Instance id="RAM">
+		<Class name="alba.cal.memory"/>
+		<Parameter name="WORD_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="control">
+		<Class name="alba.cal.control_1out_0par"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="check_gb">
+		<Class name="alba.cal.chk_gb"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="subtractor_1">
+		<Class name="alba.cal.subtractor"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="subtractor_2">
+		<Class name="alba.cal.subtractor"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="abs_1">
+		<Class name="alba.cal.abs"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="abs_2">
+		<Class name="alba.cal.abs"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Connection dst="control" dst-port="in2" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="data_in" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_in" src="control" src-port="addr_in">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_out" src="control" src-port="addr_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="control" dst-port="in1" src="RAM" src-port="data_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="check_gb" dst-port="in1" src="control" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="subtractor_1" dst-port="in1" src="control" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="subtractor_2" dst-port="in1" src="control" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="subtractor_1" dst-port="in2" src="check_gb" src-port="out1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="subtractor_2" dst-port="in2" src="check_gb" src-port="out2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="" dst-port="out" src="check_gb" src-port="out3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="abs_1" dst-port="in1" src="subtractor_1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="abs_2" dst-port="in1" src="subtractor_2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="check_gb" dst-port="in2" src="abs_1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="check_gb" dst-port="in3" src="abs_2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+</XDF>

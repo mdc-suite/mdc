@@ -1,0 +1,110 @@
+package it.diee.unica.alba.actors;
+
+actor CorrCtrl(int DATA_SIZE=32,int ADDR_SIZE=8) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5 :
+	
+	uint(size=6) index := 0;
+
+	bool endStore := false;
+	bool sentData := false;
+	bool sentC := true;
+	bool acquiredParms := false;
+	bool isC1 := true;
+
+	acquireParms: action in1:[a] ==> out5:[a], addr_in:[address]
+	guard not acquiredParms
+	var int(size=ADDR_SIZE) address
+	do
+		address := 50 + index;
+		if index < 1 then
+			//println("T " + a);
+			index := index + 1;
+		else 
+			//println("par " + a);
+			index := 0;
+			acquiredParms := true;
+		end
+	end
+
+	genAddr: action in1:[a] ==> addr_in:[address]
+	guard acquiredParms and not endStore
+	var int(size=ADDR_SIZE) address
+	do
+		address := index;
+		if index < 49 then
+			index := index + 1;
+		else 
+			index := 0;
+			endStore := true;
+		end
+	end
+	
+	sendData: action ==> addr_out:[address]
+	guard endStore and not sentData and sentC
+	var int(size=ADDR_SIZE) address
+	do
+		if isC1 then
+			address := index;
+		else
+			address := index+25;
+		end
+		sentData := true;		
+	end
+	
+	recvDataC1: action in2:[data] ==> out1:[data]
+	guard sentData and sentC and isC1
+	do
+		//println("C1[" + index +"]=" + data);
+		sentData := false;
+		sentC := false;
+	end
+	
+	recvDataC2: action in2:[data] ==>  out3:[data]
+	guard sentData and sentC and not isC1
+	do
+		//println("C2[" + index +"]=" + data);
+		sentData := false;
+		sentC := false;
+	end
+	
+	sendDataC: action ==> addr_out:[address]
+	guard endStore and not sentData and not sentC
+	var int(size=ADDR_SIZE) address
+	do
+		if isC1 then
+			address := 12;
+		else
+			address := 37;
+		end
+		sentData := true;
+	end
+	
+	recvDataC1_2: action in2:[dataC] ==> out2:[dataC]
+	guard sentData and not sentC and isC1
+	do
+		isC1 := false;
+		sentC := true;
+		sentData := false;
+	end
+	
+	recvDataC2_2: action in2:[dataC] ==> out4:[dataC]
+	guard sentData and not sentC and not isC1
+	do
+		//println("recv c2 2 " + index);
+		index := index + 1;
+		sentC := true;
+		sentData := false;
+		isC1 := true;
+		if index=25 then
+			endStore := false;
+			sentData := false;
+			sentC := true;
+			acquiredParms := false;
+			isC1 := true;
+			index := 0;
+		end
+			
+	end
+	
+	
+
+end

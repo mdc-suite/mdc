@@ -1,0 +1,28 @@
+package fir;
+
+actor Source(int SIZE=8)
+		 ==>
+	int(size=SIZE) data_in,
+	int(size=2*SIZE) acc_in,
+	int(size=SIZE) c0,
+	int(size=SIZE) c1,
+	int(size=SIZE) c2,
+	int(size=SIZE) c3
+:
+	// filter coefficients
+	int(size=SIZE)  coeffs[4] := [1,2,3,4];
+	
+	// filter samples
+	int(size=SIZE)	data[16] := [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+	
+	int	i := -1;
+
+produce: action  ==> data_in:[data[i]], acc_in:[0], c0:[coeffs[0]], c1:[coeffs[1]], c2:[coeffs[2]], c3:[coeffs[3]]
+guard i<15
+do
+	i := i+1;
+end
+
+
+
+end

@@ -1,0 +1,12 @@
+package it.diee.unica.alba.common;
+ 
+actor Target () int(size=32)result ==> :
+  
+  uint(size=32) i := 0;
+  
+  action result:[a] ==>
+  do   
+  	println("Result[" + i +"] is " + a);
+  	i := i+1;
+  end
+end

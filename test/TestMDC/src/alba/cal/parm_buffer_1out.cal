@@ -1,0 +1,4 @@
+package alba.cal;
+
+actor parm_buffer_1out(int ADDR_SIZE=16,int DATA_SIZE=32,int CONST=1) int(size=DATA_SIZE) parms ==> int(size=DATA_SIZE) out:
+end

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="381"/>
+		<vertex id="out" x="604" y="119"/>
+		<vertex id="Memory" x="301" y="342"/>
+		<vertex id="Cubic" x="153" y="203"/>
+		<vertex id="Mul" x="338" y="161"/>
+		<vertex id="Shift" x="460" y="131"/>
+		<vertex id="Add" x="589" y="243"/>
+	</vertices>
+</layout>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="ArmSurveillance">
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.networks.MaxMin"/>
+    </Instance>
+    <Instance id="Smear">
+        <Class name="it.diee.unica.alba.networks.Smear"/>
+    </Instance>
+    <Instance id="Nbit">
+        <Class name="it.diee.unica.alba.networks.Nbit"/>
+    </Instance>
+    <Instance id="Application">
+        <Class name="it.diee.unica.alba.applications.ArmSurveillanceCtrl"/>
+    </Instance>
+    <Connection dst="MinMax" dst-port="in1" src="Application" src-port="outMinMax"/>
+    <Connection dst="Application" dst-port="inMinMax" src="MinMax" src-port="outMM"/>
+    <Connection dst="Smear" dst-port="in1" src="Application" src-port="outSmear"/>
+    <Connection dst="Application" dst-port="inSmear" src="Smear" src-port="out"/>
+    <Connection dst="Nbit" dst-port="in1" src="Application" src-port="outNbit"/>
+    <Connection dst="Application" dst-port="inNbit" src="Nbit" src-port="out"/>
+</XDF>

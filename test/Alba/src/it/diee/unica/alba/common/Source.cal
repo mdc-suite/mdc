@@ -1,0 +1,20 @@
+package it.diee.unica.alba.common;
+ 
+import it.diee.unica.alba.common.Data.SRC1;
+import it.diee.unica.alba.common.Data.INPUT_SIZE;
+ 
+actor Source () ==> int(size=32)source1 :
+  
+    int i := 0;
+ 
+    sendData: action ==> source1:[ Out ]
+    guard
+        i < INPUT_SIZE
+    var
+        uint(size=8) Out
+    do
+    	println("Input["+ i + "] is " + SRC1[i]);
+        Out := SRC1[i];
+        i := i+1;
+    end 
+end

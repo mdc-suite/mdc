@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Smear">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Smear">
+        <Class name="it.diee.unica.alba.actors.Smear"/>
+    </Instance>
+    <Instance id="Sub1">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Shift">
+        <Class name="it.diee.unica.alba.actors.common.Shift"/>
+        <Parameter name="CONST">
+            <Expr kind="Literal" literal-kind="Integer" value="1"/>
+        </Parameter>
+        <Parameter name="LEFT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="Sub2">
+        <Class name="it.diee.unica.alba.actors.common.Sub"/>
+    </Instance>
+    <Instance id="Add">
+        <Class name="it.diee.unica.alba.actors.common.Add_2in"/>
+    </Instance>
+    <Connection dst="Smear" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="Sub1" dst-port="in1" src="Smear" src-port="out2"/>
+    <Connection dst="Sub1" dst-port="in2" src="Smear" src-port="out1"/>
+    <Connection dst="Add" dst-port="in1" src="Smear" src-port="out1"/>
+    <Connection dst="Shift" dst-port="in1" src="Sub1" src-port="out"/>
+    <Connection dst="Add" dst-port="in2" src="Shift" src-port="out"/>
+    <Connection dst="Smear" dst-port="in2" src="Add" src-port="out"/>
+    <Connection dst="Sub2" dst-port="in1" src="Smear" src-port="out3"/>
+    <Connection dst="Sub2" dst-port="in2" src="Smear" src-port="out4"/>
+    <Connection dst="Smear" dst-port="in3" src="Sub2" src-port="out"/>
+    <Connection dst="" dst-port="out" src="Smear" src-port="out5"/>
+</XDF>

@@ -1,0 +1,11 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor Mul(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=DATA_SIZE) out :
+
+action in1:[a], in2:[b] ==> out:[a*b]
+do
+	//println("mul " + a + "*" + b + "=" + (a*b));
+end
+		
+end

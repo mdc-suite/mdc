@@ -1,0 +1,66 @@
+package it.diee.unica.alba.common;
+
+import std.video.Display.*;
+import it.diee.unica.alba.common.Constants.H_SIZE;
+import it.diee.unica.alba.common.Constants.V_SIZE;
+ 
+actor Display () int(size=32)result ==> :
+  
+  uint(size=3) i := 0;
+  uint(size=32) j := 0;
+  
+  uint(size=8) y [H_SIZE*V_SIZE];
+  uint(size=8) u [H_SIZE*V_SIZE];
+  uint(size=8) v [H_SIZE*V_SIZE];
+  //int(size=16) pictureWidth := H_SIZE;
+  //int(size=16) pictureSize := V_SIZE;
+  
+  bool done := false;
+  bool start := false;
+  
+  init: action ==>
+  guard not start
+  do
+  	displayYUV_init();
+  	start := true;
+  end
+  
+  action result:[a] ==>
+  guard start
+  do     	
+  	if i=0 then
+  		y[i] := a;
+  		println("Y[" + j +"]=" + a);
+  	else if i=1 then
+  		u[i] := a;
+  		println("U[" + j +"]=" + a);
+  		 else if i=2 then
+  		 		v[i] := a;
+  				println("V[" + j +"]=" + a);
+  		 	  end
+  		 end
+  	end
+  	
+  	
+  	if i<2 then
+  		i := i+1;
+  	else
+  		i := 0; 
+  		j := j+1;	
+  	end
+  	
+  end
+  
+  printImage: action  ==>
+  guard j = H_SIZE*V_SIZE and not done
+  do
+  	//fpsPrintInit();		
+ 	//fpsPrintNewPicDecoded();
+  	//displayYUV_init();  	
+	//compareYUV_init();
+  	displayYUV_displayPicture(y,u, v, 4, 4);
+  	//compareYUV_comparePicture(y,u, v, pictureWidth, pictureSize);
+  	//done := true;
+  end
+  
+end

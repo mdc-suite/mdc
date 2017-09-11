@@ -1,0 +1,18 @@
+package it.diee.unica.alba.actors;
+
+actor DecoderMM(int DATA_SIZE=32,int ADDR_SIZE=6) uint(size=((2*ADDR_SIZE)+(2*DATA_SIZE))) in1 ==> uint(size=DATA_SIZE) out1, uint(size=DATA_SIZE) out2 :
+
+bool evDone := false;
+
+evMM: action in1:[value] ==> out1:[max], out2:[min]
+guard not evDone
+var uint(size=DATA_SIZE) max,
+	uint(size=DATA_SIZE) min
+do
+	min := value>>2*ADDR_SIZE;
+  	max := value>>(2*ADDR_SIZE+DATA_SIZE);
+end
+
+
+
+end

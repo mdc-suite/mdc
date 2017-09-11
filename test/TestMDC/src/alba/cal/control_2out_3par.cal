@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor control_2out_3par(int DATA_SIZE=32,int ADDR_SIZE=10) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) parms1, int(size=DATA_SIZE) parms2, int(size=DATA_SIZE) parms3 :
+
+end

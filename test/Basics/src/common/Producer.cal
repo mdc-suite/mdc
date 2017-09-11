@@ -1,0 +1,41 @@
+package common;
+import common.Constants.*;
+
+actor Producer(int SIZE=8, int INPUT=0)
+
+		 ==>
+	int(size=SIZE) out1
+:
+
+bool done := false;
+
+produce: action  ==> out1:[a] repeat 4
+guard not done
+var int(size=SIZE) a[4]
+do
+	if(INPUT=0) then
+		a[0] := input1 [0];
+		a[1] := input1 [1];
+		a[2] := input1 [2];
+		a[3] := input1 [3];
+	else if(INPUT=1) then
+		a[0] := input2 [0];
+		a[1] := input2 [1];
+		a[2] := input2 [2];
+		a[3] := input2 [3];
+	else if(INPUT=2) then
+		a[0] := input3 [0];
+		a[1] := input3 [1];
+		a[2] := input3 [2];
+		a[3] := input3 [3];
+	end
+	end
+	end
+	println("Producing " + a[0]);
+	println("Producing " + a[1]);
+	println("Producing " + a[2]);
+	println("Producing " + a[3]);
+	done := true;
+end
+
+end

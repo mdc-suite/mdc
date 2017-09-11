@@ -1,0 +1,539 @@
+package it.diee.unica.alba.applications;
+ 
+import it.diee.unica.alba.common.Data.SRC1;
+import it.diee.unica.alba.common.Data.INPUT_SIZE;
+import it.diee.unica.alba.applications.Constants.*;
+
+import it.diee.unica.alba.applications.Data.image1;
+import it.diee.unica.alba.applications.Data.image2;
+ 
+actor ArmSurveillanceCtrl (int ADDR_SIZE=4) int(size=32)inNbit, int(size=32)inSmear, int(size=((2*ADDR_SIZE)+(2*32)))inMinMax ==> int(size=32)outNbit, int(size=32)outSmear, int(size=32)outMinMax :
+  
+	int FrameWidth := FRAMEWIDTH;
+	int FrameHeight	:= FRAMEHEIGTH;
+	int colors	:= COLORS;
+	int nFrameWidth := NFRAMEWIDTH;
+	int nFrameHeight := NFRAMEHEIGTH;
+
+	int off_h;
+	int off_v;
+	
+	int fixed_factorW := (CIF_W/FrameWidth) * (1<<FRAC_BIT);
+	int fixed_factorH := (CIF_H/FrameHeight) * (1<<FRAC_BIT);
+	
+	int new_cif_width := ((FrameWidth*fixed_factorW)>>FRAC_BIT );
+	int new_cif_height := ((FrameHeight*fixed_factorH)>>FRAC_BIT);
+	
+	
+	int x_curve_a [new_cif_width]; /*vertical movements, frame a*/
+	int y_curve_a [new_cif_height]; /*horizontal movements, frame a*/
+	
+	int x_curve_b [new_cif_width]; /*vertical movements, frame b*/
+	int y_curve_b [new_cif_height]; /*horizontal movements, frame b*/
+	
+	
+	int in_bit_W := 0;
+	int out_bit_W := 0;
+	int in_bit_H := 0;
+	int out_bit_H := 0;
+	int step_bit_W := 0;
+	int step_bit_H := 0;
+	int step_bit := 0;
+	
+	int New_Frac_bit := 0;
+	int Wstep := 0;
+	int Hstep := 0;
+	
+	
+	// calcualte curves vars	
+	int i := 0;
+	bool sentSize := false;
+	bool endSmearX := false;
+	bool endSmearY := false;
+	
+	uint(size=8) tmpImg[(new_cif_width)*(new_cif_height)*colors];
+	int temp := 0;
+	
+	initApp: action  ==> 
+	do
+		println("Start arm surveillance!");
+	end
+	
+	loop: action  ==> 
+	end
+		
+	sendNbit_1: action  ==> outNbit:[FrameWidth,new_cif_width,FrameHeight,new_cif_height]
+	do
+	end
+	
+	recvNbit_1: action inNbit:[res1,res2,res3,res4] ==> 
+	do
+		in_bit_W := res1;
+		out_bit_W := res2;
+		in_bit_H := res3;
+		out_bit_H := res4;
+		println("recvNbit1 " + in_bit_W + " " + out_bit_W + " " + in_bit_H+ " " + out_bit_H);
+	end
+	
+	sendMinMax_1: action  ==> outMinMax:[2,(out_bit_W - in_bit_W),0,2,out_bit_H - in_bit_H,0]	
+	do
+		println("sendMM1 " + in_bit_W + " " + out_bit_W + " " + in_bit_H+ " " + out_bit_H);
+	end
+	
+	sendMinMaxTot_1: action  ==> outMinMax:[2,step_bit_H, step_bit_W]
+	end
+	
+	recvMinMax_1: action inMinMax:[resW,resH] ==> 
+	do
+		step_bit_W := resW>>2*ADDR_SIZE;
+		step_bit_H := resH>>2*ADDR_SIZE;
+		println("recvMM1 " + step_bit_W + " " + step_bit_H);
+	
+	end
+	
+	recvMinMaxTot_1: action inMinMax:[res] ==> 
+	do
+		step_bit := res>>2*ADDR_SIZE;
+		println("recvMMT1 " + step_bit);
+	end
+
+
+	sendNbit_2: action  ==> outNbit:[nFrameWidth,new_cif_width,nFrameHeight,new_cif_height]
+	end 
+	
+	recvNbit_2: action inNbit:[res1,res2,res3,res4] ==> 
+	do
+		in_bit_W := res1;
+		out_bit_W := res2;
+		in_bit_H := res3;
+		out_bit_H := res4;
+		println("recvNbit2 " + in_bit_W + " " + out_bit_W + " " + in_bit_H+ " " + out_bit_H);
+	end
+	
+	sendMinMax_2: action  ==> outMinMax:[2,(out_bit_W - in_bit_W),0,2,out_bit_H - in_bit_H,0]	
+	do
+		println("sendMM2 " + in_bit_W + " " + out_bit_W + " " + in_bit_H+ " " + out_bit_H);
+	end
+	
+	sendMinMaxTot_2: action  ==> outMinMax:[2,step_bit_H, step_bit_W]
+	end
+	
+	recvMinMax_2: action inMinMax:[resW,resH] ==> 
+	do
+		step_bit_W := resW>>2*ADDR_SIZE;
+		step_bit_H := resH>>2*ADDR_SIZE;
+		println("recvMM2 " + step_bit_W + " " + step_bit_H);
+	end
+	
+	recvMinMaxTot_2: action inMinMax:[res] ==> 
+	do
+		step_bit := res>>2*ADDR_SIZE;
+		println("recvMMT2 " + step_bit);
+	end
+	
+	bilinear_fixed_point_1: action ==>
+	do
+		New_Frac_bit := FRAC_BIT + step_bit;
+
+		//fixed point version of step;
+		Wstep := ( (FrameWidth-2)  << New_Frac_bit ) / ( new_cif_width-1)  ;
+		Hstep := ( (FrameHeight-2) << New_Frac_bit )  /( new_cif_height-1) ;
+		
+		foreach int i in 0 .. new_cif_height-1 do
+			foreach int j in 0 .. new_cif_width-1 do
+				foreach int c in 0 .. colors-1 do
+					calc_tempImg_1(i,j,c,Wstep,Hstep,New_Frac_bit,FrameWidth,colors,temp);
+					if temp>255 then
+						tmpImg[(i*new_cif_width+j)*colors + c] :=  255;
+					else
+						tmpImg[(i*new_cif_width+j)*colors + c] :=  temp;
+					end
+				end
+			end
+		end
+				
+	end
+	
+	bilinear_fixed_point_2: action ==>
+	do
+		New_Frac_bit := FRAC_BIT + step_bit;
+
+		//fixed point version of step;
+		Wstep := ( (nFrameWidth-2)  << New_Frac_bit ) / ( new_cif_width-1)  ;
+		Hstep := ( (nFrameHeight-2) << New_Frac_bit )  /( new_cif_height-1) ;
+
+
+
+		foreach int i in 0 .. new_cif_height-1 do
+			foreach int j in 0 .. new_cif_width-1 do
+				foreach int c in 0 .. colors-1 do
+					calc_tempImg_2(i,j,c,Wstep,Hstep,New_Frac_bit,nFrameWidth,colors,temp);
+					if temp>255 then
+						tmpImg[(i*new_cif_width+j)*colors + c] :=  255;
+					else
+						tmpImg[(i*new_cif_width+j)*colors + c] :=  temp;
+					end
+				end
+			end
+		end
+
+	end
+	
+	procedure calc_tempImg_1(int i, int j, int c, int Wstep, int Hstep, int New_Frac_bit, int twidth, int colors, int temp)
+	var int I, int J, int ndx, int W, int H, int ta, int tb, int tc, int td, int t0
+	begin	
+
+		temp := 0;
+
+        I := (i*(Hstep))>>New_Frac_bit; // THE PIXEL TO BE PROCESSED (in the original image)
+
+        J := (j*(Wstep))>>New_Frac_bit; // THE LINE TO BE PROCESSED (in the original image)
+
+        ndx := (I*(twidth)+ J) *colors ;
+
+		W :=((Wstep*j) & ((1<<New_Frac_bit) -1))>>(New_Frac_bit-FILTER_RESOLUTION ) ;
+
+        H :=((Hstep*i) & ((1<<New_Frac_bit) -1))>>(New_Frac_bit-FILTER_RESOLUTION ) ;
+
+ 		ta := image1[ndx+c];
+
+		tb := image1[ndx+colors+c];
+
+		ndx := ndx+((twidth)*colors);
+
+		tc := image1[ndx+c];
+
+		td := image1[ndx+colors+c];
+
+
+		t0 := (tb - ta) * W + (ta<<FILTER_RESOLUTION);
+
+       	temp := ((td - tc) * W + (tc<<FILTER_RESOLUTION) - t0) * H + (t0<<FILTER_RESOLUTION);
+
+		temp := temp>>(LAST_SHIFT<<1);
+
+	end
+
+	procedure calc_tempImg_2(int i, int j, int c, int Wstep, int Hstep, int New_Frac_bit, int twidth, int colors, int temp)
+	var int I, int J, int ndx, int W, int H, int ta, int tb, int tc, int td, int t0
+	begin	
+
+		temp := 0;
+
+        I := (i*(Hstep))>>New_Frac_bit; // THE PIXEL TO BE PROCESSED (in the original image)
+
+        J := (j*(Wstep))>>New_Frac_bit; // THE LINE TO BE PROCESSED (in the original image)
+
+        ndx := (I*(twidth)+ J) *colors ;
+
+		W :=((Wstep*j) & ((1<<New_Frac_bit) -1))>>(New_Frac_bit-FILTER_RESOLUTION ) ;
+
+        H :=((Hstep*i) & ((1<<New_Frac_bit) -1))>>(New_Frac_bit-FILTER_RESOLUTION ) ;
+
+ 		ta := image2[ndx+c];
+
+		tb := image2[ndx+colors+c];
+
+		ndx := ndx+((twidth)*colors);
+
+		tc := image2[ndx+c];
+
+		td := image2[ndx+colors+c];
+
+
+		t0 := (tb - ta) * W + (ta<<FILTER_RESOLUTION);
+
+       	temp := ((td - tc) * W + (tc<<FILTER_RESOLUTION) - t0) * H + (t0<<FILTER_RESOLUTION);
+
+		temp := temp>>(LAST_SHIFT<<1);
+
+	end
+	
+	sendSmearX_1: action  ==> outSmear:[data]
+	guard not endSmearX
+	var int data
+	do
+		if not sentSize then
+			data := new_cif_width-1;
+			sentSize := true;
+		else 
+			data := x_curve_a[i];
+		end
+		
+		if i<(new_cif_width-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearX := true;
+			sentSize := false;
+		end
+	end
+	
+	sendSmearX_2: action  ==> outSmear:[data]
+	guard not endSmearX
+	var int data
+	do
+		if not sentSize then
+			data := new_cif_width-1;
+			sentSize := true;
+		else 
+			data := x_curve_b[i];
+		end
+		
+		if i<(new_cif_width-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearX := true;
+			sentSize := false;
+		end
+	end
+	
+	recvSmearX_1: action inSmear:[res] ==> 
+	guard endSmearX
+	do
+		x_curve_a[i] := res;
+		
+		if i<(new_cif_width-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearX := false;
+		end
+	end
+	
+	recvSmearX_2: action inSmear:[res] ==> 
+	guard endSmearX
+	do
+		x_curve_b[i] := res;
+		
+		if i<(new_cif_width-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearX := false;
+		end
+	end
+	
+	sendSmearY_1: action  ==> outSmear:[data]
+	guard not endSmearY
+	var int data
+	do
+		if not sentSize then
+			data := new_cif_height;
+			sentSize := true;
+		else 
+			data := y_curve_a[i];
+		end
+		
+		if i<(new_cif_height-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearY := true;
+			sentSize := false;
+		end
+	end
+	
+	sendSmearY_2: action  ==> outSmear:[data]
+	guard not endSmearY
+	var int data
+	do
+		if not sentSize then
+			data := new_cif_height;
+			sentSize := true;
+		else 
+			data := y_curve_b[i];
+		end
+		
+		if i<(new_cif_height-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearY := true;
+			sentSize := false;
+		end
+	end
+	
+	recvSmearY_1: action inSmear:[res] ==> 
+	guard endSmearY
+	do
+		y_curve_a[i] := res;
+		
+		if i<(new_cif_height-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearY := false;
+		end
+	end
+	
+	recvSmearY_2: action inSmear:[res] ==> 
+	guard endSmearY
+	do
+		y_curve_b[i] := res;
+		
+		if i<(new_cif_height-1) then
+			i := i+1;
+		else
+			i := 0;
+			endSmearY := false;
+		end
+	end
+	
+	initCurves_1: action  ==>
+	do
+		foreach int j in 0 .. new_cif_height-1 do
+			foreach int i in 0 .. new_cif_width-1 do
+				y_curve_a[j] := y_curve_a[j] + tmpImg[j*new_cif_width+i];//somma elementi di ogni riga e genera Cy(j)
+				x_curve_a[i] := x_curve_a[i] + tmpImg[j*new_cif_width+i];//somma elementi di ogni colonna e genera Cx(j)
+			end
+		end
+	end
+	
+	initCurves_2: action  ==>
+	do
+		foreach int j in 0 .. new_cif_height-1 do
+			foreach int i in 0 .. new_cif_width-1 do
+				y_curve_b[j] := y_curve_b[j] + tmpImg[j*new_cif_width+i];//somma elementi di ogni riga e genera Cy(j)
+				x_curve_b[i] := x_curve_b[i] + tmpImg[j*new_cif_width+i];//somma elementi di ogni colonna e genera Cx(j)
+			end
+		end
+	end
+	
+	calcCurves_1: action  ==>
+	guard endSmearX and endSmearY
+	do
+		endSmearX := false;
+		endSmearY := true;
+	end
+
+	calcCurves_2: action  ==>
+	guard endSmearX and endSmearY
+	do
+		endSmearX := false;
+		endSmearY := true;
+	end
+	
+	updateVariables: action  ==>
+	do
+		updateVars();
+	end
+	
+	calcDiff: action  ==>
+	do
+		calcolaDiff();
+		println("off_h = " + off_h);
+		println("off_v = " + off_v);
+		println("End arm surveillance!");
+	end
+	
+	procedure updateVars()
+	begin
+
+		fixed_factorW := ( ( CIF_W/nFrameWidth * (1<<FRAC_BIT) ) );
+		fixed_factorH := ( ( CIF_H/nFrameHeight * (1<<FRAC_BIT) ) );
+
+		new_cif_width := ((nFrameWidth*fixed_factorW)>>FRAC_BIT );
+		new_cif_height := ((nFrameHeight*fixed_factorH)>>FRAC_BIT);
+
+	end
+
+	function abs(int a)-->int:
+		if a>=0 then a
+		else -a
+		end
+	end
+
+	procedure calcolaDiff()
+	var int noise_sens, int rileva[2], int tmp
+	begin
+		noise_sens := 100;  // per prova
+		rileva := [0,0];
+
+		foreach int x in 0 .. FrameWidth-1 do
+				
+			tmp := x_curve_a[x]-x_curve_b[x];
+			x_curve_a[x] := abs(tmp);
+
+			if (x_curve_a[x]<(2*noise_sens)) then
+				x_curve_a[x]:=x_curve_a[x]-noise_sens;
+			end
+				
+			if(x_curve_a[x]<0) then 
+				x_curve_a[x] := 0;
+			end
+			
+		end
+
+		foreach int y in 0 .. FrameHeight-1 do
+				
+			tmp := y_curve_a[y]-y_curve_b[y];
+			y_curve_a[y] := abs(tmp);
+
+			if (y_curve_a[y]<(2*noise_sens)) then
+				y_curve_a[y]:=y_curve_a[y]-noise_sens;
+			end
+				
+			if(y_curve_a[y]<0) then 
+				y_curve_a[y] := 0;
+			end
+			
+		end
+
+		foreach int x in 16 .. (FrameWidth-16) do
+				
+			rileva[0] := rileva[0] + x_curve_a[x];
+
+			off_h := rileva[0]/(FrameWidth-32);
+
+			foreach int y in 16 .. (FrameHeight-16) do
+
+				rileva[1] := rileva[1] + y_curve_a[y];
+
+				off_v := rileva[1]/(FrameHeight-32);
+			end
+		end
+		
+	end
+	
+	
+	schedule fsm init:
+		init (initApp) --> wait_1;
+		
+		wait_1 (sendNbit_1) --> n1;
+		n1 (recvNbit_1) --> wait_mm1;
+		wait_mm1 (sendMinMax_1) --> mm1;
+		mm1 (recvMinMax_1) --> wait_mmt1;
+		wait_mmt1 (sendMinMaxTot_1) --> mmt1;
+		mmt1 (recvMinMaxTot_1) --> b1;
+		b1 (bilinear_fixed_point_1) --> init_c1;
+		init_c1 (initCurves_1) --> wait_x1;
+		wait_x1 (sendSmearX_1) --> wait_x1;
+		wait_x1 (recvSmearX_1) --> wait_y1;
+		wait_y1 (sendSmearY_1) --> wait_y1;
+		wait_y1 (recvSmearY_1) --> curves_1;
+		curves_1 (calcCurves_1) --> upd;
+		upd (updateVariables) --> wait_2;
+		
+		wait_2 (sendNbit_2) --> n2;
+		n2 (recvNbit_2) --> wait_mm2;
+		wait_mm2 (sendMinMax_2) --> mm2;
+		mm2 (recvMinMax_2) --> wait_mmt2;
+		wait_mmt2 (sendMinMaxTot_2) --> mmt2;
+		mmt2 (recvMinMaxTot_2) --> b2;
+		b2 (bilinear_fixed_point_2) --> init_c2;
+		init_c2 (initCurves_2) --> wait_x2;
+		wait_x2 (sendSmearX_2) --> wait_x2;
+		wait_x2 (recvSmearX_2) --> wait_y2;
+		wait_y2 (sendSmearY_2) --> wait_y2;
+		wait_y2 (recvSmearY_2) --> curves_2;
+		curves_2 (calcCurves_2) --> diff;
+		
+		diff (calcDiff) --> stop;
+		stop (loop) --> stop;
+	end
+	
+	
+
+end

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="sub">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="subtracter">
+        <Class name="alba.cal.subtractor"/>
+    </Instance>
+    <Connection dst="subtracter" dst-port="in1" src="" src-port="in1">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="subtracter" dst-port="in2" src="" src-port="in2">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+    <Connection dst="" dst-port="out" src="subtracter" src-port="out">
+        <Attribute kind="Value" name="bufferSize">
+            <Expr kind="Literal" literal-kind="Integer" value="32"/>
+        </Attribute>
+    </Connection>
+</XDF>

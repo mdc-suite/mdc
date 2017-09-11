@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="TopTest">
+    <Instance id="Source">
+        <Class name="it.diee.unica.alba.common.Source"/>
+    </Instance>
+    <Instance id="TestNet">
+        <Class name="it.diee.unica.alba.networks.Corr"/>
+    </Instance>
+    <Instance id="Target">
+        <Class name="it.diee.unica.alba.common.Target"/>
+    </Instance>
+    <Connection dst="TestNet" dst-port="in1" src="Source" src-port="source1"/>
+    <Connection dst="Target" dst-port="result" src="TestNet" src-port="out"/>
+</XDF>

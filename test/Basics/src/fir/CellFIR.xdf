@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="CellFIR">
+    <Port kind="Input" name="data_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="acc_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="coeff">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="data_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="acc_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="acc">
+        <Class name="fir.Adder"/>
+    </Instance>
+    <Instance id="delay">
+        <Class name="fir.Delay"/>
+    </Instance>
+    <Instance id="mul">
+        <Class name="fir.Multiplier"/>
+    </Instance>
+    <Connection dst="mul" dst-port="in1" src="" src-port="data_in"/>
+    <Connection dst="acc" dst-port="in2" src="" src-port="acc_in"/>
+    <Connection dst="" dst-port="acc_out" src="acc" src-port="out1"/>
+    <Connection dst="" dst-port="data_out" src="delay" src-port="out1"/>
+    <Connection dst="mul" dst-port="in2" src="" src-port="coeff"/>
+    <Connection dst="acc" dst-port="in1" src="mul" src-port="out1"/>
+    <Connection dst="delay" dst-port="in1" src="" src-port="data_in"/>
+</XDF>

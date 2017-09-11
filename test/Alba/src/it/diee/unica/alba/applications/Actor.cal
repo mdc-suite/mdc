@@ -1,0 +1,24 @@
+package it.diee.unica.alba.applications;
+
+import it.diee.unica.alba.common.Constants.*;
+import it.diee.unica.alba.applications.Constants.*;
+ 
+actor Actor() float in1 ==> int out1:
+ 
+ action in1:[a] ==> out1:[floor(a)]
+ end
+ 
+ function floor_recursion (float x, int integer) --> int:
+		if (x-integer)>0.0 then
+			floor_recursion(x,integer+1)
+		else
+			integer
+		end	
+	end
+	
+	function floor(float x) --> int:
+		floor_recursion(x,0)
+	end
+	
+   
+end

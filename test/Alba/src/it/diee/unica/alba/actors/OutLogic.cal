@@ -1,0 +1,62 @@
+package it.diee.unica.alba.actors;
+
+actor OutLogic(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3 ==>  int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4 :
+
+	int(size=DATA_SIZE) partAcc := 0; 
+
+	int(size=DATA_SIZE) h[9] = [1,1,2,2,4,2,2,1,1];
+
+	uint(size=4) i := 0;
+	uint(size=4) j := 0;
+	
+	bool sendH := true;
+	bool sendAcc := true;
+	bool endAcc := false;
+	
+	iter: action in3:[tvData] ==> out2:[h[j]]
+	guard sendH and not endAcc
+	do			
+		//println("out logic i=" + i + ", j=" + j);			
+		sendH := false;
+		
+	end
+	
+	recvMul: action in1:[mulRes] ==> out3:[partAcc]
+	guard not sendH and sendAcc
+	do
+		if(j=0)then
+			partAcc := 0;
+		end			
+		//println("recv mul i=" + i + ", j=" + j);
+		sendAcc := false;
+	end
+
+	recvAcc: action in2:[accRes] ==> 
+	guard not sendH and not sendAcc
+	do
+		//println("recv acc i=" + i + ", j=" + j);
+		if j<8 then
+			j := j+1;
+		else if i<7 then
+				j := 0;
+				i := i+1;
+				endAcc := true;
+			else
+				j := 0;
+				i := 0;
+				endAcc := true;
+			end
+		end
+		partAcc := accRes;
+		sendH := true;
+		sendAcc := true;
+	end
+	
+	finalizeAcc: action ==> out1:[8], out4:[partAcc]
+	guard endAcc
+	do
+		//println("finalizing (i=" + i + ",j=" + j + ")=" + partAcc);
+		endAcc := false;
+	end
+	
+end

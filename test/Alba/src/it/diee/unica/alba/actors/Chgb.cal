@@ -1,0 +1,154 @@
+package it.diee.unica.alba.actors;
+
+actor Chgb(int DATA_SIZE=32,int ADDR_SIZE=8) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2, int(size=DATA_SIZE) in3, int(size=DATA_SIZE) in4 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5:
+	
+	int(size=DATA_SIZE) v1 := 0;
+	int(size=DATA_SIZE) v2 := 0;
+	int(size=DATA_SIZE) epslon := 2;
+	
+	uint(size=4) i := 0;
+	uint(size=4) j := 0;
+
+	bool endSend := false;
+	bool sentData := false;
+	bool iterI := false;
+	bool iterJ := false;
+	bool evalI := false;
+	bool evalJ := false;
+	bool returnZero := false;
+	
+	genAddr: action in1:[a] ==> addr_in:[address]
+	guard not (iterJ or iterI)
+	var int(size=ADDR_SIZE) address
+	do
+		address := i;
+		//println("saving " + a + " on address " + address);
+		if i < 15 then
+			i := i + 1;
+		else
+			//println("end save"); 
+			i := 1;
+			iterI := true;
+		end
+	end
+	
+	
+	readI: action  ==> addr_out:[address]
+	guard iterI and not evalI and not endSend and not sentData and not returnZero
+	var int(size=ADDR_SIZE) address
+	do
+		address := i;
+		//println("i=" + i);
+		
+		if i > 0 then
+			j := i+1;
+		end
+		
+		if i < 15 then
+			i := i+1;
+		else 	
+			i := 0;
+			endSend := true;
+		end
+		
+		sentData := true;
+
+	end
+	
+	recvDataI: action in2:[data] ==> 
+	guard iterI and sentData and not evalI
+	do
+		if i=1 then
+			v1 := data;
+		else //if (j=i) then
+				v2 := data;
+				evalI := true;
+			//end
+		end
+		sentData := false;
+	end
+	
+	sendEvalI: action ==> out1:[v1], out2:[v2]
+	guard evalI and not sentData and iterI
+	do
+		//println("send eval i=" + i);
+		sentData := true;
+	end
+	
+	recvEvalI: action in3:[ev1] ==>
+	guard evalI and sentData and iterI
+	do
+		//println("recv eval i=" + i);	
+		if (ev1 > epslon and i<14) then
+			//println("do j");
+			iterJ := true;
+			iterI := false;
+		end
+			
+		sentData := false;
+		evalI := false;
+	end
+	
+	readJ: action  ==> addr_out:[address]
+	guard iterJ and not endSend and not sentData and not evalJ and not returnZero
+	var int(size=ADDR_SIZE) address
+	do
+		address := j;
+		//println("read j=" + j);
+
+		sentData := true;
+	end
+	
+	recvAndSendEvalJ: action in2:[currBlk] ==> out1:[currBlk], out2:[v1], out3:[currBlk], out4:[v2]
+	guard iterJ and sentData and not evalJ
+	do
+		//println("recv and send eval j=" + j);
+		evalJ := true;
+	end
+	
+	recvEvalJ: action in3:[ev1], in4:[ev2] ==>
+	guard evalJ and sentData and iterJ
+	do	
+		//println("recv eval j=" + j);	
+		if (ev1 > epslon) and (ev2 > epslon) then
+			returnZero := true;
+		end
+		
+		if j < 13 then
+			j := j+1;
+		else 
+			iterJ := false;
+			iterI := true;
+		end	
+		
+		sentData := false;
+		evalJ := false;
+	end
+	
+	
+	endChgb: action  ==> out5:[res]
+	guard endSend or returnZero
+	var int(size=DATA_SIZE) res
+	do
+		//println("end chgb return 0 " + returnZero);
+		i := 0;
+		j := 0;
+	
+		if returnZero then
+			res :=	0;
+		else
+			res := 1;
+		end
+		
+		endSend := false;
+		sentData := false;
+		iterI := false;
+		iterJ := false;
+		evalI := false;
+		evalJ := false;
+		returnZero := false;
+
+	end
+	
+
+end

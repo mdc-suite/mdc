@@ -1,0 +1,18 @@
+package demo;
+
+actor MAC(int SIZE=32)
+	int(size=SIZE) data_in,
+	int(size=SIZE) coef,
+	int(size=SIZE) acc_in
+		 ==>
+	int(size=2*SIZE) acc_out
+:
+
+add: action data_in:[a], coef:[b], acc_in:[c] ==> acc_out:[a*b+c]
+do
+	//println("Multiplying " + a + "*" + b + "=" + (a*b));
+end
+
+
+
+end

@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor hsum_vsum(int DATA_SIZE=32) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=DATA_SIZE) out :
+
+end

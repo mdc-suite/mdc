@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Net1">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in3">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in4">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in5">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in6">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="mul0">
+        <Class name="dpm.Multiplier"/>
+    </Instance>
+    <Instance id="sub0">
+        <Class name="dpm.Subtractor"/>
+    </Instance>
+    <Instance id="add0">
+        <Class name="dpm.Adder"/>
+    </Instance>
+    <Instance id="add1">
+        <Class name="dpm.Adder"/>
+    </Instance>
+    <Instance id="sh0">
+        <Class name="dpm.Shifter"/>
+    </Instance>
+    <Connection dst="mul0" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="mul0" dst-port="in2" src="" src-port="in2"/>
+    <Connection dst="sub0" dst-port="in1" src="mul0" src-port="out1"/>
+    <Connection dst="add0" dst-port="in1" src="" src-port="in3"/>
+    <Connection dst="" dst-port="out1" src="sh0" src-port="out1"/>
+    <Connection dst="add0" dst-port="in2" src="" src-port="in4"/>
+    <Connection dst="add1" dst-port="in1" src="" src-port="in5"/>
+    <Connection dst="add1" dst-port="in2" src="" src-port="in6"/>
+    <Connection dst="sub0" dst-port="in2" src="add0" src-port="out1"/>
+    <Connection dst="sh0" dst-port="in2" src="add1" src-port="out1"/>
+    <Connection dst="sh0" dst-port="in1" src="sub0" src-port="out1"/>
+</XDF>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="cubic_conv">
+	<Port kind="Input" name="in1">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Port kind="Output" name="out">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Instance id="RAM">
+		<Class name="alba.cal.memory"/>
+		<Parameter name="WORD_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="control">
+		<Class name="alba.cal.control_1out_0par"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Parameter>
+	</Instance>
+	<Instance id="mul">
+		<Class name="alba.cal.mul_2x1"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="add">
+		<Class name="alba.cal.adder"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="cubic">
+		<Class name="alba.cal.cubic_sum"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shift">
+		<Class name="alba.cal.shifter_kernel_div"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="8"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="0"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Connection dst="control" dst-port="in2" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="data_in" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_in" src="control" src-port="addr_in">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="RAM" dst-port="address_out" src="control" src-port="addr_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="10"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="control" dst-port="in1" src="RAM" src-port="data_out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="cubic" dst-port="in2" src="control" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="mul" dst-port="in1" src="control" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="cubic" dst-port="in3" src="mul" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="mul" dst-port="in2" src="cubic" src-port="out1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add" dst-port="in2" src="cubic" src-port="out2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shift" dst-port="in1" src="cubic" src-port="out3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add" dst-port="in1" src="mul" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="cubic" dst-port="in1" src="add" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="cubic" dst-port="in4" src="shift" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="" dst-port="out" src="cubic" src-port="out4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+</XDF>

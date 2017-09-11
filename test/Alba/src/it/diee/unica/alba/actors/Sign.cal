@@ -1,0 +1,18 @@
+package it.diee.unica.alba.actors;
+
+actor Sign(int DATA_SIZE=32) int(size=DATA_SIZE) in1 ==> int(size=(DATA_SIZE)) out :
+
+	computeNbit: action in1:[a] ==> out:[sign]
+	var int(size=DATA_SIZE) sign
+	do
+		if(a<0) then
+			sign := -1;
+		else
+			sign := 1;
+		end
+		
+		//println("received " + a + ", res is " + sign);	
+	end
+
+
+end

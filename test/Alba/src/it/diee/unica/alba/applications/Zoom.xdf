@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Zoom">
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.networks.MaxMin"/>
+    </Instance>
+    <Instance id="Application">
+        <Class name="it.diee.unica.alba.applications.ZoomCtrl"/>
+    </Instance>
+    <Instance id="Abs">
+        <Class name="it.diee.unica.alba.networks.Absolute"/>
+    </Instance>
+    <Instance id="Median">
+        <Class name="it.diee.unica.alba.networks.Median"/>
+    </Instance>
+    <Instance id="Cubic">
+        <Class name="it.diee.unica.alba.networks.Cubic"/>
+    </Instance>
+    <Instance id="CubicConv">
+        <Class name="it.diee.unica.alba.networks.CubicConv"/>
+    </Instance>
+    <Instance id="Chgb">
+        <Class name="it.diee.unica.alba.networks.Chgb"/>
+    </Instance>
+    <Instance id="Sbwlabel">
+        <Class name="it.diee.unica.alba.networks.Sbwlabel"/>
+    </Instance>
+    <Connection dst="Application" dst-port="inMinMax" src="MinMax" src-port="outMM"/>
+    <Connection dst="MinMax" dst-port="in1" src="Application" src-port="outMinMax"/>
+    <Connection dst="Application" dst-port="inAbs" src="Abs" src-port="out"/>
+    <Connection dst="Abs" dst-port="in1" src="Application" src-port="outAbs"/>
+    <Connection dst="Chgb" dst-port="in1" src="Application" src-port="outChgb"/>
+    <Connection dst="Application" dst-port="inChgb" src="Chgb" src-port="out"/>
+    <Connection dst="Sbwlabel" dst-port="in1" src="Application" src-port="outSbwlabel"/>
+    <Connection dst="Application" dst-port="inSbwlabel" src="Sbwlabel" src-port="out"/>
+    <Connection dst="Cubic" dst-port="in1" src="Application" src-port="outCubic"/>
+    <Connection dst="Application" dst-port="inCubic" src="Cubic" src-port="out"/>
+    <Connection dst="CubicConv" dst-port="in1" src="Application" src-port="outCubicConv"/>
+    <Connection dst="Application" dst-port="inCubicConv" src="CubicConv" src-port="out"/>
+    <Connection dst="Median" dst-port="in1" src="Application" src-port="outMedian"/>
+    <Connection dst="Application" dst-port="inMedian" src="Median" src-port="out"/>
+</XDF>

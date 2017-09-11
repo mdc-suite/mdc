@@ -1,0 +1,112 @@
+package it.diee.unica.alba.actors;
+
+
+actor Clip(int DATA_SIZE=16,int ADDR_SIZE=6) int(size=DATA_SIZE) in1, int(size=2*DATA_SIZE+2*(ADDR_SIZE+1)) in2 ==> int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2 :
+
+	int (size=DATA_SIZE) x := 0;
+	int (size=DATA_SIZE) d := 0;
+	uint (size=2) idx := 0;
+	
+	bool bothPositive := false;
+	bool bothNegative := false;
+	bool opposite := false;
+	bool sentSize := false;
+	
+	receiveData: action in1:[a] ==> 
+	guard (not (bothPositive or bothNegative or opposite)) and idx<2
+	do
+		//println("receive " + a);
+		if idx = 0 then
+			x := a;
+		else
+			d := a;
+		end
+		
+		idx := idx + 1;
+	end
+	
+	evaluateData: action ==>
+	guard  idx = 2 and not sentSize
+	do
+		if x>0 and d>0 then
+		//println("evaluate bp");
+			bothPositive := true;
+		else if x<0 and d<0 then
+			//println("evaluate bn");
+				bothNegative := true;
+			else
+			//println("evaluate o");
+				opposite := true;
+			end	
+		end
+		idx := 0;
+	end
+	
+	sendSize: action  ==> out2:[a]
+	guard (bothPositive or bothNegative) and not sentSize
+	var int(size=DATA_SIZE) a
+	do
+		//println("sending size "  + sentSize);
+		a := 2;
+		sentSize := true;
+	end
+	
+	sendData: action ==> out2:[a]
+	guard (bothPositive or bothNegative) and sentSize and idx < 2
+	var int(size=DATA_SIZE) a
+	do
+		//println("both");
+		if idx = 0 then
+			a := x;
+		else if idx = 1 then
+				a := d;
+			end
+		end
+		
+		idx := idx + 1;
+	end
+	
+	oppositeData : action  ==> out1:[a]
+	guard opposite
+	var int(size=DATA_SIZE) a
+	do
+		//println("opposite");
+		a := 0;
+		opposite := false;
+	end
+	
+	compareData: action in2:[value] ==> out1:[a]
+	guard (bothPositive or bothNegative) and sentSize and idx = 2
+	var int(size=DATA_SIZE) a,
+		int(size=DATA_SIZE) max
+	do
+		max := value>>(2*(ADDR_SIZE)+DATA_SIZE);
+		//println("res max " + max);
+		if max = d then
+			if(bothPositive) then
+				//println("res bp x " + x);
+				a := x;
+				bothPositive := false;
+			else
+				//println("res bp d " + d);
+				a := d;
+				bothNegative := false;
+			end
+		else if max = x then
+				if(bothPositive) then
+				//println("res bn d " + d);
+					a := d;
+					bothPositive := false;
+				else
+				//println("res bn x " + x);
+					a := x;
+					bothNegative := false;
+				end
+			end
+		end
+		
+		idx := 0;
+		sentSize := false;
+	end
+		
+end

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="FIR_4tap">
+    <Port kind="Input" name="data_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="acc_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="c3">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="data_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="acc_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="64"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="stage_0">
+        <Class name="fir.CellFIR"/>
+    </Instance>
+    <Instance id="stage_1">
+        <Class name="fir.CellFIR"/>
+    </Instance>
+    <Instance id="stage_2">
+        <Class name="fir.CellFIR"/>
+    </Instance>
+    <Instance id="stage_3">
+        <Class name="fir.CellFIR"/>
+    </Instance>
+    <Connection dst="stage_1" dst-port="data_in" src="stage_0" src-port="data_out"/>
+    <Connection dst="stage_2" dst-port="data_in" src="stage_1" src-port="data_out"/>
+    <Connection dst="stage_3" dst-port="data_in" src="stage_2" src-port="data_out"/>
+    <Connection dst="stage_1" dst-port="acc_in" src="stage_0" src-port="acc_out"/>
+    <Connection dst="stage_2" dst-port="acc_in" src="stage_1" src-port="acc_out"/>
+    <Connection dst="stage_3" dst-port="acc_in" src="stage_2" src-port="acc_out"/>
+    <Connection dst="stage_0" dst-port="data_in" src="" src-port="data_in"/>
+    <Connection dst="stage_0" dst-port="acc_in" src="" src-port="acc_in"/>
+    <Connection dst="stage_0" dst-port="coeff" src="" src-port="c0"/>
+    <Connection dst="stage_1" dst-port="coeff" src="" src-port="c1"/>
+    <Connection dst="stage_2" dst-port="coeff" src="" src-port="c2"/>
+    <Connection dst="stage_3" dst-port="coeff" src="" src-port="c3"/>
+    <Connection dst="" dst-port="data_out" src="stage_3" src-port="data_out"/>
+    <Connection dst="" dst-port="acc_out" src="stage_3" src-port="acc_out"/>
+</XDF>

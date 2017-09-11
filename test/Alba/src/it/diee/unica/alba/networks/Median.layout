@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="203"/>
+		<vertex id="out" x="827" y="422"/>
+		<vertex id="Memory" x="301" y="72"/>
+		<vertex id="MedianCtrl" x="153" y="160"/>
+		<vertex id="Shift" x="708" y="412"/>
+		<vertex id="Add" x="301" y="227"/>
+		<vertex id="Sub1" x="470" y="324"/>
+		<vertex id="MinMax" x="153" y="375"/>
+		<vertex id="DecMM" x="301" y="402"/>
+		<vertex id="Sub2" x="589" y="402"/>
+	</vertices>
+</layout>

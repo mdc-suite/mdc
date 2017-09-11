@@ -1,0 +1,183 @@
+package it.diee.unica.alba.actors;
+
+actor SbwlabelCtrl(int DATA_SIZE=32,int ADDR_SIZE=8) int(size=DATA_SIZE) in1, int(size=DATA_SIZE) in2 ==> int(size=ADDR_SIZE) addr_in, int(size=ADDR_SIZE) addr_out, int(size=DATA_SIZE) out1, int(size=DATA_SIZE) out2, int(size=DATA_SIZE) out3, int(size=DATA_SIZE) out4, int(size=DATA_SIZE) out5, int(size=DATA_SIZE) out6, int(size=DATA_SIZE) out7, int(size=DATA_SIZE) out8 :
+	
+	uint(size=2) iter := 0;
+	uint(size=2) row := 0;
+	uint(size=2) column := 0;
+	uint(size=3) idx := 0;
+
+	bool goVsum := false;
+	bool goHsum := false;
+	bool done := false;
+	bool sentData := true;
+	
+	int(size=DATA_SIZE) recvData := 0;
+
+	genAddr: action in1:[a] ==> addr_in:[address]
+	guard not goVsum and not goHsum
+	var int(size=ADDR_SIZE) address
+	do
+		address := row*4 + column;
+		//println("saving " + a + " on address " + address);
+		if column < 3 then
+			column := column + 1;
+		else if row < 3 then
+				row := row + 1;
+				column := 0;
+			else
+				row := 0;
+				column := 0;
+				goHsum := true;
+			end
+		end
+	end
+	
+	sendtHsum: action ==> addr_out:[address]
+	guard goHsum
+	var int(size=ADDR_SIZE) address
+	do
+		address := iter*4 + column;
+		//println("send hsum " + address);
+		
+		if(column < 3) then
+			column := column + 1;
+		else
+			column := 0;
+			goVsum := true;
+			goHsum := false;
+		end	
+	end
+	
+	sendtVsum: action ==> addr_out:[address]
+	guard goVsum
+	var int(size=ADDR_SIZE) address
+	do
+		address := iter + row*4;
+		//println("send vsum " + address);
+		
+		if(row < 3) then
+			row := row + 1;
+		else
+			row := 0;
+			goVsum := false;
+			goHsum := true;
+			if iter < 3 then
+				iter := iter + 1;
+			else
+				iter := 0;
+				done := true;
+				goVsum := false;
+				goHsum := false;
+			end
+		end	
+	end
+	
+	acquireData: action in2:[data] ==> 
+	guard done and sentData
+	do
+		//println("aquire " + data);
+		recvData := data;
+		sentData := false;
+	end
+	
+	sendOut1: action ==> out1:[data]
+	guard not sentData and idx = 0 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out1");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+
+	sendOut2: action ==> out2:[data]
+	guard not sentData and idx = 1 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out2");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+
+	sendOut3: action ==> out3:[data]
+	guard not sentData and idx = 2 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out3");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+	
+	sendOut4: action ==> out4:[data]
+	guard not sentData and idx = 3 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out4");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+	
+	sendOut5: action ==> out5:[data]
+	guard not sentData and idx = 4 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out5");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+	
+	sendOut6: action ==> out6:[data]
+	guard not sentData and idx = 5 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out6");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+	
+	sendOut7: action ==> out7:[data]
+	guard not sentData and idx = 6 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out7");
+		data := recvData;
+		idx := idx + 1;
+		sentData := true;
+	end
+	
+	sendOut8: action ==> out8:[data]
+	guard not sentData and idx = 7 
+	var int(size=DATA_SIZE) data 
+	do
+		//println("out8");
+		data := recvData;
+		idx := 0;
+		sentData := true;
+		if iter < 3 then
+			iter := iter + 1;
+		end
+	end
+	
+	endSbwlabel: action  ==> 
+	guard done and sentData and iter = 3
+	do
+		//println("end sbw");
+		iter := 0;
+		row := 0;
+		column := 0;
+		idx := 0;
+
+		goVsum := false;
+		goHsum := false;
+		done := false;
+		sentData := true;
+	end
+	
+
+end

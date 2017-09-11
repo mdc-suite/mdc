@@ -1,0 +1,1335 @@
+package it.diee.unica.alba.applications;
+ 
+import it.diee.unica.alba.applications.Constants.*;
+import it.diee.unica.alba.applications.Data.*;
+import  std.video.Display.*;
+ 
+actor ZoomCtrl (int DATA_SIZE=8,int ADDR_SIZE=6) uint(size=32)inChgb, uint(size=8)inSbwlabel, uint(size=8)inCubicConv, uint(size=((2*ADDR_SIZE)+(2*DATA_SIZE)))inMinMax,  uint(size=8)inAbs, uint(size=8)inMedian, uint(size=8)inCubic ==> uint(size=8)outChgb, uint(size=8)outSbwlabel, uint(size=8)outCubicConv, uint(size=8)outMinMax, uint(size=8)outAbs, uint(size=8)outMedian, uint(size=8)outCubic :
+ 
+ 	int CUBIC :=  0;
+	int MEDIAN := 1;
+	int BILEVELMEDIAN := 2;
+	int CONSTANT := 3;
+	int DIAGONAL45 := 4;
+	int DIAGONAL135 := 5;
+ 	
+ 	uint resFloor := 0;
+ 			  
+	String interpScheme := "adaptive";
+	String imgType := "greyscale";
+		
+	int factor := 2 ;
+	int i := 0;
+	int j := 0;
+	
+	int p := 0;
+		
+	int twidth := TWIDTH_SMALL;		
+	int theigth := THEIGHT_SMALL;
+	int colors := COLORS_2;
+	
+	int intTimes := 0;
+	//double fracTimes := 0.0;
+	
+	uint(size=8) blk[16];	
+	uint biblk[16];
+	
+	int out_theigth := floor(theigth*factor);
+	int out_twidth = floor(twidth*factor) ;
+		
+	uint (size=8) inImg[twidth*theigth*colors] := imageSmall;
+	uint (size=8) origImg[twidth*theigth*colors];
+	//uint (size=16) outImg[out_twidth*out_theigth*colors];
+	
+	uint(size=8) rBuf[out_twidth*out_theigth];
+	uint(size=8) gBuf[out_twidth*out_theigth];
+	uint(size=8) bBuf[out_twidth*out_theigth];
+	
+	bool do_rgb_to_rgb := false;
+	bool do_ycbcr_to_ycbcr := false;
+	bool do_zoom := false;
+	bool do_adaptive_zoom := false;
+	
+	uint width := twidth;	
+	uint heigth := theigth;
+		
+	uint width3 := width+3;  /* width and heigth for extension image      */
+	uint heigth3 := heigth+3;
+	
+	uint nwidth1 := nwidth+1; /* width and heigth for tmpshort int which is add one more row/col on the top/left of zoomin image   */
+	uint nheigth1 := nheigth+1;
+	
+	uint nwidth1_gb=((twidth)<<1)+1 ;
+ 	uint nheigth1_gb=((theigth)<<1)+1 ;
+	
+	uint nwidth := 2*width;  /* width and heigth for zoomin image  */
+	uint nheigth := 2*heigth;
+	
+	uint(size=8) extImg[width3*heigth3*3];		
+	uint(size=8) tmpImg[nwidth1*nheigth1*3];
+	uint(size=8) zoominImg[nwidth*nheigth*3];
+	uint(size=8) zoomInRgb[nwidth*nheigth*3];
+	
+	int I := 0;
+	int J := 0;			
+	
+	int epslon := 2;
+	int bilevelflag := 0;
+	int m1 := 0;
+	int m2 := 0;
+	int m3 := 0;
+	
+	uint abs0 := 0;
+	uint abs1 := 0;
+	uint abs2 := 0;
+	uint abs3 := 0;
+	uint abs4 := 0;
+	uint abs5 := 0;
+	uint abs6 := 0;
+	
+	int mean :=0;
+	int size_V=16;
+	int num :=0;
+	int sumL := 0;
+	int sumU := 0;
+	int sumC1 := 0;
+	int sumC2 := 0;
+	
+	bool doChgb := false;
+	bool doAbs := false;
+	bool doBlockProc := false;
+	
+	bool doBilevelM1 := false;
+	bool doCubic135M1 := false;
+	bool doCubic45M1 := false;
+	bool doCubicConvM1 := false;
+	bool doMedianM1 := false;
+	bool doConstantM1 := false;
+	
+	bool doBilevelM2 := false;
+	bool doCubicM2 := false;
+	bool doMedianM2 := false;
+	bool doConstantM2 := false;
+	
+	bool doBilevelM3 := false;
+	bool doCubicM3 := false;
+	bool doMedianM3 := false;
+	bool doConstantM3 := false;
+	
+	uint (size=8) minvM1 := 0;
+	uint (size=8) maxvM1 := 0;
+	uint (size=8) minvM2 := 0;
+	uint (size=8) maxvM2 := 0;
+	uint (size=8) minvM3 := 0;
+	uint (size=8) maxvM3 := 0;
+	
+	int absM2 := 0;
+	int absM3 := 0;
+	
+	bool endGryBlk := false;
+	
+	
+	initZoom: action ==> 
+	do
+		println("Start zoom!");
+		
+		/* For color image, the default image space is ycbcr */	
+		if ( colors > 1 and imgType="greyscale") then
+			imgType := "ycbcr" ;
+		end
+
+		/* choose larger factor if user specifies the zoomin image's width and heigth */
+		if(nwidth >0|| nheigth >0) then
+			factor := max(floor(nwidth/twidth), floor(nheigth/theigth));
+		end
+
+		if(imgType="rgb") then
+		
+			do_rgb_to_rgb := true;
+			//outImg=rgb_to_rgb(tmpImg,twidth,theigth,factor,interpScheme) ;
+		
+		else if(imgType=("ycbcr")) then
+		
+			do_ycbcr_to_ycbcr := true;
+			//outImg=ycbcr_to_ycbcr(tmpImg,twidth,theigth,factor,interpScheme) ;
+		
+			else
+				do_zoom := true;
+				//outImg=zoom(tmpImg,twidth,theigth,factor,interpScheme) ; 
+		
+			end
+		
+		end
+		
+	end
+
+	rgb_to_rgb: action  ==> 
+	guard do_rgb_to_rgb
+	do
+		do_zoom := true;	
+		//outImg = zoom(tmpImg,width,heigth,factor,interpScheme) ;
+	end	
+		
+	ycbcr_to_ycbcr_1: action ==>
+	guard do_ycbcr_to_ycbcr
+	do
+		println("Rgb2ycc start!");
+		foreach int index in 0 .. twidth*theigth-1 do
+			rgb2ycbcr(inImg,index);
+		end
+		println("Rgb2ycc end!");
+		
+		do_zoom := true;
+		//outImg = zoom(tmpImg,width,heigth,factor,interpScheme) ;
+
+	end
+	
+	ycbcr_to_ycbcr_2: action ==>
+	guard do_ycbcr_to_ycbcr
+	do
+		println("Ycc2rgb start!");
+		/* convert YCBCR to RGB   */
+		foreach int index in 0 .. out_twidth*out_theigth-1 do
+			ycbcr2rgb(zoominImg, index);
+		end
+		println("Ycc2rgb end!");
+		println("End zoom!");
+		displayYUV_init();	
+	end
+	
+	zoom: action  ==>
+	guard do_zoom
+	do
+		intTimes := floor(log2(factor));
+		//intTimes := floor(log(factor)/log(2));
+		//fracTimes := factor/(1<<(intTimes)) ;
+		
+		if(interpScheme="adaptive") then
+			do_adaptive_zoom := true;
+			//foreach int t= in 1 .. intTimes-1 do
+			//	outImg=adaptive_zoom(tmpImg,twidth,theigth) ;
+			 //   twidth <<=1; theigth <<=1;
+			//end
+		else if(interpScheme="bicubic") then
+				println(" Sorry ,not yet implemented\n" );
+				// tmpImg=fract_zoom(tmpImg,twidth,theigth,&factor) ;
+			else if(interpScheme="bilinear") then
+					println(" Sorry, not yet implemented\n");
+				else if(interpScheme="constant") then
+						println(" Sorry ,not yet implemented\n" );
+					end
+				end
+			end
+		end
+		
+	end
+	
+	adaptive_zoom_1: action  ==>
+	guard do_adaptive_zoom
+	do
+		
+		//println("1");		
+		i := 0;		/* initializing zoominImg */ 	
+		j := 0;
+		while(i<nheigth) do
+			while(j<nwidth) do
+				
+				zoominImg[getZoominImg(i*3,j*3,nwidth)]   := origImg[getOrigImg(i*3/2,j*3/2,width)];	
+				zoominImg[getZoominImg(i*3,j*3+1,nwidth)] := origImg[getOrigImg(i*3/2,j*3/2+1,width)];
+				zoominImg[getZoominImg(i*3,j*3+2,nwidth)] := origImg[getOrigImg(i*3/2,j*3/2+2,width)];
+				
+				j := j+2;
+			end
+			j := 0;
+			i := i+2;
+		end
+				
+		i := 1;		/* initializing tmpImg */ 	
+		j := 1;
+		while(i<nheigth1) do
+			while(j<nwidth1) do
+				//if(i=3 and j=1) then
+				//	println("value=" + zoominImg[getZoominImg((i-1)*3,(j-1)*3,nwidth)] + ", index=" + getZoominImg((i-1)*3,(j-1)*3,nwidth));
+				//end
+				tmpImg[getTmpImg(i*3,j*3,nwidth1)]   := zoominImg[getZoominImg((i-1)*3,(j-1)*3,nwidth)];
+				tmpImg[getTmpImg(i*3,j*3+1,nwidth1)] := zoominImg[getZoominImg((i-1)*3,(j-1)*3+1,nwidth)];
+				tmpImg[getTmpImg(i*3,j*3+2,nwidth1)] := zoominImg[getZoominImg((i-1)*3,(j-1)*3+2,nwidth)];
+			
+				j := j+1;
+			end
+			j := 1;
+			i := i+1;
+		end
+		
+		extend_img(width,heigth,3);
+				
+		j := 2;
+		while(j<nwidth1) do
+			J := j>>1 ;
+			tmpImg[getTmpImg(0,j*3,nwidth1)]   := median(extImg[getExtImg(0,J*3,width3)],extImg[getExtImg(0,(J+1)*3,width3)],extImg[getExtImg(1*3,J*3,width3)],extImg[getExtImg(1*3,(J+1)*3,width3)]);
+			tmpImg[getTmpImg(0,j*3+1,nwidth1)] := median(extImg[getExtImg(0,J*3+1,width3)],extImg[getExtImg(0,(J+1)*3+1,width3)],extImg[getExtImg(1*3,J*3+1,width3)],extImg[getExtImg(1*3,(J+1)*3,width3)]+1) ;
+			tmpImg[getTmpImg(0,j*3+2,nwidth1)] := median(extImg[getExtImg(0,J*3+2,width3)],extImg[getExtImg(0,(J+1)*3+2,width3)],extImg[getExtImg(1*3,J*3+2,width3)],extImg[getExtImg(1*3,(J+1)*3,width3)]+2) ;
+			
+			j := j+2;
+		end
+				
+		i := 2;
+		while(i<nheigth1) do
+			I := i>>1 ;
+			tmpImg[getTmpImg(i*3,0,nwidth1)] := median(extImg[getExtImg(I*3,0,width3)],extImg[getExtImg((I+1)*3,0,width3)],extImg[getExtImg(I*3,1*3,width3)],extImg[getExtImg((I+1)*3,1*3,width3)]) ;
+			tmpImg[getTmpImg(i*3,1,nwidth1)] := median(extImg[getExtImg(I*3,1,width3)],extImg[getExtImg((I+1)*3,1,width3)],extImg[getExtImg(I*3,1*3+1,width3)],extImg[getExtImg((I+1)*3,1*3+1,width3)]) ;
+			tmpImg[getTmpImg(i*3,2,nwidth1)] := median(extImg[getExtImg(I*3,2,width3)],extImg[getExtImg((I+1)*3,2,width3)],extImg[getExtImg(I*3,1*3+2,width3)],extImg[getExtImg((I+1)*3,1*3+2,width3)]) ;
+			i := i+1;
+		end
+		
+		p := 0;
+		i := 1;
+		j := 1;
+			   
+	end
+	
+	procedure extend_img(int width,int heigth, int extension)
+	begin
+
+		foreach int i in 1 .. heigth do
+			foreach int j in 1 .. width do
+				extImg[getExtImg(i*3,j*3,width3)]   := origImg[getOrigImg((i-1)*3,(j-1)*3,width)];
+				extImg[getExtImg(i*3,j*3+1,width3)] := origImg[getOrigImg((i-1)*3,(j-1)*3+1,width)];
+		       	extImg[getExtImg(i*3,j*3+2,width3)] := origImg[getOrigImg((i-1)*3,(j-1)*3+2,width)];
+			end
+		end
+
+		if(extension=1) then     /* symmetric  extension */
+			
+			foreach int i in 0 .. heigth3-1 do
+		    	extImg[getExtImg(i*3,0,width3)] := extImg[getExtImg(i*3,1*3,width3)];
+		        extImg[getExtImg(i*3,1,width3)] := extImg[getExtImg(i*3,1*3+1,width3)];
+		        extImg[getExtImg(i*3,2,width3)] := extImg[getExtImg(i*3,1*3+2,width3)];
+
+		        extImg[getExtImg(i*3,(width3-2)*3,width3)]   := extImg[getExtImg(i*3,(width3-3)*3,width3)];
+		        extImg[getExtImg(i*3,(width3-2)*3+1,width3)] := extImg[getExtImg(i*3,(width3-3)*3+1,width3)];
+		        extImg[getExtImg(i*3,(width3-2)*3+2,width3)] := extImg[getExtImg(i*3,(width3-3)*3+2,width3)];
+
+		        extImg[getExtImg(i*3,(width3-1)*3,width3)] 	 := extImg[getExtImg(i*3,(width3-2)*3,width3)];
+		        extImg[getExtImg(i*3,(width3-1)*3+1,width3)] := extImg[getExtImg(i*3,(width3-2)*3+1,width3)];
+		        extImg[getExtImg(i*3,(width3-1)*3+2,width3)] := extImg[getExtImg(i*3,(width3-2)*3+2,width3)];
+			end
+
+		    foreach int j in 0 .. width3-1 do
+		    	extImg[getExtImg(0,j*3,width3)]   := extImg[getExtImg(1*3,j*3,width3)];
+		        extImg[getExtImg(0,j*3+1,width3)] := extImg[getExtImg(1*3,j*3+1,width3)];
+		        extImg[getExtImg(0,j*3+2,width3)] := extImg[getExtImg(1*3,j*3+2,width3)];
+
+		        extImg[getExtImg((heigth3-2)*3,j*3,width3)]   := extImg[getExtImg((heigth3-3)*3,j*3,width3)];
+		        extImg[getExtImg((heigth3-2)*3,j*3+1,width3)] := extImg[getExtImg((heigth3-3)*3,j*3+1,width3)];
+		        extImg[getExtImg((heigth3-2)*3,j*3+2,width3)] := extImg[getExtImg((heigth3-3)*3,j*3+2,width3)];
+
+		        extImg[getExtImg((heigth3-1)*3,j*3,width3)]   := extImg[getExtImg(heigth3-2,j*3,width3)];
+		        extImg[getExtImg((heigth3-1)*3,j*3+1,width3)] := extImg[getExtImg(heigth3-2,j*3+1,width3)];
+		        extImg[getExtImg((heigth3-1)*3,j*3+2,width3)] := extImg[getExtImg(heigth3-2,j*3+2,width3)];
+			end
+	
+		else if(extension=2) then   /* linear extension   */
+				
+				foreach int i in 0 .. heigth3-1 do
+		              extImg[getExtImg(i*3,0,width3)] := (2*extImg[getExtImg(i*3,1*3,width3)]-extImg[getExtImg(i*3,2*3,width3)]);
+		              extImg[getExtImg(i*3,1,width3)] := (2*extImg[getExtImg(i*3,1*3+1,width3)]-extImg[getExtImg(i*3,2*3+1,width3)]);
+		              extImg[getExtImg(i*3,2,width3)] := (2*extImg[getExtImg(i*3,1*3+2,width3)]-extImg[getExtImg(i*3,2*3+2,width3)]);
+
+		              extImg[getExtImg(i*3,(width3-2)*3,width3)]   := (2*extImg[getExtImg(i*3,(width3-3)*3,width3)]-extImg[getExtImg(i*3,(width3-4)*3,width3)]);
+		              extImg[getExtImg(i*3,(width3-2)*3+1,width3)] := (2*extImg[getExtImg(i*3,(width3-3)*3+1,width3)]-extImg[getExtImg(i*3,(width3-4)*3+1,width3)]);
+		              extImg[getExtImg(i*3,(width3-2)*3+2,width3)] := (2*extImg[getExtImg(i*3,(width3-3)*3+2,width3)]-extImg[getExtImg(i*3,(width3-4)*3+2,width3)]);
+
+		              extImg[getExtImg(i*3,(width3-1)*3,width3)]   := (2*extImg[getExtImg(i*3,(width3-2)*3,width3)]-extImg[getExtImg(i*3,(width3-3)*3,width3)]);
+		              extImg[getExtImg(i*3,(width3-1)*3+1,width3)] := (2*extImg[getExtImg(i*3,(width3-2)*3+1,width3)]-extImg[getExtImg(i*3,(width3-3)*3+1,width3)]);
+		              extImg[getExtImg(i*3,(width3-1)*3+2,width3)] := (2*extImg[getExtImg(i*3,(width3-2)*3+2,width3)]-extImg[getExtImg(i*3,(width3-3)*3+2,width3)]);
+			   	end
+
+		        foreach int j in 0 .. width3-1 do
+		        	 extImg[getExtImg(0,j*3,width3)]   := (2*extImg[getExtImg(1*3,j*3,width3)]-extImg[getExtImg(2*3,j*3,width3)]);
+		        	 extImg[getExtImg(0,j*3+1,width3)] := (2*extImg[getExtImg(1*3,j*3+1,width3)]-extImg[getExtImg(2*3,j*3+1,width3)]);
+		        	 extImg[getExtImg(0,j*3+2,width3)] := (2*extImg[getExtImg(1*3,j*3+2,width3)]-extImg[getExtImg(2*3,j*3+2,width3)]);
+
+		             extImg[getExtImg((heigth3-2)*3,j*3,width3)]   := (2*extImg[getExtImg((heigth3-3)*3,j*3,width3)]-extImg[getExtImg((heigth3-4)*3,j*3,width3)]);
+		             extImg[getExtImg((heigth3-2)*3,j*3+1,width3)] := (2*extImg[getExtImg((heigth3-3)*3,j*3+1,width3)]-extImg[getExtImg((heigth3-4)*3,j*3+1,width3)]);
+		             extImg[getExtImg((heigth3-2)*3,j*3+2,width3)] := (2*extImg[getExtImg((heigth3-3)*3,j*3+2,width3)]-extImg[getExtImg((heigth3-4)*3,j*3+2,width3)]);
+
+		             extImg[getExtImg((heigth3-1)*3,j*3,width3)]   := (2*extImg[getExtImg((heigth3-2)*3,j*3,width3)]-extImg[getExtImg((heigth3-3)*3,j,width3)]);
+		             extImg[getExtImg((heigth3-1)*3,j*3+1,width3)] := (2*extImg[getExtImg((heigth3-2)*3,j*3+1,width3)]-extImg[getExtImg((heigth3-3)*3,j*3+1,width3)]);
+		             extImg[getExtImg((heigth3-1)*3,j*3+2,width3)] := (2*extImg[getExtImg((heigth3-2)*3,j*3+2,width3)]-extImg[getExtImg((heigth3-3)*3,j*3+2,width3)]);
+		        end
+
+		     else if(extension=3) then              /* quadratic extension */
+		     		foreach int i in 0 .. heigth3-1 do
+		        	 
+			              extImg[getExtImg(i*3,0,width3)] := (3*extImg[getExtImg(i*3,1*3,width3)]-3*extImg[getExtImg(i*3,2*3,width3)]+extImg[getExtImg(i*3,3*3,width3)]);
+			              extImg[getExtImg(i*3,1,width3)] := (3*extImg[getExtImg(i*3,1*3+1,width3)]-3*extImg[getExtImg(i*3,2*3+1,width3)]+extImg[getExtImg(i*3,3*3+1,width3)]);
+			              extImg[getExtImg(i*3,2,width3)] := (3*extImg[getExtImg(i*3,1*3+2,width3)]-3*extImg[getExtImg(i*3,2*3+2,width3)]+extImg[getExtImg(i*3,3*3+2,width3)]);
+	
+			              extImg[getExtImg(i*3,(width3-2)*3,width3)]   := (3*extImg[getExtImg(i*3,(width3-3)*3,width3)]-3*extImg[getExtImg(i*3,(width3-4)*3,width3)]+extImg[getExtImg(i*3,(width3-5)*3,width3)]);
+			              extImg[getExtImg(i*3,(width3-2)*3+1,width3)] := (3*extImg[getExtImg(i*3,(width3-3)*3+1,width3)]-3*extImg[getExtImg(i*3,(width3-4)*3+1,width3)]+extImg[getExtImg(i*3,(width3-5)*3+1,width3)]);
+			              extImg[getExtImg(i*3,(width3-2)*3+2,width3)] := (3*extImg[getExtImg(i*3,(width3-3)*3+2,width3)]-3*extImg[getExtImg(i*3,(width3-4)*3+2,width3)]+extImg[getExtImg(i*3,(width3-5)*3+2,width3)]);
+	
+			              extImg[getExtImg(i*3,(width3-1)*3,width3)]   := (3*extImg[getExtImg(i*3,(width3-2)*3,width3)]-3*extImg[getExtImg(i*3,(width3-3)*3,width3)]+extImg[getExtImg(i*3,(width3-4)*3,width3)]);
+			              extImg[getExtImg(i*3,(width3-1)*3+1,width3)] := (3*extImg[getExtImg(i*3,(width3-2)*3+1,width3)]-3*extImg[getExtImg(i*3,(width3-3)*3+1,width3)]+extImg[getExtImg(i*3,(width3-4)*3+1,width3)]);
+			              extImg[getExtImg(i*3,(width3-1)*3+2,width3)] := (3*extImg[getExtImg(i*3,(width3-2)*3+2,width3)]-3*extImg[getExtImg(i*3,(width3-3)*3+2,width3)]+extImg[getExtImg(i*3,(width3-4)*3+2,width3)]);
+			           end
+
+		         foreach int j in 0 .. width3-1 do
+		              
+		        	 extImg[getExtImg(0,j*3,width3)]   := (3*extImg[getExtImg(1*3,j*3,width3)]-3*extImg[getExtImg(2*3,j*3,width3)]+extImg[getExtImg(3*3,j*3,width3)]);
+		             extImg[getExtImg(0,j*3+1,width3)] := (3*extImg[getExtImg(1*3,j*3+1,width3)]-3*extImg[getExtImg(2*3,j*3+1,width3)]+extImg[getExtImg(3*3,j*3+1,width3)]);
+		             extImg[getExtImg(0,j*3+2,width3)] := (3*extImg[getExtImg(1*3,j*3+2,width3)]-3*extImg[getExtImg(2*3,j*3+2,width3)]+extImg[getExtImg(3*3,j*3+2,width3)]);
+
+		             extImg[getExtImg((heigth3-2)*3,j*3,width3)]   := (3*extImg[getExtImg((heigth3-3)*3,j*3,width3)]-3*extImg[getExtImg((heigth3-4)*3,j*3,width3)]+extImg[getExtImg((heigth3-5)*3,j*3,width3)]);
+		             extImg[getExtImg((heigth3-2)*3,j*3+1,width3)] := (3*extImg[getExtImg((heigth3-3)*3,j*3+1,width3)]-3*extImg[getExtImg((heigth3-4)*3,j*3+1,width3)]+extImg[getExtImg((heigth3-5)*3,j*3+1,width3)]);
+		             extImg[getExtImg((heigth3-2)*3,j*3+2,width3)] := (3*extImg[getExtImg((heigth3-3)*3,j*3+2,width3)]-3*extImg[getExtImg((heigth3-4)*3,j*3+2,width3)]+extImg[getExtImg((heigth3-5)*3,j*3+2,width3)]);
+
+		             extImg[getExtImg((heigth3-1)*3,j*3,width3)]   := (3*extImg[getExtImg((heigth3-2)*3,j*3,width3)]-3*extImg[getExtImg((heigth3-3)*3,j*3,width3)]+extImg[getExtImg((heigth3-4)*3,j*3,width3)]);
+		             extImg[getExtImg((heigth3-1)*3,j*3+1,width3)] := (3*extImg[getExtImg((heigth3-2)*3,j*3+1,width3)]-3*extImg[getExtImg((heigth3-3)*3,j*3+1,width3)]+extImg[getExtImg((heigth3-4)*3,j*3+1,width3)]);
+		             extImg[getExtImg((heigth3-1)*3,j*3+2,width3)] := (3*extImg[getExtImg((heigth3-2)*3,j*3+2,width3)]-3*extImg[getExtImg((heigth3-3)*3,j*3+2,width3)]+extImg[getExtImg((heigth3-4)*3,j*3+2,width3)]);
+
+		        end
+			
+				end
+			end
+		end
+				
+		p := 0;
+		i := 1;
+		j := 1;
+		
+	end
+	
+	greyblack_interpolation_1: action ==>
+	guard not endGryBlk
+	do
+		//println("******gb1");
+		//println("p=" + p + ", i=" + i + ", j=" + j);
+		//for(p=0;p<3;p++){
+			//for(i=1;i<nheigth1-1;i+=2){
+     	I := (i-1)/2 ;
+     			//for(j=1;j<nwidth1-1;j+=2){
+	   	J := (j-1)/2;
+       
+       	foreach int l in 0 .. 3 do
+       		foreach int k in 0 .. 3 do
+       			//println("I=" + I + " J=" + J + " k=" + k + " l=" + l);
+          		blk[k*4+l] := extImg[getExtImg((I+k)*3,(J+l)*3+p,width3)];//genera i sottoblocchi 4x4 con origine nei nuovi pixel dell'immagine zoomata
+			end
+		end
+
+		doChgb := true;
+			
+	end
+	
+	send_chgb: action ==> outChgb:[2,blk0,blk1,blk2,blk3,
+									blk4,blk5,blk6,blk7,
+									blk8,blk9,blk10,blk11,
+									blk12,blk13,blk14,blk15]
+	guard doChgb
+	var uint blk0, uint blk1, uint blk2, uint blk3,
+		uint blk4, uint blk5, uint blk6, uint blk7,
+		uint blk8, uint blk9, uint blk10, uint blk11,
+		uint blk12, uint blk13, uint blk14, uint blk15
+	do
+		//println("send chgb");
+		blk0 := blk[0];
+		blk1 := blk[1];
+		blk2 := blk[2];
+		blk3 := blk[3];
+		blk4 := blk[4];
+		blk5 := blk[5];
+		blk6 := blk[6];
+		blk7 := blk[7];
+		blk8 := blk[8];
+		blk9 := blk[9];
+		blk10 := blk[10];
+		blk11 := blk[11];
+		blk12 := blk[12];
+		blk13 := blk[13];
+		blk14 := blk[14];
+		blk15 := blk[15];
+	end
+	
+	recv_chgb: action inChgb:[result] ==>
+	guard doChgb
+	do
+		//println("recv chgb");
+		bilevelflag := result;
+	end
+	
+	greyblack_interpolation_2: action ==>
+	guard not endGryBlk
+	do
+		//println("******gb2");
+		//println("chgb=" + bilevelflag);
+		doChgb := false;
+		if (bilevelflag=1) then
+			doAbs := true;
+		end	
+	end
+	
+	
+	send_abs: action ==> outAbs:[data0,data1,data2,data3,data4,data5,data6]
+	guard doAbs
+	var int data0, int data1, int data2, int data3, int data4, int data5, int data6
+	do
+		//println("send abs");
+		data0 := blk[getBlk(1,1)]-blk[getBlk(0,1)]; 
+		data1 := blk[getBlk(1,1)]-blk[getBlk(0,2)]; 
+		data2 := blk[getBlk(1,1)]-blk[getBlk(1,0)];
+		data3 := blk[getBlk(1,1)]-blk[getBlk(1,2)]; 
+		data4 := blk[getBlk(1,1)]-blk[getBlk(2,0)];
+		data5 := blk[getBlk(1,1)]-blk[getBlk(2,1)];
+		data6 := blk[getBlk(1,1)]-blk[getBlk(2,2)]; 
+	end 
+	
+	recv_abs: action inAbs:[res0,res1,res2,res3,res4,res5,res6] ==>
+	guard doAbs
+	do
+		//println("recv abs");
+		abs0 := res0;
+		abs1 := res1;
+		abs2 := res2;
+		abs3 := res3;
+		abs4 := res4;
+		abs5 := res5;
+		abs6 := res6;
+	end
+	
+	none_abs: action  ==>
+	guard not doAbs
+	do
+		//println("none abs");
+	end
+	
+	
+	greyblack_interpolation_3: action ==>
+	guard not endGryBlk
+	do
+		//println("******gb3");
+		doAbs := false;
+		if (bilevelflag=1) then    /* bilevel block  */			            
+			if (abs0>epslon and abs1>epslon and abs2>epslon and /* check single pixel different from the background color */
+				abs3>epslon and abs4>epslon and abs5>epslon and abs6>epslon) then
+				m1 := CONSTANT;
+			    m2 := CONSTANT;
+			    m3 := CONSTANT;
+			else
+			    m1 := BILEVELMEDIAN;
+			    m2 := m1 ;
+			    m3 := m1 ;
+		 	end				   	
+		else                /* grayscale block */
+			doBlockProc := true;
+		end	
+	end
+	
+	blockProc_1: action ==>
+	guard doBlockProc
+	do
+	
+		mean := 0;
+
+		/* get bilevel block from blk using mean as the threshold  */
+		foreach int idx in 0 .. size_V-1 do
+			mean := mean + blk[idx];
+		end
+		
+		mean := mean / size_V;
+		
+		foreach int idx in 0 .. size_V-1 do
+			if (blk[idx]>mean ) then
+				biblk[idx] := 1;
+			else
+				biblk[idx] := 0;
+			end
+		end
+		
+		foreach int idx in 0 .. 3 do					
+			/* check strong edge */
+			sumU := sumU + biblk[getBlk(1,idx)];			
+			sumL := sumL + biblk[getBlk(idx,1)];			
+			sumC1 := sumC1 + biblk[getBlk(idx,idx)];			
+			sumC2 := sumC2 + biblk[getBlk(idx,3-idx)];
+		end
+		
+	end
+	
+	send_sbwlabel: action  ==> outSbwlabel:[biblk[0],biblk[1],biblk[2],biblk[3],
+											biblk[4],biblk[5],biblk[6],biblk[7],
+											biblk[8],biblk[9],biblk[10],biblk[11],
+											biblk[12],biblk[13],biblk[14],biblk[15]]
+	guard doBlockProc
+	do
+		//foreach int hhh in 0 .. 15 do
+		//println(biblk[hhh]);
+		//end
+	end	
+	
+	recv_sbwlabel: action inSbwlabel:[result] ==> 
+	guard doBlockProc
+	do
+		//println("recv sbw=" + result);
+		num := result;
+	end
+	
+	blockProc_2: action ==>
+	guard doBlockProc
+	do    
+		if (num=1) then  /* edge block */
+			 m1 := MEDIAN ;
+			 m2 := m1 ;
+			 m3 := m1 ;  
+		else		        
+			m1 := CUBIC ;			        
+			m2 := m1 ;			        
+			m3 := m1 ;
+		end
+
+		//println("sumU=" + sumU + ", sumL=" + sumL + 
+		//		", sumC1=" + sumC1 + ", sumC2=" + sumC2
+		//);
+
+		// per i strong edge ho tutti 1 o tutti 0 (sopra o sotto la media) sulla stessa riga/colonna/diagonale			     
+		if(sumU=0||sumU=4 ) then//se è strong horizontal edge interpolazione cubica invece che mediana
+			m3 := CUBIC ;
+		end
+		if(sumL=0||sumL=4 ) then// se è strong vertical edge interpolazione cubica invece che mediana
+		 	m2 := CUBIC ;
+		end     
+		if(sumC1=0||sumC1=4) then// se è strong diagonal 135 degree edge interpolazione cubica invece che mediana
+		 	m1 := DIAGONAL45 ;
+		end
+		if(sumC2=0||sumC2=4) then// se è strong diagonal 45 degree edge interpolazione cubica invece che mediana
+		 	m1 := DIAGONAL135 ;
+		end
+		
+		sumU := 0;
+		sumL := 0;
+		sumC1 := 0;
+		sumC2 := 0;
+		 
+	end	
+	
+	none_blockProc: action ==>
+	guard not doBlockProc
+	end
+	
+	greyblack_interpolation_4: action ==>
+	guard not endGryBlk
+	do
+		//println("******gb4");
+		doBlockProc := false;
+		
+		/* do interpolation of C */
+		if m1=CONSTANT then
+			//println("const m1");
+			doConstantM1 := true;
+		else if m1=CUBIC then
+				//println("cubic m1");
+				doCubicConvM1 := true;
+			else if m1=MEDIAN then
+					doMedianM1 := true;
+				else if m1 = DIAGONAL45 then
+						//println("d45 m1");
+						doCubic45M1 := true;
+					else if m1 = DIAGONAL135 then
+							//println("d135 m1");
+						 doCubic135M1 := true;
+						else if m1=BILEVELMEDIAN then
+						 		doBilevelM1 := true;
+							else 
+								println("Wrong interpolation filter for C\n") ;
+			         		end
+			         	end
+			       	end
+				end
+			end
+		end
+		
+		/* do interpolation of L */
+		if m2=MEDIAN then
+			doMedianM2 := true;
+		else if m2=CUBIC then
+				//println("cubic m2");
+				doCubicM2 := true;
+			else if m2=CONSTANT then
+					//println("const m2");
+					doConstantM2 := true;
+				else if m2=BILEVELMEDIAN then
+						doBilevelM2 := true;
+					else 
+						println("Wrong interpolation filter for L\n") ;
+			        end
+			    end
+			end
+		end
+		
+		/* do interpolation of U */
+		if m3=MEDIAN then
+			doMedianM3 := true;
+		else if m3=CUBIC then
+				//println("cubic m3");
+				doCubicM3 := true;
+			else if m3=CONSTANT then
+					//println("const m3");
+					doConstantM3 := true;
+				else if m3=BILEVELMEDIAN then
+						doBilevelM3 := true;
+					else 
+						println("Wrong interpolation filter for U\n") ;
+			        end
+			    end
+			end
+		end
+		
+		//if(p=0 and i=1) then
+		//	println(m1 + "," + m2 + "," + m3);
+		//end
+		
+	end
+	
+	
+	// m1 ----------------------------------------------------------------//
+	constM1: action  ==>
+	guard doConstantM1
+	do
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := blk[getBlk(1,1)]; 
+	end
+	
+	send_cubicConvM1: action  ==> outCubicConv:[blk[0],blk[1],blk[2],blk[3],
+											blk[4],blk[5],blk[6],blk[7],
+											blk[8],blk[9],blk[10],blk[11],
+											blk[12],blk[13],blk[14],blk[15]]
+	guard doCubicConvM1
+	do		
+		//println("send cubic conv m1");
+		/*if i=1 and p=0 and j=1 then
+			foreach int hhh in 0 .. 15 do
+				println("cubconv blk[" + hhh + "]=" + blk[hhh]);
+			end
+		end*/
+	end
+	
+	recv_cubicConvM1: action inCubicConv:[result] ==>
+	guard doCubicConvM1
+	do	
+		/*if 	i=1 and p=0 and j=1 then	
+			println("recv cubic conv m1(" + getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb) + ") = " + result);
+		end*/
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := result;//(short) cubic_conv(blk);
+	end
+	
+	send_medianM1: action  ==> outMedian:[4,blk[getBlk(1,1)],blk[getBlk(1,2)],blk[getBlk(2,1)],blk[getBlk(2,2)]]
+	guard doMedianM1
+	do		
+		//println("send median m1");
+	end
+	
+	recv_medianM1: action inMedian:[result] ==>
+	guard doMedianM1
+	do		
+		/*if(p=0 and i=1 and j=27) then
+			println("median m1 " + result);
+		end*/
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := result;
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := (-((blk[getBlk(1,1)]+blk[getBlk(1,2)]+blk[getBlk(2,1)]+blk[getBlk(2,2)])>>2)+(tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]<<1)) ;
+		/*if(p=0 and i=1 and j=27) then
+			println("median m1 " + tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]);
+		end*/		
+	end
+	
+	send_diagonal45M1: action  ==> outCubic:[blk[getBlk(0,0)],blk[getBlk(1,1)],blk[getBlk(2,2)],blk[getBlk(3,3)]]
+	guard doCubic45M1
+	do		
+		//println("send cubic45 m1");
+	end
+	
+	recv_diagonal45M1: action inCubic:[result] ==>
+	guard doCubic45M1
+	do		
+		//println("recv cubic45 m1");
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := result;		
+	end
+	
+	send_diagonal135M1: action  ==> outCubic:[blk[getBlk(0,3)],blk[getBlk(1,2)],blk[getBlk(2,1)],blk[getBlk(3,0)]]
+	guard doCubic135M1
+	do		
+		//println("send cubic135 m1");
+	end
+	
+	recv_diagonal135M1: action inCubic:[result] ==>
+	guard doCubic135M1
+	do		
+		//println("recv cubic135 m1");
+		tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := result;		
+	end
+	
+	send_bilevelM1: action  ==> outMinMax:[4,blk[getBlk(1,1)],blk[getBlk(1,2)],blk[getBlk(2,1)],blk[getBlk(2,2)]										]
+	guard doBilevelM1
+	do	
+	end
+	
+	recv_bilevelM1: action inMinMax:[result] ==>
+	guard doBilevelM1
+	do
+						
+		minvM1 := result>>(2*ADDR_SIZE);
+		maxvM1 := result>>(2*ADDR_SIZE+DATA_SIZE);
+		if( blk[getBlk(1,1)]+blk[getBlk(1,2)]+blk[getBlk(2,1)]+blk[getBlk(2,2)] > (minvM1+maxvM1+2*epslon)*2   ) then  /* more maxv than minv */
+				tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := maxvM1;
+			else
+				tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := minvM1;
+			end
+	end	
+	//--------------------------------------------------------------------//
+	
+	
+	// m2 ----------------------------------------------------------------//
+	send_medianM2: action  ==> outMedian:[4,blk[getBlk(1,1)],blk[getBlk(2,1)],tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)],tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)]]
+	guard doMedianM2
+	do		
+		//println("send median m2");
+		//if(p=0 and i=7 and j=21) then		
+		//	println("sending median m2 " + blk[getBlk(1,1)] + "," + blk[getBlk(2,1)] + "," + 
+		//	tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] + "," + tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)]);
+		//end
+	end
+	
+	recv_medianM2: action inMedian:[result] ==>
+	guard doMedianM2
+	do		
+		//println("recv median m2");
+		tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := result;
+		tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := (-(blk[getBlk(1,1)]+blk[getBlk(2,1)]+tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]+tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)]>>2)+(tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)]<<1)) ;
+	end
+	
+	send_cubicM2: action  ==> outCubic:[blk[getBlk(0,1)],blk[getBlk(1,1)],blk[getBlk(2,1)],blk[getBlk(3,1)]]
+	guard doCubicM2
+	do		
+		//println("send cubic m2");
+	end
+	
+	recv_cubicM2: action inCubic:[result] ==>
+	guard doCubicM2
+	do		
+		//println("recv cubic m2");
+		//if i=1 and p=0 and j=1 then
+		//	println("recv cubic m2 = " + result);
+		//end
+		tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := result;		
+	end
+	
+	constM2: action  ==>
+	guard doConstantM2
+	do
+		tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := blk[getBlk(1,1)]; 
+	end
+	
+	send_bilevelM2: action  ==> outMinMax:[4,blk[getBlk(1,1)],blk[getBlk(2,1)],tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)],tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)]],
+										outAbs:[blk[getBlk(1,1)]-blk[getBlk(2,1)]]
+	guard doBilevelM2
+	do		
+		//println("send bilevel m2");
+	end
+	
+	recv_bilevelM2: action inMinMax:[resultMM],inAbs:[result] ==>
+	guard doBilevelM2
+	do		
+		//println("recv bilevel m2");
+		minvM2 := resultMM>>(2*ADDR_SIZE);
+		maxvM2 := resultMM>>(2*ADDR_SIZE+DATA_SIZE);
+		absM2 := result;
+		if(blk[getBlk(1,1)]+blk[getBlk(2,1)]+tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]+tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)] > (minvM2+maxvM2+2*epslon)*2  ) then
+				tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := maxvM2;			            		
+			else
+				tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := minvM2;				    				
+			end
+			
+			if(absM2 <= epslon ) then				    					
+				tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := blk[getBlk(1,1)];
+			end		
+	end	
+	//--------------------------------------------------------------------//
+	
+	
+	// m3 ----------------------------------------------------------------//
+	send_medianM3: action  ==> outMedian:[4,blk[getBlk(1,1)],blk[getBlk(1,2)],tmpImg[getTmpImg((i-1)*3,(j+1)*3+p,nwidth1_gb)],tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]]
+	guard doMedianM3
+	do		
+		//println("send median m3");
+		/*if(p=0 and i=1 and j=27) then
+			println("sending median m3 " + blk[getBlk(1,1)] + "," + blk[getBlk(1,2)] + 
+			"," + tmpImg[getTmpImg((i-1)*3,(j+1)*3+p,nwidth1_gb)] + "," + tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]);
+		end*/
+	end
+	
+	recv_medianM3: action inMedian:[result] ==>
+	guard doMedianM3
+	do		
+		//if(p=0 and i=1 and j=27) then println("recv median m3 " + result); end
+		tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := result;
+		/*if(p=0 and i=1 and j=27) then
+				println("aaa " + tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]);
+			end*/
+		tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := (-((blk[getBlk(1,1)]+blk[getBlk(1,2)]+tmpImg[getTmpImg((i-1)*3,(j+1)*3+p,nwidth1_gb)]+tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)])>>2)+(tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)]<<1));
+	end
+	
+	send_cubicM3: action  ==> outCubic:[blk[getBlk(1,0)],blk[getBlk(1,1)],blk[getBlk(1,2)],blk[getBlk(1,3)]]
+	guard doCubicM3
+	do		
+		//println("send cubic m3");
+	end
+	
+	recv_cubicM3: action inCubic:[result] ==>
+	guard doCubicM3
+	do	
+		//println("recv cubic m3 = " + result);
+		//if i=1 and p=0 and j=1 then
+		//	println("recv cubic m3 = " + result + "(index=" + getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)+ ")");
+		//end
+		tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := result;		
+	end
+	
+	constM3: action  ==>
+	guard doConstantM3
+	do
+		tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := blk[getBlk(1,1)];
+	end
+	
+	send_bilevelM3: action  ==> outMinMax:[4,blk[getBlk(1,1)],blk[getBlk(1,2)],tmpImg[getTmpImg((i-1)*3,(j+1)*3+p,nwidth1_gb)],tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]],									
+										outAbs:[blk[getBlk(1,1)]-blk[getBlk(1,2)]]
+	guard doBilevelM3
+	do		
+		//println("send bilevel m3");
+	end
+	
+	recv_bilevelM3: action inMinMax:[resultMM],inAbs:[result] ==>
+	guard doBilevelM3
+	do		
+		//println("recv bilevel m3");
+		minvM3 := resultMM>>(2*ADDR_SIZE);
+		maxvM3 := resultMM>>(2*ADDR_SIZE+DATA_SIZE);	
+		absM3 := result;
+		if(  blk[getBlk(1,1)]+blk[getBlk(1,2)]+tmpImg[getTmpImg((i-1)*3,(j+1)*3+p,nwidth1_gb)]+tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] > (minvM3+maxvM3+2*epslon)*2 ) then
+				tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := maxvM3;
+			else
+				tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := minvM3;
+			end
+			
+			if (absM3<=epslon) then
+				tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] := blk[getBlk(1,1)];
+			end		
+	end	
+	//--------------------------------------------------------------------//
+	
+	greyblack_interpolation_5: action ==>
+	guard not endGryBlk
+	do
+		//if i=1 and p=0 and j=1 then
+		//	println("index " + getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb) + "," + getTmpImg((i+1)*3,(j)*3+p,nwidth1_gb) + "," + getTmpImg((i)*3,(j+1)*3+p,nwidth1_gb));	
+		//end
+		
+		/* do interpolation of C */
+		/*if doMedianM1 then
+			//println("median m1");
+			//tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] := (-((blk[getBlk(1,1)]+blk[getBlk(1,2)]+blk[getBlk(2,1)]+blk[getBlk(2,2)])>>2)+(tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]<<1)) ;
+		else if doBilevelM1 then
+			
+		end
+		end*/
+		
+		/* do interpolation of L */
+		/*if doMedianM2 then
+			//println("median m2");
+			//if(p=0 and i=7 and j=21) then
+			//	println("median valuePre " + tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)]);
+			//end
+			//tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] := (-(blk[getBlk(1,1)]+blk[getBlk(2,1)]+tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)]+tmpImg[getTmpImg((i+1)*3,(j-1)*3+p,nwidth1_gb)]>>2)+(tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)]<<1)) ;
+		else if doBilevelM2 then
+			//println("bilevel m2");
+			
+		end		
+		end*/
+		
+		//if i=1 and p=0 and j=1 then
+		//	println("doMedianM3=" + doMedianM3 + ",doBilevelM3=" + doBilevelM3);
+		//end
+		
+		/* do interpolation of U */
+		/*if doMedianM3 then
+			//println("median m3");
+						    			
+		else if doBilevelM3 then
+			//println("bilevel m3");
+			
+		end
+		end*/
+		
+		//if(p=2 and i=19 and j=33) then
+		//	println(tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] + "," + tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] + "," + 
+		//		tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)]
+		//	);
+		//end
+		
+		//if(p=0 and i=63 and j=33) then
+		/*if(getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)=471 or getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)=471 or getTmpImg((i+1)*3,j*3+p,nwidth1_gb)=471) then	
+			println("p=" + p + ", i=" + i + ", j=" + j);
+			println("value=" + tmpImg[getTmpImg((i+1)*3,(j+1)*3+p,nwidth1_gb)] + " (" + m1 + ")" );
+			println("value=" + tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] + " (" + m2 + ")" );//+ tmpImg[getTmpImg(i*3,(j+1)*3+p,nwidth1_gb)] + "," + 
+			println("value=" + tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)] + " (" + m3 + ")" );	//tmpImg[getTmpImg((i+1)*3,j*3+p,nwidth1_gb)]);
+		end*/
+		
+		doBilevelM1 := false;
+		doCubic135M1 := false;
+		doCubic45M1 := false;
+		doCubicConvM1 := false;
+		doMedianM1 := false;
+		doConstantM1 := false;
+	
+		doBilevelM2 := false;
+		doCubicM2 := false;
+		doMedianM2 := false;
+		doConstantM2 := false;
+	
+		doBilevelM3 := false;
+		doCubicM3 := false;
+		doMedianM3 := false;
+		doConstantM3 := false;
+		
+		
+		
+		// increments and ending
+		//for(p=0;p<3;p++){
+			//for(i=1;i<nheigth1-1;i+=2){
+				//for(j=1;j<nwidth1_gb-1;j+=2){
+		if p<3 and (i<nheigth1_gb-1) and (j<nwidth1_gb-3) then
+			j := j+2;
+		else if p<3 and (i<nheigth1_gb-3) then
+				i := i+2;
+				j := 1;
+			else if p<2 then
+					p := p+1;
+					i := 1;
+					j := 1;
+				else
+					p := 0;
+					i := 1;
+					j := 1;
+					endGryBlk := true;
+				end
+			end
+		end
+		
+	end
+	
+	adaptive_zoom_2: action  ==>
+	guard endGryBlk
+	do
+		//println("2");
+		foreach int ii in 0 .. nheigth-1 do
+			foreach int jj in 0 .. nwidth-1 do				
+				zoominImg[getZoominImg(ii*3,jj*3,nwidth)]   := tmpImg[getTmpImg((ii+1)*3,(jj+1)*3,nwidth1_gb)];
+				zoominImg[getZoominImg(ii*3,jj*3+1,nwidth)] := tmpImg[getTmpImg((ii+1)*3,(jj+1)*3+1,nwidth1_gb)];
+				zoominImg[getZoominImg(ii*3,jj*3+2,nwidth)] := tmpImg[getTmpImg((ii+1)*3,(jj+1)*3+2,nwidth1_gb)];
+				//println("ii=" + ii + ", jj=" + jj);
+				//if(ii=0 and jj = 30) then println("idxTmp " + getTmpImg((ii+1)*3,(jj+1)*3,nwidth1_gb)); end
+				//println(zoominImg[getZoominImg(ii*3,jj*3,nwidth)] + "," + zoominImg[getZoominImg(ii*3,jj*3+1,nwidth)] + "," + zoominImg[getZoominImg(ii*3,jj*3+2,nwidth)]);
+			end
+		end
+	end
+	
+	function median(uint a,uint b, uint c, uint d) --> uint(size=8)	 :
+		(a+b+c+d-max4((a),(b),(c),(d))-min4((a),(b),(c),(d)))>>1
+	end
+	
+	function max4(int a,int b,int c,int d) --> int:
+		if (a<=b && a<=c && a<=d) then a else
+		if (b<=a && b<=c && b<=d) then b else
+		if (c<=b && c<=a && c<=d) then c else
+		if (d<=b && d<=c && d<=a) then d else
+		0
+		end end end end
+	end
+	
+	function min4(int a,int b,int c,int d) --> int:
+		if (a>=b && a>=c && a>=d) then a else
+		if (b>=a && b>=c && b>=d) then b else
+		if (c>=b && c>=a && c>=d) then c else
+		if (d>=b && d>=c && d>=a) then d else
+		0
+		end end end end
+	end
+	
+	
+	
+	
+	
+	procedure rgb2ycbcr(uint(size=8) rgb[twidth*theigth*3], uint i)
+	var	uint r, uint g, uint b,
+		uint yv, uint cbv, uint crv
+	begin
+			
+			yv := 0;
+			cbv := 0;
+			crv := 0;
+			
+		    r := rgb[3*i];
+		    g := rgb[3*i+1];
+		    b := rgb[3*i+2];
+
+			//println("rgb " + r + "," + g + "," + b);
+			//println("floor " + (0.2568*r + 0.5041*g + 0.0979*b) + "," + (-0.1482*r -0.2910*g + 0.4392*b) + "," + (0.4392*r - 0.3678*g - 0.0714*b));
+
+		    //yv  := floor(0.2568*r + 0.5041*g + 0.0979*b) + 16;
+		    //cbv := floor(-0.1482*r -0.2910*g + 0.4392*b) + 128;
+		    //crv := floor(0.4392*r - 0.3678*g - 0.0714*b) + 128;
+		    floor_proc(0.2568*r + 0.5041*g + 0.0979*b);
+		    yv := resFloor + 16;
+		    floor_proc(-0.1482*r -0.2910*g + 0.4392*b);
+		    cbv := resFloor + 128;
+		    floor_proc(0.4392*r - 0.3678*g - 0.0714*b);
+		    crv := resFloor + 128;
+		   	
+		    if(yv<0) then
+		    	origImg[3*i] := 0;
+		    else if(yv>255) then
+		    		origImg[3*i] := 255;
+		    	else 
+		    		origImg[3*i] := yv;
+		    	end
+		    end
+		    
+		    if(cbv<0) then
+		    	origImg[3*i+1] := 0;
+		    else if(cbv>255) then
+		    		origImg[3*i+1] := 255;
+		    	else
+		    		origImg[3*i+1] := cbv;
+		    	end
+		    end
+		    
+		    if(crv<0) then
+		    	origImg[3*i+2] := 0;
+		    else if(crv>255) then
+		    		origImg[3*i+2] := 255;
+		    	else
+		    		origImg[3*i+2] := crv;
+		    	end
+		    end
+		    
+		    //println(origImg[i*3] + "," + origImg[i*3+1] + "," + origImg[i*3+2]);
+		    			
+		   	//if(i>1000) then
+			//	println(yv + "," + cbv + "," + crv);
+			//end
+	end
+	
+	procedure ycbcr2rgb(uint(size=8) zoomInYcc[out_twidth*out_theigth*3], int i)
+	var	int r, int g, int b, 
+	    int yv, int cbv, int crv
+	begin
+	
+
+		
+		r := 0;
+		g := 0;
+		b := 0;
+
+	    yv  := zoomInYcc[i*3]-16;
+	    crv := zoomInYcc[i*3+1]-128 ;
+	    cbv := zoomInYcc[i*3+2]-128 ;
+		
+		println(zoomInYcc[i*3] + "," + zoomInYcc[i*3+1] + "," + zoomInYcc[i*3+2]);
+		
+	    //r := floor(1.1644*yv + 1.5960*crv);
+	    //g := floor(1.1644*yv -0.39188*cbv- 0.8130*crv) ;
+	    //b := floor(1.1644*yv + 2.0172 *cbv) ;	    
+	    
+	    floor_proc(1.1644*yv + 1.5960*crv);
+	    r := resFloor;
+	    floor_proc(1.1644*yv -0.39188*cbv- 0.8130*crv);
+	    g := resFloor;
+	    floor_proc(1.1644*yv + 2.0172 *cbv);
+	    b := resFloor;
+
+	    if(r<0) then
+	    	zoomInRgb[3*i] := 0;
+	    	rBuf[i] := 0;
+	    else if(r>255) then
+	    		zoomInRgb[3*i]   := 255;
+	    		rBuf[i] := 255;
+	    	else
+	    		zoomInRgb[3*i]   := r;
+	    		rBuf[i] := r;
+	    	end
+	    end
+	    
+	    if(g<0) then
+	    	zoomInRgb[3*i+1] := 0;
+	    	gBuf[i] := 0;
+	    else if(g>255) then
+	    		zoomInRgb[3*i+1] := 255;
+	    		gBuf[i] := 255;
+	    	else
+	    		zoomInRgb[3*i+1] := g;
+	    		gBuf[i] := g;
+	    	end
+	    end
+	    
+	    if(b<0) then
+	    	zoomInRgb[3*i+2] := 0;
+	    	bBuf[i] := 0;
+	    else if(b>255) then
+	    		zoomInRgb[3*i+2] := 255;
+	    		bBuf[i] := 255;
+	    	else
+	    		zoomInRgb[3*i+2] := b;
+	    		bBuf[i] := b;
+	    	end
+	    end
+	    
+	    //if i=396 or i=201 or i=393 then
+		//	println(rBuf[i] + "," + gBuf[i] + "," + bBuf[i]);
+		//end
+	  
+	end
+	
+	loop: action  ==>
+	do
+		displayYUV_displayRGBPicture(rBuf, gBuf, bBuf, twidth*2, theigth*2);
+	end
+	
+	function floor_recursion (float x, float compareTo, uint integer) --> uint:
+		if (x-compareTo)>0.0 then
+			floor_recursion(x,compareTo+1.0,integer+1)
+		else
+			integer
+		end	
+	end
+	
+	function floor(float x) --> uint:
+		floor_recursion(x,0.0,0)
+	end
+	
+	procedure floor_proc(double x)
+	var float cmp
+	begin
+		resFloor := 0;
+		cmp := 0.0;
+		//println("go floor");
+		while(x-cmp>0.0) do
+			//println("res=" + resFloor);
+			cmp := cmp + 1.0;
+			resFloor := resFloor+1;
+		end
+		resFloor := resFloor-1;
+	end
+	
+	function max(int a,int b)
+			-->
+		int
+	:
+		if(a > b)then
+			a
+		else
+			b
+		end
+	end
+	
+	function log2_recursion(uint a, uint n) --> uint:
+	if (1<<n)<a  then
+			log2_recursion(a,n+1)
+		else
+			n
+		end	
+	end
+	
+	function log2(uint a) --> uint:
+		log2_recursion(a,0)
+	end	
+	
+	function getZoominImg(uint a, uint b, uint nwidth) --> uint :
+		(a)*nwidth+(b)
+	end
+ 
+	function getExtImg(uint a, uint b, uint width3) --> uint :
+		(a)*width3+(b)
+	end
+	
+	function getBlk(uint a, uint b) --> uint :
+		(a)*4+(b)
+	end
+
+	function getTmpImg(uint a, uint b, uint nwidth1) --> uint :
+		(a)*nwidth1+(b)
+	end
+
+
+	function getOrigImg(uint a, uint b, uint width) --> uint :
+		(a)*width+(b)
+	end
+	
+	schedule fsm init:
+		init (initZoom) --> wait_choice;
+		wait_choice (rgb_to_rgb) --> wait_zoom;
+		wait_choice (ycbcr_to_ycbcr_1) --> wait_zoom;
+		wait_zoom (zoom) --> wait_adpt_zoom_1;
+		wait_adpt_zoom_1 (adaptive_zoom_1) --> wait_grblk_interp_1;
+		
+		wait_grblk_interp_1 (greyblack_interpolation_1) --> wait_chgb;
+		wait_chgb (send_chgb) --> chgbElab;
+		chgbElab (recv_chgb) --> wait_grblk_interp_2;
+		wait_grblk_interp_2 (greyblack_interpolation_2) --> out_grblk_interp_2;
+		out_grblk_interp_2 (send_abs) --> absElab;
+		absElab (recv_abs) --> wait_grblk_interp_3;
+		out_grblk_interp_2 (none_abs) --> wait_grblk_interp_3;
+		wait_grblk_interp_3 (greyblack_interpolation_3) --> out_grblk_interp_3;
+		out_grblk_interp_3 (blockProc_1) --> wait_sbw;
+		wait_sbw (send_sbwlabel) --> sbwElab;
+		sbwElab (recv_sbwlabel) --> wait_blkProc2;
+		out_grblk_interp_3 (none_blockProc) --> wait_grblk_interp_4;
+		wait_blkProc2 (blockProc_2) --> wait_grblk_interp_4;
+		wait_grblk_interp_4 (greyblack_interpolation_4) --> wait_m1;
+		
+		wait_m1 (constM1) --> wait_m2;
+		wait_m1 (send_cubicConvM1) --> cubicConv_m1;
+		cubicConv_m1 (recv_cubicConvM1) --> wait_m2;
+		wait_m1 (send_medianM1) --> median_m1;
+		median_m1 (recv_medianM1) --> wait_m2;
+		wait_m1 (send_diagonal45M1) --> diag45_m1;
+		diag45_m1 (recv_diagonal45M1) --> wait_m2;
+		wait_m1 (send_diagonal135M1) --> diag135_m1;
+		diag135_m1 (recv_diagonal135M1) --> wait_m2;
+		wait_m1 (send_bilevelM1) --> bilevel_m1;
+		bilevel_m1 (recv_bilevelM1) --> wait_m2;
+		
+		wait_m2 (constM2) --> wait_m3;
+		wait_m2 (send_medianM2) --> median_m2;
+		median_m2 (recv_medianM2) --> wait_m3;
+		wait_m2 (send_cubicM2) --> cubic_m2;
+		cubic_m2 (recv_cubicM2) --> wait_m3;
+		wait_m2 (send_bilevelM2) --> bilevel_m2;
+		bilevel_m2 (recv_bilevelM2) --> wait_m3;
+		
+		wait_m3 (constM3) --> wait_grblk_interp_5;
+		wait_m3 (send_medianM3) --> median_m3;
+		median_m3 (recv_medianM3) --> wait_grblk_interp_5;
+		wait_m3 (send_cubicM3) --> cubic_m3;
+		cubic_m3 (recv_cubicM3) --> wait_grblk_interp_5;
+		wait_m3 (send_bilevelM3) --> bilevel_m3;
+		bilevel_m3 (recv_bilevelM3) --> wait_grblk_interp_5;
+		
+		
+		wait_grblk_interp_5 (greyblack_interpolation_5) --> wait_grblk_interp_endIter;
+		wait_grblk_interp_endIter (greyblack_interpolation_1) --> wait_chgb;
+		
+		wait_grblk_interp_endIter (adaptive_zoom_2) --> wait_rgb;	
+		wait_rgb (ycbcr_to_ycbcr_2) --> end_loop;
+		end_loop (loop) --> end_loop;
+	end
+	
+
+end

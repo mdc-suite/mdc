@@ -1,0 +1,8 @@
+package alba.cal;
+
+actor shifter_buffer_rgb(int DATA_SIZE=32,int ADDR_SIZE=10,int CONST=3) int(size=DATA_SIZE) parms ==> int(size=DATA_SIZE) parm1, int(size=DATA_SIZE) parm2 :
+	
+	action parms:[a] ==> parm1:[a-1], parm2:[a+1]
+	end
+
+end

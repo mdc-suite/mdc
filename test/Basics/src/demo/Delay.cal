@@ -1,0 +1,20 @@
+package demo;
+
+actor Delay(int SIZE=32)
+	int(size=SIZE) in1
+		 ==>
+	int(size=SIZE) out1
+:
+	
+	int(size=SIZE) data_in := 0;
+	int(size=SIZE) data_out := 0;
+
+add: action in1:[data] ==> out1:[data_out]
+do
+	data_out := data_in;
+	data_in := data;
+end
+
+
+
+end

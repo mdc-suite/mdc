@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="100"/>
+		<vertex id="out" x="1323" y="422"/>
+		<vertex id="Memory" x="301" y="70"/>
+		<vertex id="FilterCtrl" x="153" y="223"/>
+		<vertex id="Shift" x="1075" y="334"/>
+		<vertex id="Sub1" x="301" y="225"/>
+		<vertex id="Sub2" x="301" y="360"/>
+		<vertex id="Abs1" x="470" y="255"/>
+		<vertex id="Abs2" x="470" y="370"/>
+		<vertex id="GenTV" x="589" y="350"/>
+		<vertex id="Mul" x="708" y="361"/>
+		<vertex id="Add1" x="956" y="381"/>
+		<vertex id="OutLogic" x="827" y="263"/>
+		<vertex id="Add2" x="956" y="246"/>
+		<vertex id="VecRebld" x="1194" y="402"/>
+	</vertices>
+</layout>

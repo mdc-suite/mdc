@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Sobel">
+    <Port kind="Input" name="y">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="SOI">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="edgeY">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="buffer_minus">
+        <Class name="edgeDetection.LineBuffer"/>
+    </Instance>
+    <Instance id="buffer_zero">
+        <Class name="edgeDetection.LineBuffer"/>
+    </Instance>
+    <Instance id="sh_minus_zero">
+        <Class name="edgeDetection.LeftShifter"/>
+    </Instance>
+    <Instance id="sh_zero_minus">
+        <Class name="edgeDetection.LeftShifter"/>
+    </Instance>
+    <Instance id="sh_zero_plus">
+        <Class name="edgeDetection.LeftShifter"/>
+    </Instance>
+    <Instance id="sh_plus_zero">
+        <Class name="edgeDetection.LeftShifter"/>
+    </Instance>
+    <Instance id="del_minus_zero">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_minus_minus">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_plus_minus">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_plus_zero">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="sub_x0">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="sub_x1">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="sub_x2">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="sub_y0">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="sub_y1">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="sub_y2">
+        <Class name="edgeDetection.Subtractor"/>
+    </Instance>
+    <Instance id="del_zero_minus">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="del_zero_zero">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="add_x">
+        <Class name="edgeDetection.Adder3x1"/>
+    </Instance>
+    <Instance id="add_y">
+        <Class name="edgeDetection.Adder3x1"/>
+    </Instance>
+    <Instance id="mul_x">
+        <Class name="edgeDetection.Multiplier"/>
+    </Instance>
+    <Instance id="mul_y">
+        <Class name="edgeDetection.Multiplier"/>
+    </Instance>
+    <Instance id="adder">
+        <Class name="edgeDetection.Adder2x1"/>
+    </Instance>
+    <Instance id="sqrt">
+        <Class name="edgeDetection.Sqrt"/>
+    </Instance>
+    <Instance id="aln">
+        <Class name="edgeDetection.Align"/>
+    </Instance>
+    <Instance id="fwd">
+        <Class name="edgeDetection.Forward"/>
+    </Instance>
+    <Connection dst="fwd" dst-port="inY" src="" src-port="y"/>
+    <Connection dst="fwd" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="buffer_minus" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="buffer_zero" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="buffer_zero" dst-port="Y" src="fwd" src-port="outY"/>
+    <Connection dst="buffer_minus" dst-port="Y" src="buffer_zero" src-port="Line"/>
+    <Connection dst="del_zero_zero" dst-port="dataIn" src="buffer_zero" src-port="Line"/>
+    <Connection dst="del_zero_minus" dst-port="dataIn"
+        src="del_zero_zero" src-port="dataOut"/>
+    <Connection dst="del_minus_zero" dst-port="dataIn"
+        src="buffer_minus" src-port="Line"/>
+    <Connection dst="del_minus_minus" dst-port="dataIn"
+        src="del_minus_zero" src-port="dataOut"/>
+    <Connection dst="del_plus_zero" dst-port="dataIn" src="fwd" src-port="outY"/>
+    <Connection dst="del_plus_minus" dst-port="dataIn"
+        src="del_plus_zero" src-port="dataOut"/>
+    <Connection dst="sh_minus_zero" dst-port="inY" src="del_minus_zero" src-port="dataOut"/>
+    <Connection dst="sh_zero_minus" dst-port="inY" src="del_zero_minus" src-port="dataOut"/>
+    <Connection dst="sh_zero_plus" dst-port="inY" src="buffer_zero" src-port="Line"/>
+    <Connection dst="sh_plus_zero" dst-port="inY" src="del_plus_zero" src-port="dataOut"/>
+    <Connection dst="sub_x0" dst-port="opB" src="del_minus_minus" src-port="dataOut"/>
+    <Connection dst="sub_x0" dst-port="opA" src="buffer_minus" src-port="Line"/>
+    <Connection dst="sub_x1" dst-port="opB" src="sh_zero_minus" src-port="outY"/>
+    <Connection dst="sub_x1" dst-port="opA" src="sh_zero_plus" src-port="outY"/>
+    <Connection dst="sub_x2" dst-port="opB" src="del_plus_minus" src-port="dataOut"/>
+    <Connection dst="sub_x2" dst-port="opA" src="fwd" src-port="outY"/>
+    <Connection dst="sub_y0" dst-port="opB" src="del_minus_minus" src-port="dataOut"/>
+    <Connection dst="sub_y0" dst-port="opA" src="del_plus_minus" src-port="dataOut"/>
+    <Connection dst="sub_y1" dst-port="opA" src="sh_plus_zero" src-port="outY"/>
+    <Connection dst="sub_y1" dst-port="opB" src="sh_minus_zero" src-port="outY"/>
+    <Connection dst="sub_y2" dst-port="opB" src="buffer_minus" src-port="Line"/>
+    <Connection dst="sub_y2" dst-port="opA" src="fwd" src-port="outY"/>
+    <Connection dst="add_x" dst-port="opA" src="sub_x0" src-port="sub"/>
+    <Connection dst="add_x" dst-port="opB" src="sub_x1" src-port="sub"/>
+    <Connection dst="add_x" dst-port="opC" src="sub_x2" src-port="sub"/>
+    <Connection dst="add_y" dst-port="opA" src="sub_y0" src-port="sub"/>
+    <Connection dst="add_y" dst-port="opB" src="sub_y1" src-port="sub"/>
+    <Connection dst="add_y" dst-port="opC" src="sub_y2" src-port="sub"/>
+    <Connection dst="mul_x" dst-port="opA" src="add_x" src-port="sum"/>
+    <Connection dst="mul_x" dst-port="opB" src="add_x" src-port="sum"/>
+    <Connection dst="mul_y" dst-port="opA" src="add_y" src-port="sum"/>
+    <Connection dst="mul_y" dst-port="opB" src="add_y" src-port="sum"/>
+    <Connection dst="adder" dst-port="opA" src="mul_x" src-port="prod"/>
+    <Connection dst="adder" dst-port="opB" src="mul_y" src-port="prod"/>
+    <Connection dst="sqrt" dst-port="inY" src="adder" src-port="sum"/>
+    <Connection dst="aln" dst-port="inY" src="sqrt" src-port="sqrtY"/>
+    <Connection dst="aln" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="" dst-port="edgeY" src="aln" src-port="outY"/>
+</XDF>

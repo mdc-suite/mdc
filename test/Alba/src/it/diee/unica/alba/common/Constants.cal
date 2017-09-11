@@ -1,0 +1,8 @@
+package it.diee.unica.alba.common;
+ 
+unit Constants :
+ 
+ 	int H_SIZE = 4;
+ 	int V_SIZE = 4;
+  
+end

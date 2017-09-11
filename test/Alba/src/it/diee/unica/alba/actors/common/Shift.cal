@@ -1,0 +1,31 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor Shift(int DATA_SIZE=32, int CONST=1, int LEFT = 1) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+	action in1:[a] ==> out:[res]
+	var int(size=DATA_SIZE) res
+	do
+		if LEFT=1 then
+			res := a<<CONST;
+		else
+			res := a>>CONST;
+			
+			if(a<1)then
+				res := res+1;
+			end
+		end
+		//if(a=-41)then
+		//	println("shift " + a + " of " + CONST + " = " + res);
+		//end
+	end
+	
+	/*function abs(int tmp) --> int:
+		if(tmp>0) then
+			tmp
+		else
+			-tmp
+		end
+	end*/
+		
+end

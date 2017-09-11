@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="inner_kernel">
+	<Port kind="Input" name="in1">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Port kind="Output" name="out">
+		<Type name="int">
+			<Entry kind="Expr" name="size">
+				<Expr kind="Literal" literal-kind="Integer" value="32"/>
+			 </Entry>
+		</Type>
+	</Port>
+	<Instance id="inn">
+		<Class name="alba.cal.inner"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="16"/>
+		</Parameter>
+	</Instance>
+	<Instance id="add1">
+		<Class name="alba.cal.adder_3x1"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="add2">
+		<Class name="alba.cal.adder_3x1"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="sub">
+		<Class name="alba.cal.subtractor"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shift1">
+		<Class name="alba.cal.shifter_kernel"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shift2">
+		<Class name="alba.cal.shifter_kernel"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="2"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shift3">
+		<Class name="alba.cal.shifter_kernel"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="2"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="shift4">
+		<Class name="alba.cal.shifter_kernel"/>
+		<Parameter name="CONST">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="LEFT">
+			<Expr kind="Literal" literal-kind="Integer" value="1"/>
+		</Parameter>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+	</Instance>
+	<Instance id="buffer_out">
+		<Class name="alba.cal.buffer_1out"/>
+		<Parameter name="DATA_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Parameter>
+		<Parameter name="ADDR_SIZE">
+			<Expr kind="Literal" literal-kind="Integer" value="16"/>
+		</Parameter>
+	</Instance>
+	<Connection dst="inn" dst-port="in1" src="" src-port="in1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shift1" dst-port="in1" src="inn" src-port="out1">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shift2" dst-port="in1" src="inn" src-port="out2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shift3" dst-port="in1" src="inn" src-port="out3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="shift4" dst-port="in1" src="inn" src-port="out4">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add1" dst-port="in1" src="shift1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add1" dst-port="in2" src="inn" src-port="out3">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add1" dst-port="in3" src="shift3" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add2" dst-port="in1" src="shift2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add2" dst-port="in2" src="inn" src-port="out2">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="add2" dst-port="in3" src="shift4" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub" dst-port="in1" src="add1" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="sub" dst-port="in2" src="add2" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="buffer_out" dst-port="parms" src="sub" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+	<Connection dst="" dst-port="out" src="buffer_out" src-port="out">
+		<Attribute kind="Value" name="bufferSize">
+			<Expr kind="Literal" literal-kind="Integer" value="32"/>
+		</Attribute>
+	</Connection>
+</XDF>

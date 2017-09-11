@@ -1,0 +1,5 @@
+package alba.cal;
+
+actor max_min () int in1 ==> int result :
+
+end

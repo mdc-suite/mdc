@@ -1,0 +1,9 @@
+package outXdf;
+
+actor Sbox2x1 (int M=4, int SEL_B=2,int DATA_INPUT_ARRAY_SIZE=64+32+32+16, int DATA_N_MAX=64, int DATA_LOGN=8, int COUNT_N=16,
+				int IN1_SIZE=32, int IN2_SIZE=32
+) 
+				int selector, int(size=IN1_SIZE) in1, int(size=IN2_SIZE) in2 ==> int(size=DATA_N_MAX) out1 :
+
+
+end

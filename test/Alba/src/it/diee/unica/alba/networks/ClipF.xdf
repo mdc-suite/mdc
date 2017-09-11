@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="ClipF">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Clip_f">
+        <Class name="it.diee.unica.alba.actors.Clip"/>
+    </Instance>
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.actors.common.MinMax"/>
+    </Instance>
+    <Connection dst="Clip_f" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="MinMax" dst-port="in1" src="Clip_f" src-port="out2"/>
+    <Connection dst="Clip_f" dst-port="in2" src="MinMax" src-port="result"/>
+    <Connection dst="" dst-port="out" src="Clip_f" src-port="out1"/>
+</XDF>

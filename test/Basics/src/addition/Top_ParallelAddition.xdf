@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Top_ParallelAddition">
+    <Instance id="src1">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="0"/>
+        </Parameter>
+    </Instance>
+    <Instance id="src2">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="1"/>
+        </Parameter>
+    </Instance>
+    <Instance id="multi_add">
+        <Class name="addition.multi_dataflow"/>
+    </Instance>
+    <Instance id="tgt1">
+        <Class name="common.Consumer"/>
+        <Parameter name="ID">
+            <Expr kind="Literal" literal-kind="Integer" value="1"/>
+        </Parameter>
+    </Instance>
+    <Instance id="src3">
+        <Class name="common.Producer"/>
+        <Parameter name="INPUT">
+            <Expr kind="Literal" literal-kind="Integer" value="2"/>
+        </Parameter>
+    </Instance>
+    <Instance id="tgt2">
+        <Class name="common.Consumer"/>
+    </Instance>
+    <Connection dst="multi_add" dst-port="in2" src="src2" src-port="out1"/>
+    <Connection dst="multi_add" dst-port="in1" src="src1" src-port="out1"/>
+    <Connection dst="tgt1" dst-port="in1" src="multi_add" src-port="out1"/>
+    <Connection dst="multi_add" dst-port="in3" src="src3" src-port="out1"/>
+    <Connection dst="tgt2" dst-port="in1" src="multi_add" src-port="out2"/>
+</XDF>

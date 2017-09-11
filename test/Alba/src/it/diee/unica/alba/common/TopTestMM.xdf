@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="TopTestMM">
+    <Instance id="Source">
+        <Class name="it.diee.unica.alba.common.SourceMM"/>
+    </Instance>
+    <Instance id="TestNet">
+        <Class name="it.diee.unica.alba.networks.MaxMin"/>
+    </Instance>
+    <Instance id="Target">
+        <Class name="it.diee.unica.alba.common.TargetMM"/>
+    </Instance>
+    <Connection dst="TestNet" dst-port="in1" src="Source" src-port="source1"/>
+    <Connection dst="Target" dst-port="result" src="TestNet" src-port="outMM"/>
+</XDF>

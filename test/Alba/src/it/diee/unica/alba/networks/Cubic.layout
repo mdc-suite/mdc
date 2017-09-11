@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="100"/>
+		<vertex id="out" x="946" y="314"/>
+		<vertex id="Memory" x="301" y="70"/>
+		<vertex id="CubicCtrl" x="153" y="189"/>
+		<vertex id="Shift" x="708" y="304"/>
+		<vertex id="Sub1" x="470" y="227"/>
+		<vertex id="Sub2" x="470" y="362"/>
+		<vertex id="Kmul1" x="301" y="225"/>
+		<vertex id="Kmul2" x="301" y="361"/>
+		<vertex id="Add" x="589" y="294"/>
+		<vertex id="Buffer" x="827" y="304"/>
+	</vertices>
+</layout>

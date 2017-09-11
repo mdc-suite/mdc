@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Sorter">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="Sorter">
+        <Class name="it.diee.unica.alba.actors.Qsort"/>
+    </Instance>
+    <Instance id="MinMax">
+        <Class name="it.diee.unica.alba.actors.common.MinMax"/>
+    </Instance>
+    <Connection dst="Sorter" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="MinMax" dst-port="in1" src="Sorter" src-port="out"/>
+    <Connection dst="Sorter" dst-port="value" src="MinMax" src-port="result"/>
+    <Connection dst="" dst-port="out" src="Sorter" src-port="result"/>
+</XDF>

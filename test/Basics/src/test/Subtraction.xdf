@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Subtraction">
+    <Port kind="Input" name="in1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in2">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="sub0">
+        <Class name="test.Subtractor"/>
+    </Instance>
+    <Instance id="sh0">
+        <Class name="test.Shifter"/>
+    </Instance>
+    <Connection dst="sub0" dst-port="in1" src="" src-port="in1"/>
+    <Connection dst="sub0" dst-port="in2" src="" src-port="in2"/>
+    <Connection dst="sh0" dst-port="in1" src="sub0" src-port="out1"/>
+    <Connection dst="" dst-port="out1" src="sh0" src-port="out1"/>
+</XDF>

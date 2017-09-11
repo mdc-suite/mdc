@@ -1,0 +1,16 @@
+package it.diee.unica.alba.actors.common;
+
+
+actor KAddPrint(int DATA_SIZE=32, int CONST=1) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
+
+	int i:=0;
+
+	action in1:[a] ==> out:[a+CONST]
+	do
+		if i<30 then
+			println("adding " + a);
+			i:=i+1;
+		end
+	end
+		
+end

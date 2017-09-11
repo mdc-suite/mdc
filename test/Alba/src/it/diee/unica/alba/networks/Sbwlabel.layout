@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout>
+	<vertices>
+		<vertex id="in1" x="57" y="101"/>
+		<vertex id="out" x="850" y="583"/>
+		<vertex id="Ctrl" x="153" y="363"/>
+		<vertex id="Sub1" x="364" y="269"/>
+		<vertex id="Memory" x="301" y="71"/>
+		<vertex id="Sub2" x="319" y="374"/>
+		<vertex id="Sub3" x="335" y="482"/>
+		<vertex id="Sub4" x="353" y="588"/>
+		<vertex id="Sub5" x="355" y="735"/>
+		<vertex id="Sub6" x="362" y="854"/>
+		<vertex id="Abs1" x="470" y="276"/>
+		<vertex id="Abs2" x="470" y="391"/>
+		<vertex id="Abs3" x="470" y="506"/>
+		<vertex id="Abs4" x="470" y="641"/>
+		<vertex id="Abs5" x="470" y="756"/>
+		<vertex id="Abs6" x="470" y="871"/>
+		<vertex id="HsumVsum" x="708" y="563"/>
+		<vertex id="Add1" x="589" y="416"/>
+		<vertex id="Add2" x="589" y="690"/>
+	</vertices>
+</layout>

@@ -1,0 +1,22 @@
+package fir;
+
+actor Target(int SIZE=32, int TAP=4)
+	int(size=SIZE) data,
+	int(size=2*SIZE) result
+		 ==>
+:
+
+	int i := 0;
+
+consume: action data:[a], result:[res] ==>
+do
+	//if(i>=TAP-1) then
+		println("Res[" + (i-TAP+1) + "] " + res);
+		println("data[" + (i-TAP+1) + "] " + a);
+	//end
+	i := i+1;
+end
+
+
+
+end
