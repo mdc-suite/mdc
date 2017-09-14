@@ -348,7 +348,7 @@ class NetworkPrinterGeneric {
 		clock_gating_cell cgc_«powerSetsIndex.get(lr)» (
 			.ck_gated(ck_gated_«clockDomainsIndex.get(lr)»),
 			.en(clocks_en[«powerSetsIndex.get(lr)»]),
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
+			«FOR sysSigId : netSysSignals.keySet»
 			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
 			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
 			«ENDFOR»
@@ -392,7 +392,7 @@ class NetworkPrinterGeneric {
 		clock_gating_cell cgc_«clockDomainsIndex.get(lr)» (
 			.ck_gated(ck_gated_«clockDomainsIndex.get(lr)»),
 			.en(en_cg«clockDomainsIndex.get(lr)»),
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
+			«FOR sysSigId : netSysSignals.keySet»
 			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
 			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
 			«ENDFOR»
