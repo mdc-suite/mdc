@@ -1,0 +1,73 @@
+package common;
+
+import std.video.Display.*;
+
+/**
+ * Standard Image Shower actor.
+ */
+@native actor ShowImage () uint(size=8) Y,
+	uint(size=16) SizeOfImage
+	==> :
+	
+	bool init := false;
+	bool open := false;
+	
+	uint(size=16) width := 0;
+	uint(size=16) height := 0;
+	uint(size=16) x := 0;
+	uint(size=16) y := 0;
+	uint(size=8) pictureBufferY[MAX_WIDTH * MAX_HEIGHT];
+	uint(size=8) pictureBufferU[MAX_WIDTH * MAX_HEIGHT];
+	uint(size=8) pictureBufferV[MAX_WIDTH * MAX_HEIGHT];
+	
+	initDisplay: action ==>
+	guard not init
+	do
+		displayYUV_init();
+		init := true;
+	end
+	
+	recvSOI: action SizeOfImage:[w,h] ==>
+	guard init and not open
+	do
+		width := w;
+		height := h;
+		x := 0;
+		y := 0;
+		println("SOI=" + width + "x" + height);
+		fpsPrintInit();
+		open := true;
+	end
+	
+	//int i := 0;
+	
+	recvY: action Y:[val] ==>
+	guard init and open
+	do
+		/*if i<364 then
+			if i>300 then
+				println(val);
+			end
+			i := i+1;
+		end*/
+		pictureBufferY[x+y*width] := val;
+		pictureBufferU[x+y*width] := 128;
+		pictureBufferV[x+y*width] := 128;
+		
+		if x < width-1 then
+			x := x+1;
+		else
+			if y < height-1 then
+				y := y+1;
+			else
+				y := 0;
+				open := false;
+				displayYUV_displayPicture(pictureBufferY,pictureBufferU,pictureBufferV,width, height);
+				fpsPrintNewPicDecoded();
+			end
+			x := 0;
+		end
+		
+	end
+
+end
