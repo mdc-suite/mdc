@@ -7,10 +7,10 @@
         <Class name="common.ShowImage"/>
     </Instance>
     <Instance id="dut">
-        <Class name="edgeDetection.Prewitt"/>
+        <Class name="edgeDetectionXDF.Scharr"/>
     </Instance>
-    <Connection dst="dut" dst-port="y" src="src" src-port="Y"/>
     <Connection dst="dst" dst-port="SizeOfImage" src="src" src-port="SizeOfImage"/>
+    <Connection dst="dut" dst-port="y" src="src" src-port="Y"/>
     <Connection dst="dut" dst-port="SOI" src="src" src-port="SizeOfImage"/>
     <Connection dst="dst" dst-port="Y" src="dut" src-port="edgeY"/>
 </XDF>

@@ -8,3 +8,4 @@ Examples project for CERBERO CPS Summer School:
 -- reference (reference I/O)
 ---- edgeDetection (reference output for the edge detection applications)
 ---- input (reference input image)
+---- protocol (communication protocol file)
