@@ -5,10 +5,10 @@
         1. Eclipse for RCP and RAP Developers, recommended by Orcc (http://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon2) (1) Requires new software installation (Help > Install New Software … > search Xtext, EMF, Graphiti on all available sites)
         2. Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/eclipse-ide-java-and-dsl-developers/neon2) (1) Requires new software installation (Help > Install New Software … > search Graphiti on all available sites)
     2. Clone the Orcc Git repository 
-        1. git clone git@github.com:orcc/orcc.git)
+        1. git clone git@github.com:orcc/orcc.git
     3. Build Orcc with maven
         1. cd orcc/eclipse/plugins
-        2. mvn install
+        2. mvn install (if you need to install maven: sudo apt install maven)
 2. Setup the Orcc framework
     1. Open Eclipse (a “design time” workspace has to be selected)
     2. Change text file encoding (Window > Preferences > General > Workspace : Text file encoding (select "Other : UTF-8", then click on Apply))
