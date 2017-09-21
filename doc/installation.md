@@ -11,7 +11,7 @@
         2. mvn install
 2. Setup the Orcc framework
     1. Open Eclipse (a “design time” workspace has to be selected)
-    2. Change text file encoding (Window > Preferences > General > Workspace : Text file encoding (select "Other : UTF-8"))
+    2. Change text file encoding (Window > Preferences > General > Workspace : Text file encoding (select "Other : UTF-8", then click on Apply))
     3. Import Orcc plugins (File > Import > General > Existing Projects into Workspace > root directory orcc/eclipse/plugins (check “Search for nested projects” and uncheck “net.sf.orcc”))
     4. Launch Orcc Workspace (right click on “net.sf.orcc.core” > Run As… > Eclipse Application).
         1. To change “run time” workspace, in the “design time” workspace menu go on Run > Run Configurations… > create or identify an Eclipse Application instance and under select a new location for the field “Workspace Data”
