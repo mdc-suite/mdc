@@ -8,7 +8,7 @@
         1. git clone git@github.com:orcc/orcc.git
     3. Build Orcc with maven
         1. cd orcc/eclipse/plugins
-        2. mvn install (if you need to install maven: sudo apt install maven)
+        2. mvn install (if you need to install maven: sudo apt-get install maven)
 2. Setup the Orcc framework
     1. Open Eclipse (a “design time” workspace has to be selected)
     2. Change text file encoding (Window > Preferences > General > Workspace : Text file encoding (select "Other : UTF-8", then click on Apply))
