@@ -715,7 +715,27 @@ public class MoreanoMerger extends Merger {
 		// initialize current source for the remaining collision connections
 		Vertex source = connection.getSource();
 		Port sourcePort = connection.getSourcePort();
-		
+		if(source instanceof Port){
+			if(connection.getTarget() instanceof Port) {
+				if(connection.getSource().getAdapter(Port.class).getType().getSizeInBits() < connection.getTarget().getAdapter(Port.class).getType().getSizeInBits()) {
+					source.getAdapter(Port.class).setType(connection.getTarget().getAdapter(Port.class).getType());
+				}
+			} else { 
+				if(connection.getSource().getAdapter(Port.class).getType().getSizeInBits() < connection.getTargetPort().getType().getSizeInBits()) {
+					source.getAdapter(Port.class).setType(connection.getTargetPort().getType());
+				}
+			}
+		} else {
+			if(connection.getTarget() instanceof Port) {
+				if(connection.getSourcePort().getType().getSizeInBits() < connection.getTarget().getAdapter(Port.class).getType().getSizeInBits()) {
+					sourcePort.setType(connection.getTarget().getAdapter(Port.class).getType());
+				}
+			} else { 
+				if(connection.getSourcePort().getType().getSizeInBits() < connection.getTargetPort().getType().getSizeInBits()) {
+					sourcePort.setType(connection.getTargetPort().getType());
+				}
+			}
+		}
 		// iterator on the networks involved in collision
 		Iterator<Network> involvedNetworksIterator = involvedNetworkConnections.keySet().iterator();
 		
@@ -936,6 +956,28 @@ public class MoreanoMerger extends Merger {
 		// initialize current target for the remaining collision connections
 		Vertex target = connection.getTarget();
 		Port targetPort = connection.getTargetPort();
+		if(target instanceof Port){
+			if(connection.getSource() instanceof Port) {
+				if(connection.getTarget().getAdapter(Port.class).getType().getSizeInBits() < connection.getSource().getAdapter(Port.class).getType().getSizeInBits()) {
+					target.getAdapter(Port.class).setType(connection.getSource().getAdapter(Port.class).getType());
+				}
+			} else { 
+				if(connection.getTarget().getAdapter(Port.class).getType().getSizeInBits() < connection.getSourcePort().getType().getSizeInBits()) {
+					target.getAdapter(Port.class).setType(connection.getSourcePort().getType());
+				}
+			}
+		} else {
+			if(connection.getSource() instanceof Port) {
+				if(connection.getTargetPort().getType().getSizeInBits() < connection.getSource().getAdapter(Port.class).getType().getSizeInBits()) {
+					targetPort.setType(connection.getSource().getAdapter(Port.class).getType());
+				}
+			} else { 
+				if(connection.getTargetPort().getType().getSizeInBits() 
+						< connection.getSourcePort().getType().getSizeInBits()) {
+					targetPort.setType(connection.getSourcePort().getType());
+				}
+			}
+		}
 
 		// iterator on the networks involved in collision
 		Iterator<Network> involvedNetworksIterator = involvedNetworkConnections.keySet().iterator();

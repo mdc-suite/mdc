@@ -70,8 +70,8 @@ public class Label{
 						return false;
 					}
 				} else {
-					if( (label.getPort() == null || this.port != null) ||
-							(label.getPort() != null || this.port == null) ) {
+					if( (label.getPort() == null && this.port != null) ||
+							(label.getPort() != null && this.port == null) ) {
 						return false;
 					}
 				}
