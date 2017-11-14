@@ -70,6 +70,7 @@ public class Label{
 						return false;
 					}
 				} else {
+					// TODO this condition could be wrong (&& instead of !! in internal conditions, but it determines problems in clique finder
 					if( (label.getPort() == null || this.port != null) ||
 							(label.getPort() != null || this.port == null) ) {
 						return false;
