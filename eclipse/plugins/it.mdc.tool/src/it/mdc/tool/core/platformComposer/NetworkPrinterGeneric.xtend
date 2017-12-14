@@ -380,12 +380,16 @@ class NetworkPrinterGeneric {
 			
 			«ENDFOR»
 			// System Signal(s)
-			.rst(rst),
 			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
 			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
+			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ELSE»
+			.rst(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
 			«ENDFOR»
 		);
+		
+
+		
+		
 		
 		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
 		// Clock Gating Cell «clockDomainsIndex.get(lr)»
