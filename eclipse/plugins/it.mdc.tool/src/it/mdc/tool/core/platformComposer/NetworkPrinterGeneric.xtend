@@ -866,18 +866,14 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		actor_«actor.simpleName» (
 			// Input Signal(s)
-			«FOR input : actor.inputs»
-			«FOR commSigId : getActorCommSignals(actor)»
-			«IF isInputSide(ACTOR,commSigId)».«getActorPortSignal(commSigId,input)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»),«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
+			«FOR input : actor.inputs SEPARATOR ","»«FOR commSigId : getActorInputCommSignals(actor) SEPARATOR ","»
+			.«getActorPortSignal(commSigId,input)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»)
+			«ENDFOR»«ENDFOR»«IF !getActorOutputCommSignals(actor).empty»,«ENDIF»
 			
 			// Output Signal(s)
-			«FOR output : actor.outputs»
-			«FOR commSigId : getActorCommSignals(actor)»
-			«IF isOutputSide(ACTOR,commSigId)».«getActorPortSignal(commSigId,output)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»),«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
+			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : getActorOutputCommSignals(actor) SEPARATOR ","»
+			.«getActorPortSignal(commSigId,output)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»)
+			«ENDFOR»«ENDFOR»«IF !getActorSysSignals(actor).empty»,«ENDIF»
 			
 			// System Signal(s)
 			«FOR sysSigId : getActorSysSignals(actor) SEPARATOR ","»	
@@ -975,21 +971,48 @@ class NetworkPrinterGeneric {
 		return actorCommSignalsId
 	}
 	
+	
+	def List<String> getActorInputCommSignals(Actor actor) {
+		var List<String> actorInputCommSignalsId = new ArrayList<String>();
+		for(String commSigId : getActorCommSignals(actor)) {
+			if(isInputSide(ACTOR,commSigId)) {
+				actorInputCommSignalsId.add(commSigId);
+			}
+		}
+		return actorInputCommSignalsId
+	}
+	
+	def List<String> getActorOutputCommSignals(Actor actor) {
+		var List<String> actorOutputCommSignalsId = new ArrayList<String>();
+		for(String commSigId : getActorCommSignals(actor)) {
+			if(isOutputSide(ACTOR,commSigId)) {
+				actorOutputCommSignalsId.add(commSigId);
+			}
+		}
+		return actorOutputCommSignalsId
+	}
+	
 	def String getTargetSignal(Connection connection, String pred, String commSigId) {
 		
 		var String prefix = ""
 		if (connection.target instanceof Actor) {
 			if(!(connection.target as Actor).hasAttribute("sbox")) {
 				if(getModName(pred) != "") {
-					prefix = getModName(pred) + ""
+					prefix = getModName(pred)
 				}	
 			}
 		}
 		
+		var String suffix = "";
+		if(!modCommSignals.get(pred).get(commSigId).get(CH).equals("")) {
+			suffix = "_" + modCommSignals.get(pred).get(commSigId).get(CH);	
+		}
+		
 		if (connection.targetPort == null) {
-			return prefix + connection.target.label + "_" + modCommSignals.get(pred).get(commSigId).get(CH)
+			
+			return prefix + connection.target.label + suffix
 		} else {
-			return prefix + connection.target.label + "_" + connection.targetPort.label + "_" + modCommSignals.get(pred).get(commSigId).get(CH)
+			return prefix + connection.target.label + "_" + connection.targetPort.label + suffix
 		}
 	}
 	
@@ -1001,7 +1024,7 @@ class NetworkPrinterGeneric {
 		if (connection.source instanceof Actor) {
 			if(!(connection.source as Actor).hasAttribute("sbox")) {
 				if(getModName(succ) != "") {
-					prefix = getModName(succ) + ""
+					prefix = getModName(succ)
 				}	
 			}
 		}
@@ -1021,16 +1044,26 @@ class NetworkPrinterGeneric {
 			}
 		}
 		
+		
+		
 		if (connection.sourcePort == null) {
 			for (commSigId : modCommSignals.get(succ).keySet) {
+				var String suffix2 = "";
+				if(!modCommSignals.get(succ).get(commSigId).get(CH).equals("")) {
+					suffix2 = "_" + modCommSignals.get(succ).get(commSigId).get(CH);	
+				}
 				if ( modCommSignals.get(succ).get(commSigId).get(CH).equals(targetChannel) ) {
-					return prefix + connection.source.label + "_" + modCommSignals.get(succ).get(commSigId).get(CH) + suffix
+					return prefix + connection.source.label + suffix2 + suffix
 				}
 			}
 		} else {
 			for (commSigId : modCommSignals.get(succ).keySet) {
+				var String suffix2 = "";
+				if(!modCommSignals.get(succ).get(commSigId).get(CH).equals("")) {
+					suffix2 = "_" + modCommSignals.get(succ).get(commSigId).get(CH);	
+				}
 				if ( modCommSignals.get(succ).get(commSigId).get(CH).equals(targetChannel) ) {
-					return prefix + connection.source.label + "_" + connection.sourcePort.label + "_" + modCommSignals.get(succ).get(commSigId).get(CH) + suffix
+					return prefix + connection.source.label + "_" + connection.sourcePort.label + suffix2 + suffix
 				}
 			}
 		}
