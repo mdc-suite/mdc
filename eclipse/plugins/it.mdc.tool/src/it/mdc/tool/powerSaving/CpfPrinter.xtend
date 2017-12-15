@@ -188,7 +188,7 @@ class CpfPrinter {
 		create_power_domain -name PDdef -default	
 					
 		«FOR lr: powerSets»
-		create_power_domain -name PD«logicRegionID.get(lr)» -instances {«FOR inst: logicRegions.get(lr)»«inst» «ENDFOR»}\
+		create_power_domain -name PD«logicRegionID.get(lr)» -instances {«FOR inst: logicRegions.get(lr)»actor_«inst» «ENDFOR»}\
 		-shutoff_condition {!powerController_0/pw_switch_en«logicRegionID.get(lr)»} -base_domains {PDdef}
 		
 		«ENDFOR»			
