@@ -814,6 +814,14 @@ class NetworkPrinterGeneric {
 		}
 	}
 	
+	def String getChannelSuffix(String module, String commSigId) {
+		if(modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
+			""
+		} else {
+			"_" + modCommSignals.get(module).get(commSigId).get(CH)
+		}
+	}
+	
 	/**
 	 * Print actors instantiation in top module.
 	 */	
@@ -901,7 +909,7 @@ class NetworkPrinterGeneric {
 			«FOR input : actor.inputs»
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«««todo put actp instead of ch
-			«IF isInputSide(pred,commSigId)».«input.label»_«modCommSignals.get(pred).get(commSigId).get(CH)»(«actor.label»_«getSigName(pred,commSigId,input)»),«ENDIF»
+			«IF isInputSide(pred,commSigId)».«input.label»«getChannelSuffix(pred,commSigId)»(«actor.label»_«getSigName(pred,commSigId,input)»),«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			
@@ -909,7 +917,7 @@ class NetworkPrinterGeneric {
 			«FOR output : actor.outputs»
 			«FOR commSigId : modCommSignals.get(succ).keySet»
 			«««todo put actp instead of ch
-			«IF isOutputSide(succ,commSigId)».«output.label»_«modCommSignals.get(succ).get(commSigId).get(CH)»(«actor.label»_«getSigName(succ,commSigId,output)»),«ENDIF»
+			«IF isOutputSide(succ,commSigId)».«output.label»«getChannelSuffix(succ,commSigId)»(«actor.label»_«getSigName(succ,commSigId,output)»),«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			

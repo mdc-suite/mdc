@@ -61,17 +61,17 @@ class SBoxPrinterGeneric {
 		'''
 		«FOR commSigId : modCommSignals.get(pred).keySet»
 		«IF isInputSide(pred,commSigId) && modCommSignals.get(pred).get(commSigId).get(DIR).equals("direct")»
-		assign out1_«modCommSignals.get(pred).get(commSigId).get(CH)» = sel ? «IF type.equals("1x2")»{«getCommSigSize(pred, commSigId)»{1'b0}}«ELSE»in2_«modCommSignals.get(pred).get(commSigId).get(CH)»«ENDIF» : in1_«modCommSignals.get(pred).get(commSigId).get(CH)»;
+		assign out1«getChannelSuffix(pred,commSigId)» = sel ? «IF type.equals("1x2")»{«getCommSigSize(pred, commSigId)»{1'b0}}«ELSE»in2«getChannelSuffix(succ,commSigId)»»«ENDIF» : in1«getChannelSuffix(succ,commSigId)»;
 		«IF type.equals("1x2")»
-		assign out2_«modCommSignals.get(pred).get(commSigId).get(CH)» = sel ? in1_«modCommSignals.get(pred).get(commSigId).get(CH)» : {«getCommSigSize(pred, commSigId)»{1'b0}};
+		assign out2«getChannelSuffix(pred,commSigId)» = sel ? in1«getChannelSuffix(succ,commSigId)» : {«getCommSigSize(pred, commSigId)»{1'b0}};
 		«ENDIF»
 		«ENDIF»
 		«ENDFOR»
 		«FOR commSigId : modCommSignals.get(succ).keySet»
 		«IF isOutputSide(succ,commSigId) && modCommSignals.get(succ).get(commSigId).get(DIR).equals("reverse")»
-		assign in1_«modCommSignals.get(succ).get(commSigId).get(CH)» = sel ? «IF type.equals("2x1")»{«getCommSigSize(succ, commSigId)»{1'b0}}«ELSE»out2_«modCommSignals.get(succ).get(commSigId).get(CH)»«ENDIF» : out1_«modCommSignals.get(succ).get(commSigId).get(CH)»;
+		assign in1«getChannelSuffix(succ,commSigId)» = sel ? «IF type.equals("2x1")»{«getCommSigSize(succ, commSigId)»{1'b0}}«ELSE»out2«getChannelSuffix(pred,commSigId)»«ENDIF» : out1«getChannelSuffix(pred,commSigId)»;
 		«IF type.equals("2x1")»
-		assign in2_«modCommSignals.get(succ).get(commSigId).get(CH)» = sel ? out1_«modCommSignals.get(succ).get(commSigId).get(CH)» : {«getCommSigSize(pred, commSigId)»{1'b0}};
+		assign in2«getChannelSuffix(succ,commSigId)» = sel ? out1«getChannelSuffix(pred,commSigId)» : {«getCommSigSize(pred, commSigId)»{1'b0}};
 		«ENDIF»
 		«ENDIF»
 		«ENDFOR»
@@ -125,7 +125,15 @@ class SBoxPrinterGeneric {
 			return ""
 		}
 	}
-		
+	
+	def String getChannelSuffix(String module, String commSigId) {
+		if(modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
+			""
+		} else {
+			"_" + modCommSignals.get(module).get(commSigId).get(CH)
+		}
+	}		
+	
 	def printInterface(String type) {
 		
 		
@@ -135,17 +143,17 @@ class SBoxPrinterGeneric {
 		)(
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId)»
-			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1_«modCommSignals.get(pred).get(commSigId).get(CH)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
 			«IF type.equals("1x2")»
-			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out2_«modCommSignals.get(pred).get(commSigId).get(CH)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out2«getChannelSuffix(pred,commSigId)»,
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
 			«FOR commSigId : modCommSignals.get(succ).keySet»
 			«IF isOutputSide(succ,commSigId)»
-			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1_«modCommSignals.get(succ).get(commSigId).get(CH)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
 			«IF type.equals("2x1")»
-			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in2_«modCommSignals.get(succ).get(commSigId).get(CH)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in2«getChannelSuffix(succ,commSigId)»,
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
