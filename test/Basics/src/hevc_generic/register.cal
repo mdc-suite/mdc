@@ -1,0 +1,10 @@
+package hevc_generic;
+
+@sequential
+actor register ()
+	int(size=14) data_in
+==>
+	int(size=14) data_out
+: 
+
+end

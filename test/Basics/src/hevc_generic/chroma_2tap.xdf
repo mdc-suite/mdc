@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="chroma_2tap">
+    <Port kind="Input" name="filter_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="9"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="acc_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="14"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="go_in">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="1"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="alpha_h">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="3"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="alpha_v">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="3"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="filter_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="9"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="go_out">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="1"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="mac0">
+        <Class name="hevc_generic.mac"/>
+    </Instance>
+    <Instance id="mac1">
+        <Class name="hevc_generic.mac"/>
+    </Instance>
+    <Instance id="delay0">
+        <Class name="hevc_generic.delay"/>
+    </Instance>
+    <Instance id="fifo0">
+        <Class name="hevc_generic.fifo"/>
+    </Instance>
+    <Instance id="mul0">
+        <Class name="hevc_generic.mul"/>
+    </Instance>
+    <Instance id="add0">
+        <Class name="hevc_generic.add"/>
+    </Instance>
+    <Instance id="mul1">
+        <Class name="hevc_generic.mul"/>
+    </Instance>
+    <Instance id="clip0">
+        <Class name="hevc_generic.clip"/>
+    </Instance>
+    <Instance id="reg0">
+        <Class name="hevc_generic.register"/>
+    </Instance>
+    <Instance id="controller">
+        <Class name="hevc_generic.controller_2tap"/>
+    </Instance>
+    <Instance id="coeff">
+        <Class name="hevc_generic.coeff_chroma_2tap"/>
+    </Instance>
+    <Connection dst="mac0" dst-port="sample" src="" src-port="filter_in"/>
+    <Connection dst="mac0" dst-port="coeff" src="coeff" src-port="c0_h"/>
+    <Connection dst="mac0" dst-port="acc_in" src="" src-port="acc_in"/>
+    <Connection dst="delay0" dst-port="data_in" src="" src-port="filter_in"/>
+    <Connection dst="mac1" dst-port="sample" src="delay0" src-port="data_out"/>
+    <Connection dst="mac1" dst-port="coeff" src="coeff" src-port="c1_h"/>
+    <Connection dst="mac1" dst-port="acc_in" src="mac0" src-port="acc_out"/>
+    <Connection dst="mul1" dst-port="sample" src="fifo0" src-port="dout"/>
+    <Connection dst="mul0" dst-port="coeff" src="coeff" src-port="c0_v"/>
+    <Connection dst="add0" dst-port="in1" src="mul0" src-port="product"/>
+    <Connection dst="add0" dst-port="in2" src="mul1" src-port="product"/>
+    <Connection dst="mul1" dst-port="coeff" src="coeff" src-port="c1_v"/>
+    <Connection dst="" dst-port="filter_out" src="clip0" src-port="data_out"/>
+    <Connection dst="mul0" dst-port="sample" src="reg0" src-port="data_out"/>
+    <Connection dst="controller" dst-port="go_in" src="" src-port="go_in"/>
+    <Connection dst="" dst-port="go_out" src="controller" src-port="go_out"/>
+    <Connection dst="coeff" dst-port="alpha_v" src="" src-port="alpha_v"/>
+    <Connection dst="coeff" dst-port="alpha_h" src="" src-port="alpha_h"/>
+    <Connection dst="fifo0" dst-port="din" src="mac1" src-port="acc_out"/>
+    <Connection dst="reg0" dst-port="data_in" src="mac1" src-port="acc_out"/>
+    <Connection dst="clip0" dst-port="data_in" src="add0" src-port="out"/>
+</XDF>

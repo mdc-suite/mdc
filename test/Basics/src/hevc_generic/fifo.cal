@@ -1,0 +1,10 @@
+package hevc_generic;
+
+@sequential
+actor fifo ()
+	int(size=14) din
+==>
+	int(size=14) dout
+: 
+
+end

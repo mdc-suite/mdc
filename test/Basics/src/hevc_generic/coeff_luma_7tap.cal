@@ -1,0 +1,23 @@
+package hevc_generic;
+
+actor coeff_luma_7tap ()
+	int(size=3) alpha_h,
+	int(size=3) alpha_v
+==>
+	int(size=9) c0_h,
+	int(size=9) c1_h,
+	int(size=9) c2_h,
+	int(size=9) c3_h,
+	int(size=9) c4_h,
+	int(size=9) c5_h,
+	int(size=9) c6_h,
+	int(size=9) c0_v,
+	int(size=9) c1_v,
+	int(size=9) c2_v,
+	int(size=9) c3_v,
+	int(size=9) c4_v,
+	int(size=9) c5_v,
+	int(size=9) c6_v
+: 
+
+end

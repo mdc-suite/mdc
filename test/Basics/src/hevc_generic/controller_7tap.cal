@@ -1,0 +1,10 @@
+package hevc_generic;
+
+@sequential
+actor controller_7tap ()
+	int(size=1) go_in
+==>
+	int(size=1) go_out
+: 
+
+end

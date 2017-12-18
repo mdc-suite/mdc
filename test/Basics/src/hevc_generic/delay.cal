@@ -1,0 +1,10 @@
+package hevc_generic;
+
+@sequential
+actor delay (int(size=32) SIZE=9)
+	int(size=SIZE) data_in
+==>
+	int(size=SIZE) data_out
+: 
+
+end

@@ -1,0 +1,11 @@
+package hevc_generic;
+
+@sequential
+actor mul ()
+	int(size=14) sample,
+	int(size=9) coeff
+==>
+	int(size=20) product
+: 
+
+end

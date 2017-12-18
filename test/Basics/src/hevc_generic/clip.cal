@@ -1,0 +1,10 @@
+package hevc_generic;
+
+@sequential
+actor clip ()
+	int(size=20) data_in
+==>
+	int(size=9) data_out
+: 
+
+end

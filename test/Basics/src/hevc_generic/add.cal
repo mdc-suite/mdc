@@ -1,0 +1,11 @@
+package hevc_generic;
+
+@sequential
+actor add ()
+	int(size=20) in1,
+	int(size=20) in2
+==>
+	int(size=20) out
+: 
+
+end

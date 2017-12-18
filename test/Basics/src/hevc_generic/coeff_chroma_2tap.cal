@@ -1,0 +1,13 @@
+package hevc_generic;
+
+actor coeff_chroma_2tap ()
+	int(size=3) alpha_h,
+	int(size=3) alpha_v
+==>
+	int(size=9) c0_h,
+	int(size=9) c1_h,
+	int(size=9) c0_v,
+	int(size=9) c1_v
+: 
+
+end

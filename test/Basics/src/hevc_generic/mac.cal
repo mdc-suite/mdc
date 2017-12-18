@@ -1,0 +1,12 @@
+package hevc_generic;
+
+@sequential
+actor mac ()
+	int(size=9) sample,
+	int(size=9) coeff,
+	int(size=14) acc_in
+==>
+	int(size=14) acc_out
+: 
+
+end
