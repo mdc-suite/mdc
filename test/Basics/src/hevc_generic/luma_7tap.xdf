@@ -159,9 +159,6 @@
     </Instance>
     <Instance id="reg1">
         <Class name="hevc_generic.register20"/>
-        <Parameter name="">
-            <Expr kind="Literal" literal-kind="Integer" value="20"/>
-        </Parameter>
     </Instance>
     <Connection dst="mac0" dst-port="sample" src="" src-port="filter_in"/>
     <Connection dst="mac0" dst-port="coeff" src="coeff" src-port="c0_h"/>
