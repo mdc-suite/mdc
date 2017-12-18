@@ -1,7 +1,7 @@
 package hevc_generic;
 
 @sequential
-actor register ()
+actor register14 ()
 	int(size=14) data_in
 ==>
 	int(size=14) data_out

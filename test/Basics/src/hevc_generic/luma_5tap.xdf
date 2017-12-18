@@ -119,7 +119,7 @@
         <Class name="hevc_generic.clip"/>
     </Instance>
     <Instance id="reg0">
-        <Class name="hevc_generic.register"/>
+        <Class name="hevc_generic.register14"/>
     </Instance>
     <Instance id="controller">
         <Class name="hevc_generic.controller_5tap"/>
@@ -128,10 +128,10 @@
         <Class name="hevc_generic.coeff_luma_5tap"/>
     </Instance>
     <Instance id="reg1">
-        <Class name="hevc_generic.register"/>
+        <Class name="hevc_generic.register20"/>
     </Instance>
     <Instance id="reg2">
-        <Class name="hevc_generic.register"/>
+        <Class name="hevc_generic.register20"/>
     </Instance>
     <Connection dst="mac0" dst-port="sample" src="" src-port="filter_in"/>
     <Connection dst="mac0" dst-port="coeff" src="coeff" src-port="c0_h"/>

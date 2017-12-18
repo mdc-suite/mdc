@@ -74,7 +74,7 @@
         <Class name="hevc_generic.clip"/>
     </Instance>
     <Instance id="reg0">
-        <Class name="hevc_generic.register"/>
+        <Class name="hevc_generic.register14"/>
     </Instance>
     <Instance id="controller">
         <Class name="hevc_generic.controller_2tap"/>
