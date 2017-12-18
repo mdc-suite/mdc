@@ -61,7 +61,7 @@ class SBoxPrinterGeneric {
 		'''
 		«FOR commSigId : modCommSignals.get(pred).keySet»
 		«IF isInputSide(pred,commSigId) && modCommSignals.get(pred).get(commSigId).get(DIR).equals("direct")»
-		assign out1«getChannelSuffix(pred,commSigId)» = sel ? «IF type.equals("1x2")»{«getCommSigSize(pred, commSigId)»{1'b0}}«ELSE»in2«getChannelSuffix(succ,commSigId)»»«ENDIF» : in1«getChannelSuffix(succ,commSigId)»;
+		assign out1«getChannelSuffix(pred,commSigId)» = sel ? «IF type.equals("1x2")»{«getCommSigSize(pred, commSigId)»{1'b0}}«ELSE»in2«getChannelSuffix(succ,commSigId)»«ENDIF» : in1«getChannelSuffix(succ,commSigId)»;
 		«IF type.equals("1x2")»
 		assign out2«getChannelSuffix(pred,commSigId)» = sel ? in1«getChannelSuffix(succ,commSigId)» : {«getCommSigSize(pred, commSigId)»{1'b0}};
 		«ENDIF»
