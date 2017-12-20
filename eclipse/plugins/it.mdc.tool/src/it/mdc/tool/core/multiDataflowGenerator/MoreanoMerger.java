@@ -1302,12 +1302,17 @@ public class MoreanoMerger extends Merger {
 							if(vertexMap.containsValue(connection.getTarget().getLabel())) {
 								Set<Connection> involvedConnections = new HashSet<Connection>();
 								for(Connection networkConnection : network.getConnections()) {
-									if((vertexMap.get(networkConnection.getTarget().getLabel()).equals(connection.getTarget().getLabel())) &&
-											(networkConnection.getTargetPort().getType().equals(connection.getTargetPort().getType()) && 
-													networkConnection.getTargetPort().getName().equals(connection.getTargetPort().getName()) )) {
-										involvedConnections.add(networkConnectionMap.get(network.getLabel()).get(networkConnection));
-										//OrccLogger.traceln("involved network " + network);
-										//OrccLogger.traceln("involved connection " + networkConnection);
+									if(!(networkConnection.getTarget() instanceof Port)) {
+										System.out.println(network + " "+ networkConnection.getTarget() + " " + networkConnection.getTargetPort());
+										System.out.println(network + " AA " + connection.getTargetPort() + "." + connection.getTargetPort().getType() + 
+												" " + networkConnection.getTargetPort() + "." + networkConnection.getTargetPort().getType());
+										if((vertexMap.get(networkConnection.getTarget().getLabel()).equals(connection.getTarget().getLabel())) &&
+												(networkConnection.getTargetPort().getType().equals(connection.getTargetPort().getType()) &&
+														networkConnection.getTargetPort().getName().equals(connection.getTargetPort().getName()) )) {
+											involvedConnections.add(networkConnectionMap.get(network.getLabel()).get(networkConnection));
+											//OrccLogger.traceln("involved network " + network);
+											//OrccLogger.traceln("involved connection " + networkConnection);
+										}
 									}
 								}
 								involvedNetworkConnections.put(network, involvedConnections);
