@@ -189,7 +189,7 @@ class CpfPrinter {
 					
 		«FOR lr: powerSets»
 		create_power_domain -name PD«logicRegionID.get(lr)» -instances {«FOR inst: logicRegions.get(lr)»actor_«inst» «ENDFOR»}\
-		-shutoff_condition {!powerController_0/pw_switch_en«logicRegionID.get(lr)»} -base_domains {PDdef}
+		-shutoff_condition {powerController_0/pw_switch_en«logicRegionID.get(lr)»} -base_domains {PDdef}
 		
 		«ENDFOR»			
 		'''
@@ -202,10 +202,12 @@ class CpfPrinter {
 	 */
 	def createPowerModes(){	
 		'''	
-		create_power_mode -name PMdef -domain_conditions {PDdef@on «FOR lr: powerSets»PD«logicRegionID.get(lr)»@on «ENDFOR»} -default
+		create_power_mode -name PMdef -domain_conditions {PDdef@high «FOR lr: powerSets»PD«logicRegionID.get(lr)»@high «ENDFOR»} -default
 		«FOR network : networks»
 		#«network.getSimpleName()»
-		create_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» -domain_conditions {PDdef@on «FOR reg : netRegions.get(network.getSimpleName())»«IF powerSets.contains(reg)»PD«logicRegionID.get(reg)»@on «ENDIF»«ENDFOR»}
+		create_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» \
+		-domain_conditions {PDdef@high «FOR reg: powerSets»«IF netRegions.get(network.getSimpleName()).contains(reg)»PD«logicRegionID.get(reg)»@high «ELSE»PD«logicRegionID.get(reg)»@off «ENDIF» «ENDFOR»}
+				
 		«ENDFOR»		
 		'''
 	}
@@ -220,8 +222,9 @@ class CpfPrinter {
 		# PD«logicRegionID.get(lr)» amount of ISO cells: «powerSetIsoAmount.get(lr)»
 		# PD«logicRegionID.get(lr)» amount of ISO cells in full design: «powerSetIsoAmount_full.get(lr)»		
 		create_isolation_rule -name iso«logicRegionID.get(lr)» -from PD«logicRegionID.get(lr)»\
-		-to {PDdef «FOR reg: LrCrossIsoMap.get(lr)»PD«logicRegionID.get(reg)» «ENDFOR»}\
-		-isolation_condition {powerController_0/iso_en«logicRegionID.get(lr)»} -isolation_output high -isolation_target from
+		-to {PDdef «FOR reg: LrCrossIsoMap.get(lr)»PD«logicRegionID.get(reg)» «ENDFOR»} -exclude {«FOR region: powerSets» powerController_0/sw_ack«logicRegionID.get(region)»«ENDFOR»}\
+		-isolation_condition {!powerController_0/iso_en«logicRegionID.get(lr)»} -isolation_output low -isolation_target from
+		update_isolation_rules -names iso«logicRegionID.get(lr)» -location to
 		
 		«ENDFOR»
 		'''
@@ -234,9 +237,10 @@ class CpfPrinter {
 		'''
 		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
 		create_state_retention_rule -name st«logicRegionID.get(lr)» -domain PD«logicRegionID.get(lr)»\
-		-restore_edge {!powerController_0/rstr_en«logicRegionID.get(lr)»}\
-		-save_edge {powerController_0/save_en«logicRegionID.get(lr)»}\
+		-restore_edge {!powerController_0/rtn_en«logicRegionID.get(lr)»}\
+		-save_edge {powerController_0/rtn_en«logicRegionID.get(lr)»}\
 		-target_type both -secondary_domain PDdef
+		update_state_retention_rules -names st«logicRegionID.get(lr)» -cells {RDFF* SRDFF*}
 		
 		«ENDIF»
 		«ENDFOR»
@@ -244,12 +248,24 @@ class CpfPrinter {
 	}
 	
 	
+	/**
+	 * identify always on drivers
+	 */	
+	def identifyAoDrivers(){
+		'''
+		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
+		identify_always_on_driver -pins {powerController_0/rtn_en«logicRegionID.get(lr)» }
+		«ENDIF»
+		«ENDFOR»
+		'''
+	}
+	
 	def updatePowerMode(){
 		'''
-		#replace cpf/sparc_exu.sdc with your PATH/sdcFile.sdc
-		update_power_mode -name PMdef -sdc_files cpf/sparc_exu.sdc
+		#replace ./DataIn/sdc/fastmode.sdc with your PATH/sdcFile.sdc
+		update_power_mode -name PMdef -sdc_files ./DataIn/sdc/fastmode.sdc
 		«FOR network : networks»		
-		update_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» -sdc_files cpf/sparc_exu.sdc
+		update_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» -sdc_files ./DataIn/sdc/fastmode.sdc
 		«ENDFOR»
 		'''		
 	}
@@ -267,7 +283,7 @@ class CpfPrinter {
 	 */
 	def createPowerNets(){
 		'''
-		create_power_nets -nets {«FOR lr: powerSets» VDD_SW«logicRegionID.get(lr)»«ENDFOR»} -internal
+		create_power_nets -nets {«FOR lr: powerSets» VDD_SW«logicRegionID.get(lr)»«ENDFOR»} -internal -voltage {0.0:1.2}
 		'''
 	}
 	
@@ -278,7 +294,6 @@ class CpfPrinter {
 		'''
 		«FOR lr: powerSets»
 		create_global_connection -domain PD«logicRegionID.get(lr)» -net VDD_SW«logicRegionID.get(lr)» -pins VDD
-		create_global_connection -domain PD«logicRegionID.get(lr)» -net TVDD -pins TVDD
 		create_global_connection -domain PD«logicRegionID.get(lr)» -net VSS -pins VSS
 		
 		«ENDFOR»
@@ -292,7 +307,8 @@ class CpfPrinter {
 	def createPoweSwitch(){
 		'''
 		«FOR lr: powerSets»
-		create_power_switch_rule -name SW«logicRegionID.get(lr)» -domain PD«logicRegionID.get(lr)» -external_power_net TVDD
+		create_power_switch_rule -name SW«logicRegionID.get(lr)» -domain PD«logicRegionID.get(lr)» -external_power_net VDD
+		update_power_switch_rule -name SW1 -enable_condition_1 {!powerController_0/pw_switch_en«logicRegionID.get(lr)»} -acknowledge_receiver_1 sw_ack«logicRegionID.get(lr)» -cells "HSWX1"
 		«ENDFOR»
 		'''
 	}
@@ -311,19 +327,20 @@ class CpfPrinter {
 	def createAnalysisView(){
 		'''
 		create_analysis_view -name AV_PMdef_bc -mode PMdef\
-		-domain_corners {PDdef@BC «FOR lr: powerSets»PD«logicRegionID.get(lr)»@BC «ENDFOR»}
+		-domain_corners {PDdef@BC_fast «FOR lr: powerSets»PD«logicRegionID.get(lr)»@BC_fast «ENDFOR»}
 		create_analysis_view -name AV_PMdef_wc -mode PMdef\
-		-domain_corners {PDdef@WC «FOR lr: powerSets»PD«logicRegionID.get(lr)»@WC «ENDFOR»}
+		-domain_corners {PDdef@WC_fast «FOR lr: powerSets»PD«logicRegionID.get(lr)»@WC_fast «ENDFOR»}
 		
 		«FOR network : networks»
 		create_analysis_view -name AV_PM«configManager.getNetworkId(network.getSimpleName())»_bc -mode PM«configManager.getNetworkId(network.getSimpleName())»\
-		-domain_corners {PDdef@BC «FOR lr: powerSets»PD«logicRegionID.get(lr)»@BC «ENDFOR»}
+		-domain_corners {PDdef@BC_fast «FOR lr: powerSets»«IF netRegions.get(network.getSimpleName()).contains(lr)»PD«logicRegionID.get(lr)»@BC_fast«ELSE»PD«logicRegionID.get(lr)»@BC_sleep «ENDIF» «ENDFOR»}
 		create_analysis_view -name AV_PM«configManager.getNetworkId(network.getSimpleName())»_wc -mode PM«configManager.getNetworkId(network.getSimpleName())»\
-		-domain_corners {PDdef@WC «FOR lr: powerSets»PD«logicRegionID.get(lr)»@WC «ENDFOR»}
-		
+		-domain_corners {PDdef@WC_fast «FOR lr: powerSets»«IF netRegions.get(network.getSimpleName()).contains(lr)»PD«logicRegionID.get(lr)»@WC_fast«ELSE»PD«logicRegionID.get(lr)»@WC_sleep «ENDIF» «ENDFOR»}
+				
 		«ENDFOR»
 		'''
 	}
+	
 	
 	/**
 	 * Print the Common Power Format file
@@ -360,7 +377,7 @@ class CpfPrinter {
 		'''
 		«headerComments()»
 		
-		set_cpf_version 1.1
+		set_cpf_version 2.0
 		set_hierarchy_separator /
 		
 		###############################################################################
@@ -373,55 +390,53 @@ class CpfPrinter {
 		#
 		###############################################################################
 						
-		# define the library sets
-		define_library_set -name set1_wc -libraries {\
-		cpf/libraries/lib/tcbn90lphpwc.lib\
-		cpf/libraries/lib/tcbn90lphpwc0d90d9.lib\
-		cpf/libraries/lib/tcbn90lphpcgwc.lib}
+		############################
+		## Define WC library sets ##
+		## SS/0.9*VDD/125C        ##
+		############################
+		define_library_set -name gpdk045_wc_hi_lib  -libraries {\
+		 ../Library/timing/slow_vdd1v2_basicCells.lib \
+		 ../Library/timing/slow_vdd1v2_extvdd1v2.lib \
+		 ../Library/timing/slow_vdd1v2_extvdd1v0.lib \
+		 ../Library/timing/slow_vdd1v0_extvdd1v2.lib \
+		 ../Library/timing/slow_vdd1v2_basicCells_lvt.lib }
 		
-		define_library_set -name set1_bc -libraries {\
-		cpf/libraries/lib/tcbn90lphpbc.lib\
-		cpf/libraries/lib/tcbn90lphpbc1d11d1.lib\
-		cpf/libraries/lib/tcbn90lphpcgbc.lib}
+		define_library_set -name gpdk045_wc_lo_lib  -libraries {\
+		 ../Library/timing/slow_vdd1v0_basicCells.lib \
+		 ../Library/timing/slow_vdd1v0_extvdd1v0.lib \
+		 ../Library/timing/slow_vdd1v0_extvdd1v2.lib \
+		 ../Library/timing/slow_vdd1v0_basicCells_lvt.lib }
+		 
+		############################
+		## Define BC library sets ##
+		##  FF/1.1*VDD/0C         ##
+		############################
+		define_library_set -name gpdk045_bc_hi_lib  -libraries {\
+		 ../Library/timing/fast_vdd1v2_basicCells.lib \
+		 ../Library/timing/fast_vdd1v2_extvdd1v2.lib \
+		 ../Library/timing/fast_vdd1v2_extvdd1v0.lib \
+		 ../Library/timing/fast_vdd1v0_extvdd1v2.lib \
+		 ../Library/timing/fast_vdd1v2_basicCells_lvt.lib }
+		
+		define_library_set -name gpdk045_bc_lo_lib  -libraries {\
+		 ../Library/timing/fast_vdd1v0_basicCells.lib \
+		 ../Library/timing/fast_vdd1v0_extvdd1v0.lib \
+		 ../Library/timing/fast_vdd1v0_extvdd1v2.lib \
+		 ../Library/timing/fast_vdd1v0_basicCells_lvt.lib }
 		
 		#define the isolation cells
-		define_isolation_cell -cells {ISOH* ISOL*} -enable ISO\
-		-power VDD -ground VSS  -valid_location on
+		define_isolation_cell -power VDD -ground VSS -enable ISO -valid_location to -cells "ISOLX1_ON"
 		
 		# define the always on cell
-		define_always_on_cell -cells {PTBUFFD* PTDFCND*} -power_switchable VDD -power TVDD -ground VSS
+		define_always_on_cell -cells "PBUFX2" -power_switchable VDD -power ExtVDD -ground VSS 
 		
 		
 		# define the state retention cell
-		define_state_retention_cell -cells RSDFCD* \
-		-power_switchable VDD -power TVDD -ground VSS -save_function SAVE -restore_function !NRESTORE \
-		-always_on_pins {NRESTORE SAVE} -clock_pin {CP} 
-		#-always_on_components {save_data}
+		define_state_retention_cell -cells {RDFF* SRDFF*} -ground VSS -power ExtVDD -power_switchable VDD -save_function !RT -restore_function RT
 		
-		define_state_retention_cell -cells RSDFCRD* \
-		-power_switchable VDD -power TVDD -ground VSS -save_function SAVE -restore_function !NRESTORE \
-		-always_on_pins {CDN NRESTORE SAVE}  
-		#-always_on_components {save_data}
-		
-		define_state_retention_cell -cells RSDFCSD* \
-		-power_switchable VDD -power TVDD -ground VSS -save_function SAVE -restore_function !NRESTORE \
-		-always_on_pins {SDN NRESTORE SAVE} -clock_pin {CP} 
-		#-always_on_components {save_data}
-		
-		define_state_retention_cell -cells RSDFCSRD* \
-		-power_switchable VDD -power TVDD -ground VSS -save_function SAVE -restore_function !NRESTORE \
-		-always_on_pins {CDN SDN NRESTORE SAVE} -clock_pin {CP} 
-		#-always_on_components {save_data}
 		
 		# define the power switch cells
-		define_power_switch_cell -cells "HDRDID*" \
-		-stage_1_enable NSLEEPIN1 -stage_1_output NSLEEPOUT1\
-		-stage_2_enable NSLEEPIN2 -stage_2_output NSLEEPOUT2\
-		-type header -power_switchable VDD -power TVDD
-		
-		define_power_switch_cell -cells "HDRSID*" \
-		-stage_1_enable NSLEEPIN -stage_1_output NSLEEPOUT\
-		-type header -power_switchable VDD -power TVDD
+		define_power_switch_cell -power_switchable VDD -power ExtVDD -stage_1_enable !PSO -stage_1_output PSO_out -type header -cells "HSWX1"
 
 				
 		###############################################################################
@@ -435,14 +450,14 @@ class CpfPrinter {
 		«createPowerDomains()»
 		
 		# create nominal conditions
-		create_nominal_condition -name off -voltage 0
-		create_nominal_condition -name on -voltage 1.08		
+		create_nominal_condition -name high -voltage 1.08 -state on
+		# associate library sets with nominal conditions
+		update_nominal_condition -name high -library_set gpdk045_wc_hi_lib
+		create_nominal_condition -name off  -voltage 0.0 -state off		
 		
 		# create power modes
 		«createPowerModes()»
-		
-		# associate library sets with nominal conditions
-		update_nominal_condition -name on -library_set set1_wc
+
 		
 		# create rules for isolation logic insertion
 		«createIsolationRules()»		
@@ -450,12 +465,12 @@ class CpfPrinter {
 		# create rules for state retention insertion
 		«createStateRetentionRules()»
 		
+		# identify always on drivers
+		«identifyAoDrivers()»
+		
 		###############################################################################
 		# 			Additional information for Logic Synthesis
 		###############################################################################
-		
-		# specify power target
-		set_power_target -leakage 30 -dynamic 250
 		
 		# specify timing constraints
 		«updatePowerMode()»
@@ -463,36 +478,34 @@ class CpfPrinter {
 		#-name PMdef -activity_file FILE_VCD.vcd\
 		#-activity_file_weight 100
 		
-		# update the rules with implementation info
-		#updateIsolationRules()
-		
 		###############################################################################
 		# 			Additional information for Physical Implementation
 		###############################################################################
 		
 		# declare power and ground nets
-		create_power_nets -nets TVDD -voltage 1.08
+		create_power_nets  -nets VDD -voltage {1.2}
 		«createPowerNets()»
 		create_ground_nets -nets VSS -voltage 0
 		
 		# (optional) create global connections
-		create_global_connection -net TVDD -pins VDD
-		create_global_connection -net VSS -pins VSS
+		create_global_connection -net VDD -pins VDD -domain PDdef
+		create_global_connection -net VSS -pins VSS -domain PDdef
+		
 		«createGlobalConnection()»
 		
 		# rules for power switch insertion
 		«createPoweSwitch()»
 		
 		# add implementation info for power domains
-		update_power_domain -name PDdef -primary_power_net TVDD -primary_ground_net VSS
-		
+		update_power_domain -name PDdef -primary_power_net VDD -primary_ground_net VSS
 		«updatePowerDomain()»
 		
 		# create operating corners
-		create_operating_corner -name BC \
-		-process 1 -temperature 0 -voltage 1.32 -library_set set1_bc
-		create_operating_corner -name WC \
-		-process 1 -temperature 125 -voltage 1.08 -library_set set1_wc
+		create_operating_corner -name WC_fast   -library_set gpdk045_wc_hi_lib  -process 1  -voltage 1.08   -temperature 125
+		create_operating_corner -name BC_fast   -library_set gpdk045_bc_hi_lib  -process 1  -voltage 1.32   -temperature 0
+		
+		create_operating_corner -name WC_sleep  -library_set gpdk045_wc_hi_lib  -process 1  -voltage 0.0    -temperature 125
+		create_operating_corner -name BC_sleep -library_set gpdk045_bc_hi_lib  -process 1  -voltage 0.0    -temperature 0
 		
 		# create analysis view
 		«createAnalysisView()»
