@@ -133,7 +133,7 @@ class PowerController {
 				8'd«configManager.getNetworkId(network.getSimpleName())»:	begin 
 					// «network.getSimpleName()»
 					«FOR lr: powerSets»
-						en_fsm_«logicRegionID.get(lr)» = «IF netRegions.get(network.getSimpleName()).contains(lr)»1«ELSE»0«ENDIF»;										
+						en_fsm_«logicRegionID.get(lr)» = «IF netRegions.get(network.getSimpleName()).contains(lr)»1'b1«ELSE»1'b0«ENDIF»;										
 					«ENDFOR»
 					end
 			«ENDFOR»

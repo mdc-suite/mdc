@@ -57,7 +57,7 @@ class ConfigPrinter {
 		«FOR network : networks»
 			8'd«configManager.getNetworkId(network.getSimpleName())»:	begin	// «network.getSimpleName()»
 			«FOR lut : luts»
-							sel[«lut.getCount()»]=«IF lut.getLutValue(network,0)»1«ELSE»0«ENDIF»;
+							sel[«lut.getCount()»]=«IF lut.getLutValue(network,0)»1'b1«ELSE»1'b0«ENDIF»;
 			«ENDFOR»
 						end
 			«ENDFOR»

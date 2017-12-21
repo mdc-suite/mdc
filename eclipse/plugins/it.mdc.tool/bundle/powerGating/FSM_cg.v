@@ -48,7 +48,7 @@ parameter IDLE_ON = 5'd0,
 	output status, en_iso, rtn, en_pw_sw, en_cg;
 
 	reg status, en_iso, rtn, en_pw_sw, en_cg, en_count;
-	reg [3 : 0] state, state_next;
+	reg [4 : 0] state, state_next;
 	reg [17:0] count, count_next;
 
 
@@ -124,8 +124,8 @@ parameter IDLE_ON = 5'd0,
 
 
 	always@(count or en_count)
-	   	if(en_count) count_next = count +1;
-		else count_next = 0;
+	   	if(en_count) count_next = count + 18'd1;
+		else count_next = 18'd0;
 
 	always@(state)
 	  case(state)
