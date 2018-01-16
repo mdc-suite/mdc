@@ -630,7 +630,6 @@ public class MDCBackend extends AbstractBackend {
 			
 			if(!lrEn) {	/// <li> if logic regions computing is disabled
 
-				OrccLogger.traceln("HDL GENERATION");
 				/// <ol><li> generate top module
 				hdlWriter.initClockDomains(clockDomains);
 				hdlWriter.generateTop(lutsToGen,getOptions());

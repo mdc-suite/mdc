@@ -802,7 +802,6 @@ class NetworkPrinterGeneric {
 		} else if (modCommParms.get(module).get(commParId).get(VAL).equals("bufferSize")) {
 			if (actor.incomingPortMap.containsKey(port)) {
 				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
-					OrccLogger.traceln("BUFFERSIZE");
 					Integer.toString(evaluator.evaluateAsInteger(actor.incomingPortMap.get(port).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value
@@ -810,7 +809,6 @@ class NetworkPrinterGeneric {
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
 				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
-					OrccLogger.traceln("BUFFERSIZE");
 					Integer.toString(evaluator.evaluateAsInteger(actor.outgoingPortMap.get(port).get(0).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value

@@ -282,8 +282,7 @@ public class NetworkPrinter extends PlatformComposer {
 	 */
 	protected boolean printNetwork(List<SboxLut> luts, Map<String,Object> options) 
 	{
-		OrccLogger.traceln("PRINT NETWORK PLATFORM COMPOSER");
-			
+		
 		/////////////////////////////////////////////////////////////
 		new Instantiator(true).doSwitch(network);
 		new NetworkFlattener().doSwitch(network);
