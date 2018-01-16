@@ -22,6 +22,7 @@ import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.backends.Backend;
 import net.sf.orcc.backends.BackendFactory;
 import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -628,7 +629,8 @@ public class MDCBackend extends AbstractBackend {
 			//TODO  uniformare notazioni per clock domains e logic regions e gestire caso con 0 lr e 0 cd
 			
 			if(!lrEn) {	/// <li> if logic regions computing is disabled
-				
+
+				OrccLogger.traceln("HDL GENERATION");
 				/// <ol><li> generate top module
 				hdlWriter.initClockDomains(clockDomains);
 				hdlWriter.generateTop(lutsToGen,getOptions());
@@ -1027,6 +1029,10 @@ public class MDCBackend extends AbstractBackend {
 		/// <li> instantiate and flatten networks 
 		for(Network net : netMap.keySet()){
 			
+			for(Connection existingConnection : net.getConnections()){
+				OrccLogger.traceln("ECB " + existingConnection + " " + existingConnection.getAttributes());	
+			}
+				
 			//OrccLogger.traceln("Instantiating " + net + "...");
 			new Instantiator(false).doSwitch(net);
 			
