@@ -21,6 +21,7 @@ import net.sf.orcc.ir.util.ExpressionEvaluator
 import net.sf.orcc.ir.Var
 import java.util.ArrayList
 import net.sf.orcc.df.Instance
+import net.sf.orcc.ir.Expression
 
 /**
  * A Verilog FIFO-based Generic Protocol Network printer
@@ -30,6 +31,8 @@ import net.sf.orcc.df.Instance
  * @author Carlo Sau
  */
 class NetworkPrinterGeneric {
+	
+	private ExpressionEvaluator evaluator;
 	
 	private Map<String,Map<String,String>> netSysSignals;
 	private Map<String,String> modNames;
@@ -782,14 +785,14 @@ class NetworkPrinterGeneric {
 		} else if (modCommParms.get(module).get(commParId).get(VAL).equals("bufferSize")) {
 			if (actor.incomingPortMap.containsKey(port)) {
 				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
-					actor.incomingPortMap.get(port).getAttribute("bufferSize").stringValue
+					Integer.toString(evaluator.evaluateAsInteger(actor.incomingPortMap.get(port).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value
 					"64"
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
 				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
-					actor.outgoingPortMap.get(port).get(0).getAttribute("bufferSize").stringValue
+					Integer.toString(evaluator.evaluateAsInteger(actor.outgoingPortMap.get(port).get(0).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value
 					"64"
@@ -1186,6 +1189,7 @@ class NetworkPrinterGeneric {
 		 Map<String,Boolean> logicRegionsSeqMap){
 		 	
 		 
+		this.evaluator = new ExpressionEvaluator();
 		 	
 		this.netSysSignals = netSysSignals;
 		this.modNames = modNames;
