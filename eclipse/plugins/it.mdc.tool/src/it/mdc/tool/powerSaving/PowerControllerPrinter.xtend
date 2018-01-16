@@ -68,12 +68,14 @@ class PowerController {
 		'''		
 		module PowerController(
 			ID,
+			reference_count,
 			
 			«FOR lr: powerSets»
+			sw_ack«logicRegionID.get(lr)»,
+			status«logicRegionID.get(lr)»,
 			iso_en«logicRegionID.get(lr)»,
 			«IF logicRegionsSeqMap.get(lr)»
-			rstr_en«logicRegionID.get(lr)»,
-			save_en«logicRegionID.get(lr)»,
+			rtn_en«logicRegionID.get(lr)»,
 			en_cg«logicRegionID.get(lr)»,
 			«ENDIF»
 			pw_switch_en«logicRegionID.get(lr)»,
@@ -91,13 +93,18 @@ class PowerController {
 		// Input
 		input clk, rst;
 		input [7 : 0] ID;
+		input [17:0] reference_count;
+		
+		«FOR lr: powerSets»
+		input	sw_ack«logicRegionID.get(lr)»;
+		«ENDFOR»
 		
 		// Output(s)
 		«FOR lr: powerSets»
+		output  status«logicRegionID.get(lr)»;
 		output	iso_en«logicRegionID.get(lr)»;
 		«IF logicRegionsSeqMap.get(lr)»
-		output	rstr_en«logicRegionID.get(lr)»;
-		output	save_en«logicRegionID.get(lr)»;
+		output	rtn_en«logicRegionID.get(lr)»;
 		output	en_cg«logicRegionID.get(lr)»;
 		«ENDIF»
 		output	pw_switch_en«logicRegionID.get(lr)»;
@@ -126,7 +133,7 @@ class PowerController {
 				8'd«configManager.getNetworkId(network.getSimpleName())»:	begin 
 					// «network.getSimpleName()»
 					«FOR lr: powerSets»
-						en_fsm_«logicRegionID.get(lr)» = «IF netRegions.get(network.getSimpleName()).contains(lr)»1«ELSE»0«ENDIF»;										
+						en_fsm_«logicRegionID.get(lr)» = «IF netRegions.get(network.getSimpleName()).contains(lr)»1'b1«ELSE»1'b0«ENDIF»;										
 					«ENDFOR»
 					end
 			«ENDFOR»
@@ -145,10 +152,12 @@ class PowerController {
 			FSM_cg fsm_«logicRegionID.get(lr)» (			
 			// Input Signal(s)
 			.en(en_fsm_«logicRegionID.get(lr)»),
+			.reference_count(reference_count),
+			.sw_ack(sw_ack«logicRegionID.get(lr)»),
 			// Output Signal(s)
+			.status(status«logicRegionID.get(lr)»),
 			.en_iso(iso_en«logicRegionID.get(lr)»),
-			.rstr(rstr_en«logicRegionID.get(lr)»),
-			.save(save_en«logicRegionID.get(lr)»),			
+			.rtn(rtn_en«logicRegionID.get(lr)»),		
 			.en_cg(en_cg«logicRegionID.get(lr)»),
 			.en_pw_sw(pw_switch_en«logicRegionID.get(lr)»),
 			// External Signal(s)

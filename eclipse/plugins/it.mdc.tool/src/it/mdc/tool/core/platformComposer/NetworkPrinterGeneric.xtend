@@ -370,13 +370,15 @@ class NetworkPrinterGeneric {
 		PowerController powerController_0(
 			// Input Signal(s)
 			.ID(ID),
+			.reference_count(reference_count),
 		
 			// Output Signal(s)			
 			«FOR lr: powerSets»
+			.sw_ack«clockDomainsIndex.get(lr)»(sw_ack«clockDomainsIndex.get(lr)»),
+			.status«clockDomainsIndex.get(lr)»(status«clockDomainsIndex.get(lr)»),
 			.iso_en«clockDomainsIndex.get(lr)»(iso_en«clockDomainsIndex.get(lr)»),
 			«IF logicRegionsSeqMap.get(lr)»
-			.rstr_en«clockDomainsIndex.get(lr)»(rstr_en«clockDomainsIndex.get(lr)»),
-			.save_en«clockDomainsIndex.get(lr)»(save_en«clockDomainsIndex.get(lr)»),
+			.rtn_en«clockDomainsIndex.get(lr)»(rtn_en«clockDomainsIndex.get(lr)»),
 			.en_cg«clockDomainsIndex.get(lr)»(en_cg«clockDomainsIndex.get(lr)»),
 			«ENDIF»
 			.pw_switch_en«clockDomainsIndex.get(lr)»(pw_switch_en«clockDomainsIndex.get(lr)»),			
@@ -390,8 +392,23 @@ class NetworkPrinterGeneric {
 			«ENDFOR»
 		);
 		
-
 		
+		/*fake_switches are inserted for behavioural and post synthesis simulation 
+		and verification (when real switches have not been insterted yet.
+		Remove these fake switches before synthesis and implementation!
+		*/
+		«FOR lr: powerSets»
+		fake_switch fake_sw_«clockDomainsIndex.get(lr)» (
+			.nsleep_in(pw_switch_en«clockDomainsIndex.get(lr)»),
+			.nsleep_out(sw_ack«clockDomainsIndex.get(lr)»),
+			// System Signal(s)
+			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
+			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
+			.aclk(«netSysSignals.get(sysSigId).get(NETP)»)«ELSE»
+			.aresetn(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
+			«ENDFOR»
+				);
+		«ENDFOR»
 		
 		
 		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
@@ -678,14 +695,10 @@ class NetworkPrinterGeneric {
 			input [7:0] ID,
 			«ENDIF»
 			«IF enablePowerGating»
+			input [17:0] reference_count, //to set the time necessary for be sure power is off or on
 			
 			«FOR lr: powerSets»
-			output iso_en«clockDomainsIndex.get(lr)»,
-			«IF logicRegionsSeqMap.get(lr)»
-			output rstr_en«clockDomainsIndex.get(lr)»,
-			output save_en«clockDomainsIndex.get(lr)»,
-			«ENDIF»
-			output pw_switch_en«clockDomainsIndex.get(lr)»,
+			output	status«clockDomainsIndex.get(lr)»,
 			«ENDFOR»
 			«ENDIF»			
 					
@@ -714,11 +727,14 @@ class NetworkPrinterGeneric {
 		
 		«IF enablePowerGating»
 		//Power controller Wires
+		wire [17:0] reference_count;
+		
 		«FOR lr: powerSets»
+		wire	sw_ack«clockDomainsIndex.get(lr)»;
+		wire	status«clockDomainsIndex.get(lr)»;
 		wire	iso_en«clockDomainsIndex.get(lr)»;
 		«IF logicRegionsSeqMap.get(lr)»
-		wire	rstr_en«clockDomainsIndex.get(lr)»;
-		wire	save_en«clockDomainsIndex.get(lr)»;		
+		wire	rtn_en«clockDomainsIndex.get(lr)»;
 		wire	en_cg«clockDomainsIndex.get(lr)»;
 		«ENDIF»
 		wire	pw_switch_en«clockDomainsIndex.get(lr)»;
