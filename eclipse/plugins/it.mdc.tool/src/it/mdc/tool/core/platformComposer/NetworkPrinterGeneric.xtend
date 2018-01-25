@@ -931,7 +931,7 @@ class NetworkPrinterGeneric {
 			«FOR input : actor.inputs»
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«««todo put actp instead of ch
-			«IF isInputSide(pred,commSigId)».«input.label»«getChannelSuffix(pred,commSigId)»(«actor.label»_«getSigName(pred,commSigId,input)»),«ENDIF»
+			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")».«input.label»«getChannelSuffix(pred,commSigId)»(«actor.label»_«getSigName(pred,commSigId,input)»),«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			
