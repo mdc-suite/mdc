@@ -795,6 +795,23 @@ class NetworkPrinterGeneric {
 		'''
 	}
 	
+	def Integer getBufferSizeIntegerValue(Connection connection) {
+		if(connection.hasAttribute("bufferSize")) {
+			if(connection.getAttribute("bufferSize").getContainedValue() != null) {
+				evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getContainedValue() as Expression);
+			} else { 
+				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
+					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getReferencedValue() as Expression);
+				} else {
+					OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
+					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getObjectValue() as Expression);
+				}
+			}
+		} else {
+			return null;
+		}
+	}
+	
 	
 	def String getParameterValue(String module, Actor actor, Port port, String commParId) {
 		if (modCommParms.get(module).get(commParId).get(VAL).equals("variable")) {
@@ -802,7 +819,7 @@ class NetworkPrinterGeneric {
 		} else if (modCommParms.get(module).get(commParId).get(VAL).equals("bufferSize")) {
 			if (actor.incomingPortMap.containsKey(port)) {
 				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
-					Integer.toString(evaluator.evaluateAsInteger(actor.incomingPortMap.get(port).getAttribute("bufferSize").containedValue as Expression))
+					getBufferSizeIntegerValue(actor.incomingPortMap.get(port)).toString
 				} else {
 					//TODO return default value
 					OrccLogger.traceln("attr " + actor.incomingPortMap.get(port).getAttributes());
@@ -810,7 +827,7 @@ class NetworkPrinterGeneric {
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
 				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
-					Integer.toString(evaluator.evaluateAsInteger(actor.outgoingPortMap.get(port).get(0).getAttribute("bufferSize").containedValue as Expression))
+					getBufferSizeIntegerValue(actor.outgoingPortMap.get(port).get(0)).toString
 				} else {
 					//TODO return default value
 					OrccLogger.traceln("attr " + actor.outgoingPortMap.get(port).get(0).getAttributes());

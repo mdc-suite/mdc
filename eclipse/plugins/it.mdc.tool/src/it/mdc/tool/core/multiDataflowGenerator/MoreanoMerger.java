@@ -42,7 +42,7 @@ import net.sf.orcc.util.OrccLogger;
  */
 public class MoreanoMerger extends Merger {
 	
-	
+	// TODO FIX BUFFERSIZE PROPAGATION!
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 

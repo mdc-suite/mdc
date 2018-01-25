@@ -12,6 +12,7 @@ import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.util.ExpressionEvaluator;
+import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.sboxManagement.SboxLutManager;
 
@@ -104,7 +105,16 @@ abstract public class Merger {
 	 */
 	protected EObject getBufferSizeValue(Connection connection) {
 		if(hasBufferSize(connection)) {
-			return connection.getAttribute("bufferSize").getContainedValue();
+			if(connection.getAttribute("bufferSize").getContainedValue() != null) {
+				return connection.getAttribute("bufferSize").getContainedValue();
+			} else { 
+				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
+					return connection.getAttribute("bufferSize").getReferencedValue();
+				} else {
+					OrccLogger.debugln("CCCH " + connection + "   " + connection.getAttributes());
+					return (EObject) connection.getAttribute("bufferSize").getObjectValue();
+				}
+			}
 		} else {
 			return null;
 		}
@@ -115,7 +125,16 @@ abstract public class Merger {
 	 */
 	protected Integer getBufferSizeIntegerValue(Connection connection) {
 		if(hasBufferSize(connection)) {
-			return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getContainedValue());
+			if(connection.getAttribute("bufferSize").getContainedValue() != null) {
+				return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getContainedValue());
+			} else { 
+				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
+					return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getReferencedValue());
+				} else {
+					OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
+					return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getObjectValue());
+				}
+			}
 		} else {
 			return null;
 		}
