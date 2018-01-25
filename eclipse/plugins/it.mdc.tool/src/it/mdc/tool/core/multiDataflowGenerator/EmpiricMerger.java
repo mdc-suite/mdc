@@ -388,11 +388,13 @@ public class EmpiricMerger extends Merger {
 								OrccLogger.debugln("connection " + candidate + " vs " + unifiable + "(" + getBufferSizeValue(candidate) + "," + getBufferSizeValue(unifiable) + ")");
 								if(getBufferSizeIntegerValue(candidate) > getBufferSizeIntegerValue(unifiable)) {
 									OrccLogger.debugln("UPD");
-									unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));
+									unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));	// for network GUI
+									unifiable.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(candidate));	// for platform-composer
 								}
 							} else {
 								OrccLogger.debugln("UPD");
-								unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));
+								unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));	// for network GUI
+								unifiable.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(candidate));	// for platform-composer
 							}
 							OrccLogger.debugln("cbs " + getBufferSizeValue(unifiable) + "   " + unifiable.getAttribute("bufferSize").getReferencedValue());
 						}
@@ -466,7 +468,8 @@ public class EmpiricMerger extends Merger {
 								connectionsMap.putAll(unifiableBroadcast);
 								sboxLutManager.addLutsExistingSboxes(unifBroadLuts, currentNetwork, ALL_SECTIONS);
 								for(Connection toBeUpdated : unifiableBufferSize.keySet()) {
-									toBeUpdated.getAttribute("bufferSize").setEObjectValue(unifiableBufferSize.get(toBeUpdated));
+									toBeUpdated.getAttribute("bufferSize").setEObjectValue(unifiableBufferSize.get(toBeUpdated));	// for network GUI
+									toBeUpdated.getAttribute("bufferSize").setContainedValue(unifiableBufferSize.get(toBeUpdated));	// for platform-composer
 								}
 								for(Instance sbox : matcher.getLuts().keySet()) {
 									networksInstances.get(currentNetwork.getSimpleName()).add(sbox.getLabel());
