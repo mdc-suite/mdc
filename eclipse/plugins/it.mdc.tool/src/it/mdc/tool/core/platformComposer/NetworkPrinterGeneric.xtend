@@ -805,6 +805,7 @@ class NetworkPrinterGeneric {
 					Integer.toString(evaluator.evaluateAsInteger(actor.incomingPortMap.get(port).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value
+					OrccLogger.traceln("attr " + actor.incomingPortMap.get(port).getAttributes());
 					"64"
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
@@ -812,6 +813,7 @@ class NetworkPrinterGeneric {
 					Integer.toString(evaluator.evaluateAsInteger(actor.outgoingPortMap.get(port).get(0).getAttribute("bufferSize").containedValue as Expression))
 				} else {
 					//TODO return default value
+					OrccLogger.traceln("attr " + actor.outgoingPortMap.get(port).get(0).getAttributes());
 					"64"
 				}
 			}
