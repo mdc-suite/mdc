@@ -6,10 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.emf.ecore.EObject;
+
+import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.Network;
+import net.sf.orcc.ir.Expression;
+import net.sf.orcc.ir.util.ExpressionEvaluator;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.sboxManagement.SboxLutManager;
-import it.mdc.tool.core.sboxManagement.*;
 
 /**
  * 
@@ -21,6 +25,11 @@ import it.mdc.tool.core.sboxManagement.*;
  * @see it.unica.diee.mdc package
  */
 abstract public class Merger {
+	
+	/**
+	 * Expression evaluator
+	 */
+	private ExpressionEvaluator evaluator;
 	
 	/**
 	 * Sbox Look-Up Table manager instance
@@ -37,6 +46,7 @@ abstract public class Merger {
 	 * The constructor
 	 */
 	public Merger() {
+		evaluator = new ExpressionEvaluator();
 		sboxLutManager = new SboxLutManager();
 		networkVertexMap = new HashMap<String,Map<String,String>>();
 	}
@@ -80,6 +90,35 @@ abstract public class Merger {
 	 */
 	public List<SboxLut> getSboxLuts() {
 		return sboxLutManager.getLuts();
+	}
+	
+	/**
+	 * 
+	 */
+	protected Boolean hasBufferSize(Connection connection) {
+		return connection.hasAttribute("bufferSize");
+	}
+
+	/**
+	 * 
+	 */
+	protected EObject getBufferSizeValue(Connection connection) {
+		if(hasBufferSize(connection)) {
+			return connection.getAttribute("bufferSize").getContainedValue();
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	protected Integer getBufferSizeIntegerValue(Connection connection) {
+		if(hasBufferSize(connection)) {
+			return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getContainedValue());
+		} else {
+			return null;
+		}
 	}
 	
 	/**

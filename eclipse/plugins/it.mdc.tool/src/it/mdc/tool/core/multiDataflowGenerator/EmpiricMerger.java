@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.emf.ecore.EObject;
+
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Argument;
 import net.sf.orcc.df.DfFactory;
@@ -21,8 +23,11 @@ import it.mdc.tool.core.sboxManagement.SboxActorManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.sboxManagement.*;
 import net.sf.orcc.graph.visit.BFS;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.util.ExpressionEvaluator;
 import net.sf.orcc.ir.util.IrUtil;
+import net.sf.orcc.util.Attribute;
 import net.sf.orcc.util.OrccLogger;
 import net.sf.orcc.df.Connection;
 
@@ -170,6 +175,7 @@ public class EmpiricMerger extends Merger {
 			
 			// broadcast flag
 			isBroadcast = false;
+			OrccLogger.traceln("bcass " + connection.getAttributes());
 			
 			if(!connection.hasAttribute("broadcast"))
 				for(Connection otherConnection : network.getConnections())
@@ -345,6 +351,7 @@ public class EmpiricMerger extends Merger {
 		
 		/// <li> find connection(s) on the merging network
 		for(Connection existingConnection : currentNetwork.getConnections()){
+			OrccLogger.traceln("ext attr " + existingConnection.getAttributes());
 			if(source.equals(existingConnection.getSource()) && 
 					target.equals(existingConnection.getTarget()))
 				candidates.add(existingConnection);
@@ -352,31 +359,60 @@ public class EmpiricMerger extends Merger {
 				
 		/// <li> search matching connection(s) on the result network 
 		for(Connection candidate : candidates) {
+			
+			OrccLogger.traceln("cand attr " + candidate.getAttributes());
 
 			if(!connectionsMap.containsKey(candidate)) {
 				Connection unifiable;
-				if(candidate.hasAttribute("broadcast"))
+				if(candidate.hasAttribute("broadcast")) {
 					unifiable = searcher.getConnection(
 						verticesMap.get(source),candidate.getSourcePort(),
 						verticesMap.get(target),candidate.getTargetPort(),
 						multiDataflow,Integer.parseInt(candidate.getAttribute("broadcastSize").getStringValue()));
-				else
+				} else {
 					unifiable = searcher.getConnection(
 						verticesMap.get(source),candidate.getSourcePort(),
 						verticesMap.get(target),candidate.getTargetPort(),
 						multiDataflow,0);
-				if(unifiable!=null){
+				}
+				if(unifiable!=null) {
 					if(!candidate.hasAttribute("broadcast")) {
 						connectionsMap.put(candidate,unifiable);
 						sboxLutManager.addLutsExistingSboxes(matcher.getLuts(), currentNetwork, ALL_SECTIONS);
 						for(Instance sbox : matcher.getLuts().keySet()) {
 							networksInstances.get(currentNetwork.getSimpleName()).add(sbox.getLabel());
 						}
+						// update bufferSize parameter (worst case)
+						if(hasBufferSize(candidate)) {
+							if(hasBufferSize(unifiable)) {
+								OrccLogger.debugln("connection " + candidate + " vs " + unifiable + "(" + getBufferSizeValue(candidate) + "," + getBufferSizeValue(unifiable) + ")");
+								if(getBufferSizeIntegerValue(candidate) > getBufferSizeIntegerValue(unifiable)) {
+									OrccLogger.debugln("UPD");
+									unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));
+								}
+							} else {
+								OrccLogger.debugln("UPD");
+								unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));
+							}
+							OrccLogger.debugln("cbs " + getBufferSizeValue(unifiable) + "   " + unifiable.getAttribute("bufferSize").getReferencedValue());
+						}
 						matcher.deleteLuts();	
 					} else {
 						boolean isNotUnifiable = false;
 						Map<Connection,Connection> unifiableBroadcast = new HashMap<Connection,Connection>();	/// <ol> <li> try to find a unifiable broadcast
 						unifiableBroadcast.put(candidate,unifiable);											/// <li> add the already found unifiable connection
+						Map<Connection,EObject> unifiableBufferSize = new HashMap<Connection,EObject>();
+						
+						// update bufferSize parameter (worst case)
+						if(hasBufferSize(candidate)) {
+							if(hasBufferSize(unifiable)) {
+								if(getBufferSizeIntegerValue(candidate) > getBufferSizeIntegerValue(unifiable)) {
+									unifiableBufferSize.put(unifiable,getBufferSizeValue(candidate));
+								}
+							} else {
+								unifiableBufferSize.put(unifiable,getBufferSizeValue(candidate));
+							}
+						}
 						Map<Instance,Boolean> unifBroadLuts = matcher.getLuts();								/// <li> get the luts of unifiable broadcast
 						matcher.deleteLuts();																	/// <li> reset matcher luts
 						
@@ -399,8 +435,19 @@ public class EmpiricMerger extends Merger {
 													break;														/// <b> the broadcast is not unifiable </b>
 												}
 										}
+										
 										if(!isNotUnifiable) {
-
+											
+											// update bufferSize parameter (worst case)
+											if(hasBufferSize(otherCandidate)) {
+												if(hasBufferSize(otherUnifiable)) {
+													if(getBufferSizeIntegerValue(otherCandidate) > getBufferSizeIntegerValue(otherUnifiable)) {
+														unifiableBufferSize.put(otherUnifiable,getBufferSizeValue(otherCandidate));
+													}
+												} else {
+													unifiableBufferSize.put(otherUnifiable,getBufferSizeValue(otherCandidate));
+												}
+											}
 											unifiableBroadcast.put(otherCandidate, otherUnifiable);				/// <li> add the other unifiable </ol>  </ol>
 											unifBroadLuts.putAll(matcher.getLuts());	
 										}
@@ -408,6 +455,7 @@ public class EmpiricMerger extends Merger {
 										isNotUnifiable = false;
 								} else {
 									unifiableBroadcast= new HashMap<Connection,Connection>();
+									unifiableBufferSize = new HashMap<Connection,EObject>();
 									break;
 								}
 							}
@@ -417,6 +465,9 @@ public class EmpiricMerger extends Merger {
 						} else {
 								connectionsMap.putAll(unifiableBroadcast);
 								sboxLutManager.addLutsExistingSboxes(unifBroadLuts, currentNetwork, ALL_SECTIONS);
+								for(Connection toBeUpdated : unifiableBufferSize.keySet()) {
+									toBeUpdated.getAttribute("bufferSize").setEObjectValue(unifiableBufferSize.get(toBeUpdated));
+								}
 								for(Instance sbox : matcher.getLuts().keySet()) {
 									networksInstances.get(currentNetwork.getSimpleName()).add(sbox.getLabel());
 								}
@@ -736,7 +787,7 @@ public class EmpiricMerger extends Merger {
 		inPort.setName("in1");
 		sboxInstance.setEntity(sboxActorManager.getSboxActor1x2(inPort.getType()));
 		sboxInstance.getActor().getInputs().add(inPort);
-		
+
 		// create connection between the common source and the sbox
 		Connection inConn = DfFactory.eINSTANCE.createConnection(collision.getSource(), 
 				collision.getSourcePort(), sboxInstance, sboxInstance.getActor().getInput("in1"));
@@ -876,7 +927,7 @@ public class EmpiricMerger extends Merger {
 		// create connection between the sbox and the collision connection target
 		Connection outConn = DfFactory.eINSTANCE.createConnection(sboxInstance, 
 				sboxInstance.getActor().getOutput("out1"), collision.getTarget(), collision.getTargetPort());
-		
+
 		// update collision connection
 		collision.setTarget(sboxInstance);
 		collision.setTargetPort(sboxInstance.getActor().getInput("in1"));
