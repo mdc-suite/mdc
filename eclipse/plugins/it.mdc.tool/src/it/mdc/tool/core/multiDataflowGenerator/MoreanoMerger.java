@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.emf.ecore.EObject;
+
 import dfg.DfgEdge;
 import dfg.DfgFactory;
 import dfg.DfgGraph;
@@ -26,6 +28,7 @@ import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Port;
 import net.sf.orcc.graph.Vertex;
+import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.IrFactory;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
@@ -352,6 +355,20 @@ public class MoreanoMerger extends Merger {
 			Map<String,Connection> mappings = (Map<String, Connection>) dfgVertex.getMappings();
 			Connection mappedConnection = mappings.get(multiDataflowNetwork.getSimpleName());
 			Connection connection = mappings.get(currentDataflowNetwork.getSimpleName());
+			if(hasBufferSize(mappedConnection)){
+				if(hasBufferSize(connection)) {
+					if(getBufferSizeIntegerValue(connection) > getBufferSizeIntegerValue(mappedConnection)) {
+						mappedConnection.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(connection));	// for network editor
+						mappedConnection.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(connection));	// for platform-composer
+					}
+				}
+			} else {
+				if(hasBufferSize(connection)) {
+					mappedConnection.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(connection));	// for network editor
+					mappedConnection.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(connection));	// for platform-composer
+				}
+			}
+			
 			Vertex mappedSource = mappedConnection.getSource();
 			Vertex mappedTarget = mappedConnection.getTarget();
 			Vertex source = connection.getSource();
@@ -482,6 +499,10 @@ public class MoreanoMerger extends Merger {
 			if(connection.hasAttribute("broadcast")) {
 				mappedConnection.setAttribute("broadcast", multiDataflowNetwork.getName());
 				mappedConnection.setAttribute("broadcastSize", connection.getAttribute("broadcastSize").getStringValue());
+			}
+			if(hasBufferSize(connection)) {
+				mappedConnection.setAttribute("bufferSize",getBufferSizeValue(connection));						// for network editor
+				mappedConnection.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(connection));	// for platform-composer
 			}
 			multiDataflowNetwork.add(mappedConnection);
 			connectionMap.put(connection, mappedConnection);
@@ -877,16 +898,34 @@ public class MoreanoMerger extends Merger {
 					source = sboxInstance;
 					sourcePort = outPort2;
 					
-					// update colliding connections source
+					// update colliding connections source and extract bufferSize (worst case)
+					Integer bufferSizeIntegerValue = 0;
+					EObject bufferSizeValue = null;
 					for(Connection involvedConnection : firstNetworkInvolvedConnections) {
 						OrccLogger.traceln("1st_nic src change " + involvedConnection + " to " + sboxInstance.getName());
 						involvedConnection.setSource(sboxInstance); 
 						involvedConnection.setSourcePort(sboxInstance.getActor().getOutput("out1"));
+						if(hasBufferSize(involvedConnection)) {
+							if(getBufferSizeIntegerValue(involvedConnection) > bufferSizeIntegerValue) {
+								bufferSizeIntegerValue = getBufferSizeIntegerValue(involvedConnection);
+								bufferSizeValue = getBufferSizeValue(involvedConnection);
+							}
+						}
 					}
 					for(Connection involvedConnection : secondNetworkInvolvedConnections) {
 						OrccLogger.traceln("2nd_nic src change " + involvedConnection + " to " + sboxInstance.getName());
 						involvedConnection.setSource(sboxInstance);
 						involvedConnection.setSourcePort(sboxInstance.getActor().getOutput("out2"));
+						if(hasBufferSize(involvedConnection)) {
+							if(getBufferSizeIntegerValue(involvedConnection) > bufferSizeIntegerValue) {
+								bufferSizeIntegerValue = getBufferSizeIntegerValue(involvedConnection);
+								bufferSizeValue = getBufferSizeValue(involvedConnection);
+							}
+						}
+					}
+					if(bufferSizeValue != null) {
+						inConn.setAttribute("bufferSize",bufferSizeValue);						// for network editor
+						inConn.getAttribute("bufferSize").setContainedValue(bufferSizeValue);	// for platform-composer
 					}
 						
 					// assign SBox output connection size attribute
@@ -1121,15 +1160,33 @@ public class MoreanoMerger extends Merger {
 					targetPort = inPort2;
 
 					// update colliding connections target
+					Integer bufferSizeIntegerValue = 0;
+					EObject bufferSizeValue = null;
 					for(Connection involvedConnection : firstNetworkInvolvedConnections) {
 						OrccLogger.traceln("1st_nic tgt change " + involvedConnection + " to " + sboxInstance.getName());
 						involvedConnection.setTarget(sboxInstance);
 						involvedConnection.setTargetPort(sboxInstance.getActor().getInput("in1"));
+						if(hasBufferSize(involvedConnection)) {
+							if(getBufferSizeIntegerValue(involvedConnection) > bufferSizeIntegerValue) {
+								bufferSizeIntegerValue = getBufferSizeIntegerValue(involvedConnection);
+								bufferSizeValue = getBufferSizeValue(involvedConnection);
+							}
+						}
 					}
 					for(Connection involvedConnection : secondNetworkInvolvedConnections) {
 						OrccLogger.traceln("2nd_nic tgt change " + involvedConnection + " to " + sboxInstance.getName());
 						involvedConnection.setTarget(sboxInstance);
 						involvedConnection.setTargetPort(sboxInstance.getActor().getInput("in2"));
+						if(hasBufferSize(involvedConnection)) {
+							if(getBufferSizeIntegerValue(involvedConnection) > bufferSizeIntegerValue) {
+								bufferSizeIntegerValue = getBufferSizeIntegerValue(involvedConnection);
+								bufferSizeValue = getBufferSizeValue(involvedConnection);
+							}
+						}
+					}
+					if(bufferSizeValue != null) {
+						outConn.setAttribute("bufferSize",bufferSizeValue);						// for network editor
+						outConn.getAttribute("bufferSize").setContainedValue(bufferSizeValue);	// for platform-composer
 					}
 						
 					// assign SBox output connection size attribute
