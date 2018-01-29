@@ -460,11 +460,8 @@ class NetworkPrinterGeneric {
 		
 		var String result = "";
 
-		if(parm.value != null) {
-			result = "." + parm.name + "(" + parm.value.toString().split(": ").get(1).split("\\)").get(0) + ")";
-		} else {
-			result = "." + parm.name + "(" + (new ExpressionEvaluator().evaluateAsInteger(parm.initialValue)) + ")";
-		}
+		result = "." + parm.name + "(" + (evaluator.evaluateAsInteger(parm.initialValue)) + ")";
+		
 		if(idParm == size-1) {
 			idParm = 0; 
 			lastParm = true;
