@@ -175,7 +175,7 @@ public class EmpiricMerger extends Merger {
 			
 			// broadcast flag
 			isBroadcast = false;
-			OrccLogger.traceln("bcass " + connection.getAttributes());
+	//		OrccLogger.traceln("bcass " + connection.getAttributes());
 			
 			if(!connection.hasAttribute("broadcast"))
 				for(Connection otherConnection : network.getConnections())
@@ -351,7 +351,7 @@ public class EmpiricMerger extends Merger {
 		
 		/// <li> find connection(s) on the merging network
 		for(Connection existingConnection : currentNetwork.getConnections()){
-			OrccLogger.traceln("ext attr " + existingConnection.getAttributes());
+		//	OrccLogger.traceln("ext attr " + existingConnection.getAttributes());
 			if(source.equals(existingConnection.getSource()) && 
 					target.equals(existingConnection.getTarget()))
 				candidates.add(existingConnection);
@@ -360,7 +360,7 @@ public class EmpiricMerger extends Merger {
 		/// <li> search matching connection(s) on the result network 
 		for(Connection candidate : candidates) {
 			
-			OrccLogger.traceln("cand attr " + candidate.getAttributes());
+		//	OrccLogger.traceln("cand attr " + candidate.getAttributes());
 
 			if(!connectionsMap.containsKey(candidate)) {
 				Connection unifiable;
@@ -385,18 +385,18 @@ public class EmpiricMerger extends Merger {
 						// update bufferSize parameter (worst case)
 						if(hasBufferSize(candidate)) {
 							if(hasBufferSize(unifiable)) {
-								OrccLogger.debugln("connection " + candidate + " vs " + unifiable + "(" + getBufferSizeValue(candidate) + "," + getBufferSizeValue(unifiable) + ")");
+					//			OrccLogger.debugln("connection " + candidate + " vs " + unifiable + "(" + getBufferSizeValue(candidate) + "," + getBufferSizeValue(unifiable) + ")");
 								if(getBufferSizeIntegerValue(candidate) > getBufferSizeIntegerValue(unifiable)) {
-									OrccLogger.debugln("UPD");
+					//				OrccLogger.debugln("UPD");
 									unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));	// for network editor
 									unifiable.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(candidate));	// for platform-composer
 								}
 							} else {
-								OrccLogger.debugln("UPD");
+					//			OrccLogger.debugln("UPD");
 								unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));	// for network editor
 								unifiable.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(candidate));	// for platform-composer
 							}
-							OrccLogger.debugln("cbs " + getBufferSizeValue(unifiable) + "   " + unifiable.getAttribute("bufferSize").getReferencedValue());
+					//		OrccLogger.debugln("cbs " + getBufferSizeValue(unifiable) + "   " + unifiable.getAttribute("bufferSize").getReferencedValue());
 						}
 						matcher.deleteLuts();	
 					} else {
@@ -510,15 +510,15 @@ public class EmpiricMerger extends Merger {
 				
 		/// <li> source collision found: place a 1x2 sbox: placeSbox1x2()
 				if(collisionSrc != null){				
-					if(sboxActorManager.getSboxCount()==6) {
-						OrccLogger.debugln("1x2 " + candidate + " vs " + collisionSrc);
-						OrccLogger.debugln("1x2b " + collisionSrc.getAttribute("bufferSize") + " " + collisionSrc.getAttribute("bufferSize").getContainedValue() + " " + collisionSrc.getAttribute("bufferSize").getReferencedValue());
+				//	if(sboxActorManager.getSboxCount()==6) {
+				//		OrccLogger.debugln("1x2 " + candidate + " vs " + collisionSrc);
+				//		OrccLogger.debugln("1x2b " + collisionSrc.getAttribute("bufferSize") + " " + collisionSrc.getAttribute("bufferSize").getContainedValue() + " " + collisionSrc.getAttribute("bufferSize").getReferencedValue());
 
-					}
+				//	}
 					candidate = placeSbox1x2(candidate,collisionSrc);
-					if(sboxActorManager.getSboxCount()==7) {
-						OrccLogger.debugln("1x2 " + candidate + " vs " + collisionSrc);
-					}
+			//		if(sboxActorManager.getSboxCount()==7) {
+			//			OrccLogger.debugln("1x2 " + candidate + " vs " + collisionSrc);
+			//		}
 					collisionSrc = null;
 				}
 					
@@ -530,14 +530,14 @@ public class EmpiricMerger extends Merger {
 				}
 		/// <li> target collision founded: place a  2x1 sbox: placeSbox2x1()
 				if(collisionTgt != null){
-					if(sboxActorManager.getSboxCount()==5) {
-						OrccLogger.debugln("2x1 " + candidate + " vs " + collisionTgt);
-					}
+			//		if(sboxActorManager.getSboxCount()==5) {
+				//		OrccLogger.debugln("2x1 " + candidate + " vs " + collisionTgt);
+				//	}
 					candidate = placeSbox2x1(candidate,collisionTgt);
-					if(sboxActorManager.getSboxCount()==6) {
-						OrccLogger.debugln("2x1 " + candidate + " vs " + collisionTgt);
-						OrccLogger.debugln("2x1b " + collisionTgt.getAttribute("bufferSize") + " " + collisionTgt.getAttribute("bufferSize").getContainedValue() + " " + collisionTgt.getAttribute("bufferSize").getReferencedValue());
-					}
+			//		if(sboxActorManager.getSboxCount()==6) {
+			//			OrccLogger.debugln("2x1 " + candidate + " vs " + collisionTgt);
+			//			OrccLogger.debugln("2x1b " + collisionTgt.getAttribute("bufferSize") + " " + collisionTgt.getAttribute("bufferSize").getContainedValue() + " " + collisionTgt.getAttribute("bufferSize").getReferencedValue());
+			//		}
 				}
 					
 		/// <li> add current candidate connection to the result network: addConnection()
@@ -892,11 +892,11 @@ public class EmpiricMerger extends Merger {
 				inConn.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(collision));	// for platform-composer
 			}
 		}
-		OrccLogger.debugln("iC " + inConn);
-		OrccLogger.debugln("iC " + inConn.getAttribute("bufferSize") + " C " + inConn.getAttribute("bufferSize").getContainedValue() + " R " + inConn.getAttribute("bufferSize").getReferencedValue());
-		if(inConn.getAttribute("bufferSize").getContainedValue()==null && inConn.getAttribute("bufferSize").getReferencedValue()==null) {
-			OrccLogger.debugln("conn " + inConn);
-		}
+//		OrccLogger.debugln("iC " + inConn);
+//		OrccLogger.debugln("iC " + inConn.getAttribute("bufferSize") + " C " + inConn.getAttribute("bufferSize").getContainedValue() + " R " + inConn.getAttribute("bufferSize").getReferencedValue());
+//		if(inConn.getAttribute("bufferSize").getContainedValue()==null && inConn.getAttribute("bufferSize").getReferencedValue()==null) {
+//			OrccLogger.debugln("conn " + inConn);
+//		}
 		
 		// update multi-dataflow network
 		multiDataflow.add(sboxInstance);
@@ -1006,11 +1006,11 @@ public class EmpiricMerger extends Merger {
 				outConn.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(collision));	// for platform-composer
 			}
 		}
-		OrccLogger.debugln("oC " + outConn);
-		OrccLogger.debugln("oC " + outConn.getAttribute("bufferSize") + " C " + outConn.getAttribute("bufferSize").getContainedValue() + " R " + outConn.getAttribute("bufferSize").getReferencedValue());
-		if(outConn.getAttribute("bufferSize").getContainedValue()==null && outConn.getAttribute("bufferSize").getReferencedValue()==null) {
-			OrccLogger.debugln("conn " + outConn);
-		}
+//		OrccLogger.debugln("oC " + outConn);
+//		OrccLogger.debugln("oC " + outConn.getAttribute("bufferSize") + " C " + outConn.getAttribute("bufferSize").getContainedValue() + " R " + outConn.getAttribute("bufferSize").getReferencedValue());
+//		if(outConn.getAttribute("bufferSize").getContainedValue()==null && outConn.getAttribute("bufferSize").getReferencedValue()==null) {
+//			OrccLogger.debugln("conn " + outConn);
+//		}
 		
 		// update multi-dataflow network
 		multiDataflow.add(sboxInstance);

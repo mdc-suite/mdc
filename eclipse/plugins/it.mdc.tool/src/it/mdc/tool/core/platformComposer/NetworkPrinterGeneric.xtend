@@ -800,7 +800,7 @@ class NetworkPrinterGeneric {
 				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
 					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getReferencedValue() as Expression);
 				} else {
-					OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
+			//		OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
 					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getObjectValue() as Expression);
 				}
 			}
@@ -819,7 +819,7 @@ class NetworkPrinterGeneric {
 					(getBufferSizeIntegerValue(actor.incomingPortMap.get(port))).toString
 				} else {
 					//TODO return default value
-					OrccLogger.traceln("default buffersize");
+				//	OrccLogger.traceln("default buffersize");
 					"64"
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
@@ -827,7 +827,7 @@ class NetworkPrinterGeneric {
 					(getBufferSizeIntegerValue(actor.outgoingPortMap.get(port).get(0))).toString
 				} else {
 					//TODO return default value
-					OrccLogger.traceln("default buffersize");
+			//		OrccLogger.traceln("default buffersize");
 					"64"
 				}
 			}
