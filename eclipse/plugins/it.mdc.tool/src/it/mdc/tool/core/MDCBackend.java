@@ -216,14 +216,9 @@ public class MDCBackend extends AbstractBackend {
 	private boolean genHDL;	
 	
 	/**
-	 * Type of communication protocol
-	 */
-	private String protType;	
-	
-	/**
 	 * Type of communication protocol file
 	 */
-	private String customProtocolFile;
+	private String protocolFile;
 
 	/**
 	 * Enable logic regions computing
@@ -569,7 +564,7 @@ public class MDCBackend extends AbstractBackend {
 		try {
 			/// <ol>
 			// get the platform composer for the selected language
-			PlatformComposer hdlWriter = getPlatformComposer(hdlDir.getPath(), network);
+			PlatformComposer hdlWriter = new NetworkPrinter(hdlDir.getPath(),configManager,network,protocolFile);
 			List<SboxLut> lutsToGen;
 			Map<String,Set<String>> netInstancesToGen;
 			Map<String,Double> powerMap;
@@ -739,22 +734,6 @@ public class MDCBackend extends AbstractBackend {
 			String pcoresDir = outputPath + File.separator + "pcores";
 			/// <li> If the Coprocessor generation is enabled
 			
-			/// <ol> <li> generate computational actors through Xronos
-			if(protType.equals("RVC")) {
-				OrccLogger.traceln("*\tLaunching Xronos HLS to synthesize actors...");
-				Backend backend = BackendFactory.getInstance().getBackend("Xronos Verilog");
-				backend.setOptions(getOptions());
-				((Xronos) backend).generateInstances(network);
-			    			
-				if(genCopr) {
-					if(coprEnv.equals("ISE")) {
-						File pcores = new File(pcoresDir);
-						if(!pcores.exists()) {
-							pcores.mkdir();
-						}
-					}
-				}
-			}
 			
 			/// <li> generate coprocessor HDL code
 			if(genCopr){
@@ -833,7 +812,7 @@ public class MDCBackend extends AbstractBackend {
 			}
 				
 			
-			if(genCopr | protType.equals("RVC") | exportPowerGatingLibraries)
+			if(genCopr | exportPowerGatingLibraries)
 			{	
 				final Result result = doLibrariesExtraction();
 				if(!result.isEmpty()) {
@@ -878,12 +857,7 @@ public class MDCBackend extends AbstractBackend {
 		
 		genHDL = getOption("it.unica.diee.mdc.genHDL", false);
 		
-		protType = getOption("it.unica.diee.mdc.protocol", "<unknown>");
-		
-		if((protType.equals("CUSTOM") || protType.equals("CUSTOM full (beta)")) && getOption("it.unica.diee.mdc.customProtocol", false)) {
-			customProtocolFile= getOption("it.unica.diee.mdc.customProtocolFile", "<unknown>");
-		}
-		
+		protocolFile= getOption("it.unica.diee.mdc.protocolFile", "<unknown>");
 			   
 		lrEn = getOption("it.unica.diee.mdc.computeLogicRegions",false);
 
@@ -931,22 +905,11 @@ public class MDCBackend extends AbstractBackend {
 					result = FilesManagerMdc.extract("/bundle/copr/mm/hdl/verilog", (outputPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl"));
 					result.merge(FilesManagerMdc.extract("/bundle/copr/mm/hdl/vhdl", (outputPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl")));
 					result.merge(FilesManagerMdc.extract("/bundle/copr/mm/data", (outputPath + File.separator + "pcores" +  File.separator + "mm_accelerator_v1_00_a")));
-					if(protType.equals("RVC")) {
-						result.merge(FilesManagerMdc.extract("/bundle/copr/SystemMdc", (outputPath + File.separator + "pcores")));
-						result.merge(FilesManagerMdc.extract("/bundle/copr/SystemBuilder", (outputPath + File.separator + "pcores")));
-					}
 					/// <li> STREAM </ol>
 				} else if(coprType.equals("STREAM")) {
 					result = FilesManagerMdc.extract("/bundle/copr/stream/hdl/verilog", (outputPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a" + File.separator + "hdl"));
-					if(protType.equals("RVC")) {
-						result.merge(FilesManagerMdc.extract("/bundle/copr/SystemMdc", (outputPath + File.separator + "pcores")));
-						result.merge(FilesManagerMdc.extract("/bundle/copr/SystemBuilder", (outputPath + File.separator + "pcores")));
-					}
 				} else {
 					result = FilesManagerMdc.extract("/bundle/copr/stream", (outputPath + File.separator + "hdl" + File.separator + "verilog"));
-					if(protType.equals("RVC")) {
-							result.merge(FilesManagerMdc.extract("/bundle/lib", (outputPath + File.separator)));
-					}
 				}
 			} else { /// <li> Vivado
 				String prefix = "";
@@ -1268,34 +1231,6 @@ public class MDCBackend extends AbstractBackend {
 		return netMapList;
 	}
 
-
-	/**
-	 * Give a type of platform composer object basing on the 
-	 * selected protocol file
-	 * 
-	 * @param hdlPath
-	 * 		output path of the HDL generation
-	 * @param network
-	 * 		the multi-dataflow network for the HDL generation
-	 * @return
-	 * 		the desired platform composer instance
-	 * @throws IOException
-	 */
-	private PlatformComposer getPlatformComposer(String hdlPath, Network network) throws IOException {
-		
-		if(protType.equals("RVC"))
-				return new RvcPrinter(hdlPath,configManager,network);
-		else if(protType.equals("CUSTOM")) {
-			//System.out.println("customProtocolFile " + customProtocolFile);
-				return new CustomPrinter(hdlPath,configManager,network,customProtocolFile);
-		}else if(protType.equals("CUSTOM full (beta)")) {
-				return new NetworkPrinter(hdlPath,configManager,network,customProtocolFile);
-		}
-	
-		return null;
-	}
-
-
 	/**
 	 * Print the correct usage of the backend
 	 * 
@@ -1349,8 +1284,7 @@ public class MDCBackend extends AbstractBackend {
 		options.addOption("x", "sboxCal", false, "Generate sbox Cal");
 		options.addOption("y", "calType", false, "Sbox Cal type");
 		options.addOption("h", "writeHdl", false, "Write HDL top module");
-		options.addOption("l", "protocol", false, "Preferred HDL protocol");
-		options.addOption("f", "protFile", false, "Communication protocol file");
+		options.addOption("f", "protFile", false, "Hardware Communication protocol file");
 		options.addOption("i", "importBS", false, "Import Buffer Size Files");
 		options.addOption("b", "folderBS", false, "Folder of Buffer Size Files");
 		options.addOption("t", "genCopr", false, "Generate Coprocessor Template Layer");
@@ -1389,7 +1323,6 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.unica.diee.mdc.genCAL", line.getOptionValue('x'));
 			optionMap.put("it.unica.diee.mdc.calType", line.getOptionValue('y'));
 			optionMap.put("it.unica.diee.mdc.genHDL", line.getOptionValue('h'));
-			optionMap.put("it.unica.diee.mdc.protocol", line.getOptionValue('l'));
 			optionMap.put("it.unica.diee.mdc.protFile", line.getOptionValue('f'));
 			optionMap.put("it.unica.diee.mdc.genCopr", line.getOptionValue('t'));
 			optionMap.put("it.unica.diee.mdc.coprType", line.getOptionValue('k'));

@@ -43,9 +43,9 @@
          </selectNetworks>
       </option>
       <option
-            description="Custom communication protocol file to be used within the HDL part of the MDC backend. Syntax: CLOCK_NAME,clock [for sequential actors only]; EXT_SIGNAL_NAME EXT_SIGNAL_DIRECTION(&gt; or &lt;) EXT_SIGNAL_SIZE(only integers are allowed) [for sequential actors only]; SRC_SIGNAL_NAME SIGNAL_DIRECTION(&gt; or &lt;) SIGNAL_SIZE(integers or bufferSize are allowed) SIGNAL_DIRECTION(&gt; or &lt;) TGT_SIGNAL_NAME, SIGNAL_TYPE(sync for sequential, not_synch for combinational) [for both sequential and combinational actors, one for each port depending on its type]"
-            id="it.unica.diee.mdc.customProtocolFile"
-            name="Custom Communication Protocol File">
+            description="Hardware communication protocol file to be used within the HDL part of the MDC backend."
+            id="it.unica.diee.mdc.protocolFile"
+            name="Protocol File">
          <browseFile
                folder="false"
                workspace="false">
@@ -134,17 +134,8 @@
             name="Generate HDL multi-dataflow">
          <checkBox>
             <optionRef
-                  id="it.unica.diee.mdc.protocol">
+                  id="it.unica.diee.mdc.protocolFile">
             </optionRef>
-            <option
-                  id="it.unica.diee.mdc.customProtocol"
-                  name="Specify a Custom Hardware Communication Protocol">
-               <checkBox>
-                  <optionRef
-                        id="it.unica.diee.mdc.customProtocolFile">
-                  </optionRef>
-               </checkBox>
-            </option>
             <optionRef
                   id="it.unica.diee.mdc.computeLogicRegions">
             </optionRef>
@@ -232,23 +223,6 @@
                folder="false"
                workspace="false">
          </browseFile>
-      </option>
-      <option
-            defaultValue="RVC"
-            description="It is possible to implement the RVC FIFO-based protocol or a custom protocol in the HDL multi-dataflow network"
-            id="it.unica.diee.mdc.protocol"
-            name="Preferred HDL protocol">
-         <comboBox>
-            <comboBoxItem
-                  id="CUSTOM">
-            </comboBoxItem>
-            <comboBoxItem
-                  id="RVC">
-            </comboBoxItem>
-            <comboBoxItem
-                  id="CUSTOM full (beta)">
-            </comboBoxItem>
-         </comboBox>
       </option>
       <option
             defaultValue="false"
