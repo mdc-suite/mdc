@@ -34,7 +34,7 @@ class ScriptPrinter {
 		# paths
 		
 		# user should properly set root path
-		set root "project_root"
+		set root "."
 		set projdir $root/project
 		
 		set constraints_files []
@@ -99,9 +99,9 @@ class ScriptPrinter {
 		# paths
 		
 		# user should properly set root path
-		set root "project_root"
+		set root "."
 		
-		set ip_files_path $root//hdl/ip
+		set ip_files_path $root/hdl/ip
 		set hdl_files_path $root/hdl/rtl
 		set lib_path $root/hdl/lib
 		
@@ -140,12 +140,12 @@ class ScriptPrinter {
 		
 		set_property top $ip_name [current_fileset]
 		
-		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy /UserIP
+		ipx::package_project -root_dir $root -vendor user.org -library user -taxonomy /UserIP
 		set_property core_revision 3 [ipx::current_core]
 		ipx::create_xgui_files [ipx::current_core]
 		ipx::update_checksums [ipx::current_core]
 		ipx::save_core [ipx::current_core]
-		set_property  ip_repo_paths $ipdir [current_project]
+		set_property  ip_repo_paths $root [current_project]
 		update_ip_catalog
 		close_project
 		'''		
