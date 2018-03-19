@@ -1,0 +1,7 @@
+package example;
+
+actor rshifter()
+  int(size=16) in0
+   ==>
+  int(size=16) out0
+: end
