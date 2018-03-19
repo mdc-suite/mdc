@@ -303,7 +303,7 @@ public abstract class PlatformComposer {
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
 		scriptPrinter.initScriptPrinter("xc7z020clg400-1",
 										"digilentinc.com:arty-z7-20:part0:1.0",
-										"mm",
+										prefix,
 										"caph");
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
 		sequence = scriptPrinter.printIpScript();
@@ -315,7 +315,7 @@ public abstract class PlatformComposer {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_top.tcl";
-		sequence = scriptPrinter.printTopScript();
+		sequence = scriptPrinter.printTopScript(network);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());

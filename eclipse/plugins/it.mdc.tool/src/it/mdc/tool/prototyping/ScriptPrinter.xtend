@@ -4,6 +4,16 @@
  
 package it.mdc.tool.prototyping
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import net.sf.orcc.df.Network
+import java.util.ArrayList
+import java.util.Map
+import java.util.HashMap
+import net.sf.orcc.df.Port
+import net.sf.orcc.df.Actor
+import it.mdc.tool.core.ConfigManager
+
 /**
  * Vivado Script Printer
  * 
@@ -12,6 +22,11 @@ package it.mdc.tool.prototyping
  * 
  */
 class ScriptPrinter {
+	
+	protected Map <Port,Integer> inputMap;
+	protected Map <Port,Integer> outputMap;
+	protected Map <Port,Integer> portMap;
+	protected int fifoNum;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
@@ -25,7 +40,8 @@ class ScriptPrinter {
 		this.lib_name = lib_name;
 	}
 
-	def printTopScript() {
+	def printTopScript(Network network) {
+		mapInOut(network);
 		'''
 		###########################
 		# IP Settings
@@ -73,16 +89,71 @@ class ScriptPrinter {
 		apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
 		connect_bd_net [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK0]
 		
+		#import IP
 		
 		startgroup
 		create_bd_cell -type ip -vlnv user.org:user:$ip_name:$ip_version $ip_name\_0
 		endgroup
 		
-		
+		«IF coupling.equals("mm")»		
 		startgroup
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
 		endgroup
+		«ELSE»
+		startgroup
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+		endgroup
+		
+		
+		# AManage connection for each accelerator port
+		
+		«FOR input : inputMap.keySet()»
+		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
+		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_in_«inputMap.get(input)»
+		endgroup
+		connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«inputMap.get(input)»/M_AXIS] [get_bd_intf_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis]
+		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
+		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+		«ENDFOR»
+		
+		«FOR output : outputMap.keySet()»
+		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
+		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_out_«outputMap.get(output)»
+		endgroup
+		connect_bd_intf_net [get_bd_intf_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis] [get_bd_intf_pins axis_data_fifo_out_«outputMap.get(output)»/S_AXIS]
+		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
+		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+		«ENDFOR»
+		
+
+			
+		«FOR i : 0..fifoNum»
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
+		endgroup
+		set_property -dict [list CONFIG.INTERFACES {S_AXI}] [get_bd_cells axi_mm2s_mapper_«i»]
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXI]
+		
+		«IF i < inputMap.size»
+		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/M_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
+		«ENDIF»
+		
+		«IF i < inputMap.size»
+		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXIS] [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS]
+		«ENDIF»
+		
+		«ENDFOR»
+		
+		
+		
+
+		
+		«ENDIF»
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
 		add_files -norecurse $projdir/$design.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
@@ -101,8 +172,7 @@ class ScriptPrinter {
 		# user should properly set root path
 		set root "."
 		
-		set ip_files_path $root/hdl/ip
-		set hdl_files_path $root/hdl/rtl
+		set hdl_files_path $root/hdl
 		set lib_path $root/hdl/lib
 		
 		set lib_name «lib_name»
@@ -126,7 +196,6 @@ class ScriptPrinter {
 		set_property board_part $boardpart [current_project]
 		set_property target_language Verilog [current_project]
 		
-		add_files $ip_files_path
 		add_files $hdl_files_path
 		#import «lib_name» lib
 		add_files $lib_path/$lib_name
@@ -150,5 +219,40 @@ class ScriptPrinter {
 		close_project
 		'''		
 	}
+	
+		protected def getLongId(int id) {
+			if(id<10) {
+				return "0"+id.toString();
+			} else {
+				return id.toString();	
+			}
+		}
+	
+		protected def mapInOut(Network network) {
+		
+		var index=0;
+		
+		inputMap = new HashMap<Port,Integer>();
+		outputMap = new HashMap<Port,Integer>();
+		fifoNum = 0;
+		
+		for(Port input : network.getInputs()) {
+			inputMap.put(input,index);
+			index=index+1;
+		}
+		
+		index=0;
+		for(Port output : network.getOutputs()) {
+			outputMap.put(output,index);
+			index=index+1;
+		}
+		
+		if (inputMap.size >= outputMap.size)
+			{fifoNum = 	inputMap.size;}
+		else 
+			{fifoNum = 	outputMap.size;	}
+	}
+	
+	
 	
 }
