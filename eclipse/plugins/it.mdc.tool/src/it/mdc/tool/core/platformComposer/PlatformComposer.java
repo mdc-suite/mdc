@@ -19,6 +19,7 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
+import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.TilPrinter;
 import it.mdc.tool.prototyping.TilPrinterEdkMm;
 import it.mdc.tool.prototyping.TilPrinterEdkStream;
@@ -109,7 +110,7 @@ public abstract class PlatformComposer {
 	protected Network network;
 	
 	/**
-	 * Crotocol signals flags
+	 * Protocol signals flags
 	 */
 	protected final static int DIRECTION = 0;
 	protected final static int OUT_PORT = 1;
@@ -298,10 +299,35 @@ public abstract class PlatformComposer {
 		/// </ol>
 		/////////////////////////
 		
+		// TODO to be replaced with tcl scripts generation
+		ScriptPrinter scriptPrinter = new ScriptPrinter();
+		scriptPrinter.initScriptPrinter("xc7z020clg400-1",
+										"digilentinc.com:arty-z7-20:part0:1.0",
+										"mm",
+										"caph");
+		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
+		sequence = scriptPrinter.printIpScript();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_top.tcl";
+		sequence = scriptPrinter.printTopScript();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
 		//////////////////////////
 		/// <li> IP package  
 		/// <ol><li> Generate XML component
-		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "component.xml";
+		/*file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "component.xml";
 		sequence = printer.printIpPackage(network,"COMPONENT");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -348,7 +374,7 @@ public abstract class PlatformComposer {
 		}
 		/// </ol>
 		// bd>bd.tcl
-		// example_designs>...
+		// example_designs>...*/
 		/////////////////////////
 		
 		//////////////////////////
@@ -389,8 +415,9 @@ public abstract class PlatformComposer {
 	
 	
 	/**
+	 * @deprecated
 	 * Generate a co-processing for Xilinx ISE
-	 * 
+	 * 	
 	 * @return
 	 * @throws IOException 
 	 */
