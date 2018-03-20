@@ -128,7 +128,7 @@ class ScriptPrinter {
 		
 
 			
-		«FOR i : 0..fifoNum»
+		«FOR i : 0..fifoNum-1»
 		startgroup
 		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
 		endgroup
