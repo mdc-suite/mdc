@@ -282,7 +282,7 @@ class TilPrinterVivadoMm extends TilPrinter {
 			// Parameters of Axi Slave Bus Interface S«portMap.get(port)+1»_AXI
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ID_WIDTH	= 1,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ADDR_WIDTH	= «Math.ceil(10+Math.log10(portMap.size) / Math.log10(2)).intValue»,	// memory size 4096
+			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ADDR_WIDTH	= «(Math.ceil(10+Math.log10(portMap.size) / Math.log10(2)).intValue).intValue()»,	// memory size 4096
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_AWUSER_WIDTH	= 0,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ARUSER_WIDTH	= 0,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_WUSER_WIDTH	= 0,
@@ -293,7 +293,7 @@ class TilPrinterVivadoMm extends TilPrinter {
 			// Parameters of Axi Slave Bus Interface S01_AXI
 			parameter integer C_S01_AXI_ID_WIDTH	= 1,
 			parameter integer C_S01_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S01_AXI_ADDR_WIDTH	= «Math.ceil(10+Math.log10(portMap.size) / Math.log10(2))»,	// memory size 4096
+			parameter integer C_S01_AXI_ADDR_WIDTH	= «(Math.ceil(10+Math.log10(portMap.size) / Math.log10(2))).intValue()»,	// memory size 4096
 			parameter integer C_S01_AXI_AWUSER_WIDTH	= 0,
 			parameter integer C_S01_AXI_ARUSER_WIDTH	= 0,
 			parameter integer C_S01_AXI_WUSER_WIDTH	= 0,

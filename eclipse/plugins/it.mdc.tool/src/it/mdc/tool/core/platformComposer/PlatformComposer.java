@@ -19,6 +19,7 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
+import it.mdc.tool.prototyping.IpDriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.TilPrinter;
 import it.mdc.tool.prototyping.TilPrinterEdkMm;
@@ -301,8 +302,8 @@ public abstract class PlatformComposer {
 		
 		// TODO to be replaced with tcl scripts generation
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
-		scriptPrinter.initScriptPrinter("xc7z020clg400-1",
-										"digilentinc.com:arty-z7-20:part0:1.0",
+		scriptPrinter.initScriptPrinter("xc7z020clg484-1",
+										"em.avnet.com:zed:part0:1.0",
 										"mm",
 										"caph");
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
@@ -379,7 +380,8 @@ public abstract class PlatformComposer {
 		
 		//////////////////////////
 		/// <li> SW drivers 
-
+		IpDriverPrinter ipDriverPrinter = new IpDriverPrinter();
+		ipDriverPrinter.initIpDriverPrinter(null,null,null);
 		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + prefix + "_accelerator" + File.separator + "src");
 		// If directory doesn't exist, create it
 		if (!srcDir.exists()) {

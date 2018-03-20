@@ -81,7 +81,9 @@ class ScriptPrinter {
 		
 		startgroup
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+		«IF coupling == "mm"»
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
+		«ENDIF»
 		endgroup
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
@@ -101,8 +103,7 @@ class ScriptPrinter {
 		# user should properly set root path
 		set root "."
 		
-		set ip_files_path $root/hdl/ip
-		set hdl_files_path $root/hdl/rtl
+		set hdl_files_path $root/hdl
 		set lib_path $root/hdl/lib
 		
 		set lib_name «lib_name»
@@ -126,7 +127,6 @@ class ScriptPrinter {
 		set_property board_part $boardpart [current_project]
 		set_property target_language Verilog [current_project]
 		
-		add_files $ip_files_path
 		add_files $hdl_files_path
 		#import «lib_name» lib
 		add_files $lib_path/$lib_name
@@ -141,6 +141,24 @@ class ScriptPrinter {
 		set_property top $ip_name [current_fileset]
 		
 		ipx::package_project -root_dir $root -vendor user.org -library user -taxonomy /UserIP
+		
+		«IF coupling == "mm"»
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_awid -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_AWUSER_WIDTH'))>0 [ipx::get_ports s01_axi_awuser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_WUSER_WIDTH'))>0 [ipx::get_ports s01_axi_wuser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_BUSER_WIDTH'))>0 [ipx::get_ports s01_axi_buser -of_objects [ipx::current_core]]
+		set_property enablement_dependency {spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH')) >0} [ipx::get_ports s01_axi_arid -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ARUSER_WIDTH')) [ipx::get_ports s01_axi_aruser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ARUSER_WIDTH'))>0 [ipx::get_ports s01_axi_aruser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_RUSER_WIDTH'))>0 [ipx::get_ports s01_axi_ruser -of_objects [ipx::current_core]]
+		
+		set bd_pkg_dir $root/bd
+		file mkdir $bd_pkg_dir
+		set bd_group [ipx::add_file_group -type xilinx_blockdiagram {} [ipx::current_core]]
+		file copy -force bd.tcl $bd_pkg_dir
+		ipx::add_file $bd_pkg_dir/bd.tcl $bd_group
+		
+		«ENDIF»
 		set_property core_revision 3 [ipx::current_core]
 		ipx::create_xgui_files [ipx::current_core]
 		ipx::update_checksums [ipx::current_core]
