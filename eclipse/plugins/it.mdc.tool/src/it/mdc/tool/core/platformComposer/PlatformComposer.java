@@ -316,7 +316,7 @@ public abstract class PlatformComposer {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_top.tcl";
-		sequence = scriptPrinter.printTopScript();
+		sequence = scriptPrinter.printTopScript(network);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -380,8 +380,7 @@ public abstract class PlatformComposer {
 		
 		//////////////////////////
 		/// <li> SW drivers 
-		IpDriverPrinter ipDriverPrinter = new IpDriverPrinter();
-		ipDriverPrinter.initIpDriverPrinter(null,null,null);
+
 		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + prefix + "_accelerator" + File.separator + "src");
 		// If directory doesn't exist, create it
 		if (!srcDir.exists()) {
