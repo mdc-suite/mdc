@@ -1,6 +1,5 @@
 package it.mdc.tool.core.platformComposer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,13 +20,10 @@ import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.TilPrinter;
-import it.mdc.tool.prototyping.TilPrinterEdkMm;
-import it.mdc.tool.prototyping.TilPrinterEdkStream;
 import it.mdc.tool.prototyping.TilPrinterVivadoMm;
 import it.mdc.tool.prototyping.TilPrinterVivadoStream;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
-import it.mdc.tool.core.sboxManagement.*;
 import net.sf.orcc.df.Connection;
 
 import java.io.FileNotFoundException;
@@ -187,12 +183,7 @@ public abstract class PlatformComposer {
 	 */
 	public void generateConfig (boolean genCopr, List<SboxLut> luts) throws IOException{
 
-		File dir;
-		if (genCopr) {
-			dir = new File(hdlPath);
-		} else {
-			dir = new File(hdlPath + File.separator + "verilog");
-		}
+		File dir = new File(hdlPath);
 		// If directory doesn't exist, create it
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -219,14 +210,8 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, String env, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap) throws IOException {		
-		if(env.equals("ISE")) {
-			/// if ISE is selected, generateCoprEdk()
-			generateCoprEdk(type, luts, networkVertexMap);
-		} else {
-			/// if Vivado is selected, generateCoprVivado()
-			generateCoprVivado(type, luts, networkVertexMap);
-		}
+	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap) throws IOException {		
+		generateCoprVivado(type, luts, networkVertexMap);
 	}
 	
 	/**
@@ -303,7 +288,7 @@ public abstract class PlatformComposer {
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
 		scriptPrinter.initScriptPrinter("xc7z020clg484-1",
 										"em.avnet.com:zed:part0:1.0",
-										"mm",
+										prefix,
 										"caph");
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
 		sequence = scriptPrinter.printIpScript();
@@ -380,7 +365,7 @@ public abstract class PlatformComposer {
 		//////////////////////////
 		/// <li> SW drivers 
 
-		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + prefix + "_accelerator" + File.separator + "src");
+		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
 		// If directory doesn't exist, create it
 		if (!srcDir.exists()) {
 			srcDir.mkdirs();
@@ -413,282 +398,6 @@ public abstract class PlatformComposer {
 		/////////////////////////
 	}
 	
-	
-	/**
-	 * @deprecated
-	 * Generate a co-processing for Xilinx ISE
-	 * 	
-	 * @return
-	 * @throws IOException 
-	 */
-	private void generateCoprEdk(String type, List<SboxLut> luts, 
-			Map<String,Map<String,String>> networkVertexMap) throws IOException {
-		/// <ul>		
-		//convert_trace_to_header conv = new convert_trace_to_header("/home/csau/MDC/jpeg/decoder_SW_c_last/traces/display_Byte.txt");
-		//conv.convert("/home/csau/PRJ/Y.h", 12);
-		
-		String file;
-		CharSequence sequence;
-		
-		String coprType = "";
-		if(type.equals("STREAM")) {
-			coprType = "s_";
-		} else if(type.equals("MEMORY-MAPPED")) {
-			coprType = "mm_";
-		}
-
-		/// <li> Initialize TIL printer
-		TilPrinter printer;
-		if(type.equals("MEMORY-MAPPED")) {
-			printer = new TilPrinterEdkMm();
-		} else if(type.equals("STREAM")) {
-			printer = new TilPrinterEdkStream();		
-		} else {
-			printer = new TilPrinter();
-		}
-		
-		/////////////////////////////
-		/// <li> Generate HDL sources
-		File verilogDir = new File(hdlPath + File.separator + "verilog");
-		// If directory doesn't exist, create it
-		if (!verilogDir.exists()) {
-			verilogDir.mkdirs();
-		}
-
-		/// <ol> <li> Generate top module
-		file = verilogDir.getPath() + File.separator +  "coprocessor_til.v";
-		sequence = printer.printHdlSource(network, "TOP");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// <li> Generate configuration registers module
-		file = verilogDir.getPath() + File.separator +  "config_regs.v";
-		sequence = printer.printHdlSource(network,"CFG_REGS");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-	
-		/// <li> Generate Register Bank module
-		if(type.equals("STREAM")){
-			file = verilogDir.getPath() + File.separator +  "cfg_regs.v";
-			sequence = printer.printHdlSource(network,"REGS_BANK");
-			try {
-				PrintStream ps = new PrintStream(new FileOutputStream(file));
-				ps.print(sequence.toString());
-				ps.close();
-			} catch (FileNotFoundException e) {
-				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-			}
-		}
-		
-		/// <li> Generate Multiplexer module
-		if(type.equals("MEMORY-MAPPED")){
-			file = verilogDir.getPath() + File.separator +  "mux.v";
-			sequence = printer.printHdlSource(network,"MUX");
-			try {
-				PrintStream ps = new PrintStream(new FileOutputStream(file));
-				ps.print(sequence.toString());
-				ps.close();
-			} catch (FileNotFoundException e) {
-				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-			}
-		}
-		
-		/// <li> Generate Demultiplexer module
-		if(type.equals("MEMORY-MAPPED")){
-			file = verilogDir.getPath() + File.separator +  "demux.v";
-			sequence = printer.printHdlSource(network,"DEMUX");
-			try {
-				PrintStream ps = new PrintStream(new FileOutputStream(file));
-				ps.print(sequence.toString());
-				ps.close();
-			} catch (FileNotFoundException e) {
-				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-			}
-		}
-		
-		/// <li> Generate Address Generator module
-		if(type.equals("MEMORY-MAPPED")){
-			file = verilogDir.getPath() + File.separator +  "address_generator.v";
-			sequence = printer.printHdlSource(network,"ADDR_GEN");
-			try {
-				PrintStream ps = new PrintStream(new FileOutputStream(file));
-				ps.print(sequence.toString());
-				ps.close();
-			} catch (FileNotFoundException e) {
-				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-			}
-		}
-		
-		/// <li> Generate Port Selector module
-		if(type.equals("MEMORY-MAPPED")){
-			if(network.getInputs().size()==network.getOutputs().size()) {
-				file = verilogDir.getPath() + File.separator +  "port_selector.v";
-				sequence = printer.printHdlSource(network,"PORT_SEL");
-				try {
-					PrintStream ps = new PrintStream(new FileOutputStream(file));
-					ps.print(sequence.toString());
-					ps.close();
-				} catch (FileNotFoundException e) {
-					OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-				}
-			} else {
-				/// <ol> <li> Generate Port Selector In module
-				file = verilogDir.getPath() + File.separator +  "port_selector_in.v";
-				sequence = printer.printHdlSource(network,"PORT_SEL_IN");
-				try {
-					PrintStream ps = new PrintStream(new FileOutputStream(file));
-					ps.print(sequence.toString());
-					ps.close();
-				} catch (FileNotFoundException e) {
-					OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-				}
-				/// <li> Generate Port Selector Out module </ol>
-				file = verilogDir.getPath() + File.separator +  "port_selector_out.v";
-				sequence = printer.printHdlSource(network,"PORT_SEL_OUT");
-				try {
-					PrintStream ps = new PrintStream(new FileOutputStream(file));
-					ps.print(sequence.toString());
-					ps.close();
-				} catch (FileNotFoundException e) {
-					OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-				}
-			}
-		}
-	
-		/// <li> Generate Clear Logic module
-		if(type.equals("STREAM")){
-			file = verilogDir.getPath() + File.separator +  "cl_logic.v";
-			sequence = printer.printHdlSource(network,"CLEAR");
-			try {
-				PrintStream ps = new PrintStream(new FileOutputStream(file));
-				ps.print(sequence.toString());
-				ps.close();
-			} catch (FileNotFoundException e) {
-				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-			}
-		}
-		
-		/// <li> Generate Test Bench module
-		file = verilogDir.getPath() + File.separator +  "tb_copr.v";
-		sequence = printer.printHdlSource(network,"TBENCH");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// <li> Generate TIL Wrapper
-		if(type.equals("MEMORY-MAPPED")){
-			file = verilogDir.getPath() + File.separator +  "ul_wrapper.v";
-		} else {
-			file = verilogDir.getPath() + File.separator +  "s_accelerator.v";
-		}
-			
-		sequence = printer.printHdlSource(network,"WRAP");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		/// </ol>
-		/////////////////////////
-		
-		////////////////////////////
-		/// <li> Generate IP package  
-		File dataDir = new File(hdlPath.replace("hdl", "data"));
-		// If directory doesn't exist, create it
-		if (!dataDir.exists()) {
-			dataDir.mkdirs();
-		}
-		
-		/// <ol> <li> PAO
-		file = dataDir.getPath() + File.separator + coprType + "accelerator_v2_1_0.pao";
-		if(network.getInputs().size()==network.getOutputs().size()) {
-			sequence = printer.printIpPackage(network,"PAO");
-		} else {
-			sequence = printer.printIpPackage(network,"PAO_IN");
-		} try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// <li> MPD
-		file = dataDir.getPath() + File.separator + coprType + "accelerator_v2_1_0.mpd";
-		sequence = printer.printIpPackage(network,"MPD");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		/// </ol>
-		/////////////////////////
-		
-		///////////////////////////
-		///<li> Generate SW drivers  
-		File driverDir = new File(hdlPath.replace("hdl", "driver"));
-		// If directory doesn't exist, create it
-		if (!driverDir.exists()) {
-			driverDir.mkdirs();
-		}
-				
-		/// <ol> <li>  Generate Low Driver Header
-		file = driverDir.getPath() + File.separator + coprType + "accelerator_l.h";
-		if(type.equals("STREAM")) {
-			//TODO printer.computeNetIdPortMap(networkVertexMap);
-		}
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"LOW_HEAD");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// <li> Generate High Driver Header
-		file = driverDir.getPath() + File.separator + coprType + "accelerator_h.h";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_HEAD");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// <li> Generate High Driver c file
-		file = driverDir.getPath() + File.separator + coprType + "accelerator_h.c";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_SRC");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		/// </ol> </ul>
-		/////////////////////////////////////////////////////////////////////////////////
-		
-	}
 
 	/**
 	 * Generate a latch-based clock gating cell module

@@ -403,7 +403,7 @@ public class ConfigManager {
 	 * 			coprocessor type (Stram or Memory-Mapped)
 	 * @throws IOException
 	 */
-	public void generateConfigFile (boolean genCopr, String coprEnv, String coprType) throws IOException {
+	public void generateConfigFile (boolean genCopr, String coprType) throws IOException {
 				
 		if(configMap.size() != networks.size()) {
 			for(Network network : networks) {
@@ -415,32 +415,13 @@ public class ConfigManager {
 		if(!genCopr) {
 			writer = new FileWriter(new File ( outPath + 
 					File.separator + "configNetID.txt"));
-		} else if(coprEnv.equals("ISE")) {
-			if (coprType.equals("MEMORY-MAPPED")) {
-			writer = new FileWriter(new File ( outPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + 
-					File.separator + "configNetID.txt"));
-			} else if(coprType.equals("STREAM")) {
-				writer = new FileWriter(new File ( outPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a" + 
-					File.separator + "configNetID.txt"));
-			} else {
-				writer = new FileWriter(new File ( outPath + 
-						File.separator + "configNetID.txt"));
-			}
-		} else if(coprEnv.equals("VIVADO")) {
-			if (coprType.equals("MEMORY-MAPPED")) {
-				writer = new FileWriter(new File ( outPath + File.separator + "mm_accelerator" + 
-					File.separator + "hdl" + File.separator + "configNetID.txt"));
-			} else if(coprType.equals("STREAM")) {
-			writer = new FileWriter(new File ( outPath + File.separator + "s_accelerator" + 
-				File.separator + "hdl" + File.separator + "configNetID.txt"));
-			} else {
-				writer = new FileWriter(new File ( outPath + 
-						File.separator + "configNetID.txt"));
-			}
 		} else {
-			writer = new FileWriter(new File ( outPath + 
-					File.separator + "configNetID.txt"));
-		}
+			if (coprType.equals("MEMORY-MAPPED")) {
+				writer = new FileWriter(new File ( outPath + File.separator + "mm_accelerator" + File.separator + "configNetID.txt"));
+			} else {
+				writer = new FileWriter(new File ( outPath + File.separator + "s_accelerator" + File.separator + "configNetID.txt"));
+			}
+		} 
 		for(int i : configMap.keySet())
 			writer.write(configMap.get(i) + 
 					" --> config id:" + i + "\n");

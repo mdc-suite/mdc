@@ -66,7 +66,7 @@ public class Printer {
 	 * @param coprType
 	 * @param coprEnv
 	 */
-	public void printReport(Map<Network,Integer> inputNets, Network multiDataflowNet, String outPath, boolean genCopr, String coprType, String coprEnv){
+	public void printReport(Map<Network,Integer> inputNets, Network multiDataflowNet, String outPath, boolean genCopr, String coprType){
 		
 		int inputActorInsts = 0;
 		int outputActorInsts = 0;
@@ -102,43 +102,17 @@ public class Printer {
 				if(!genCopr) {
 					writer = new FileWriter(new File ( outPath + 
 							File.separator + "report.txt"));
-				} else if (coprEnv.equals("ISE")) {
-					if (coprType.equals("MEMORY-MAPPED")) {
-						File path = new File( outPath + File.separator + "pcores");
-						if(!path.exists()) {
-							path.mkdir();
-						}
-						path = new File( outPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a");
-						if(!path.exists()) {
-							path.mkdir();
-						}
-						writer = new FileWriter(new File ( outPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + 
-								File.separator + "report.txt"));
-					} else if(coprType.equals("STREAM-BASED (XILINX FSL)")) {
-						File path = new File( outPath + File.separator + "pcores");
-						if(!path.exists()) {
-							path.mkdir();
-						}
-						path = new File( outPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a");
-						if(!path.exists()) {
-							path.mkdir();
-						}
-						writer = new FileWriter(new File ( outPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a" + 
-								File.separator + "report.txt"));
+				} else {
+					File path;
+					if(coprType.equals("STREAM")) {
+						path = new File( outPath + File.separator + "s_accelerator");
 					} else {
-						writer = new FileWriter(new File ( outPath + 
-								File.separator + "report.txt"));
+						path = new File( outPath + File.separator + "mm_accelerator");
 					}
-
-				} else if (coprEnv.equals("VIVADO")) {
-					File path = new File( outPath + File.separator + "s_accelerator");
 					if(!path.exists()) {
 						path.mkdir();
 					}
 					writer = new FileWriter(new File ( path + File.separator + "report.txt"));
-				} else {
-					writer = new FileWriter(new File ( outPath + 
-							File.separator + "report.txt"));
 				}
 				
 				writer.write("###########################################################################\n");

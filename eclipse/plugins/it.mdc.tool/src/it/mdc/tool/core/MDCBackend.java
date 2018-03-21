@@ -219,6 +219,11 @@ public class MDCBackend extends AbstractBackend {
 	 * Type of communication protocol file
 	 */
 	private String protocolFile;
+	
+	/**
+	 * HDL component library
+	 */
+	private String hdlCompLib;
 
 	/**
 	 * Enable logic regions computing
@@ -250,11 +255,6 @@ public class MDCBackend extends AbstractBackend {
 	 *Co-processing layer generation type
 	 */
 	private String coprType;
-	
-	/**
-	 *Co-processing layer targeted environment
-	 */
-	private String coprEnv;
 	////////////////////////////////////////////////////////
 	
 	
@@ -428,7 +428,7 @@ public class MDCBackend extends AbstractBackend {
 				/// <li> Generate the resulting network report
 				// TODO  fix error on copr path
 				if(!profileEn)
-					printer.printReport(currMap,resultNetwork,outputPath,genCopr,coprType,coprEnv);
+					printer.printReport(currMap,resultNetwork,outputPath,genCopr,coprType);
 				
 				///<li> generate the resulting network RVC-CAL specification.
 				/// Set result network name and launch beforeGeneration()
@@ -446,7 +446,7 @@ public class MDCBackend extends AbstractBackend {
 				/// <li> If the coprocessor generation is enabled:
 				/// Generate configuration file: ConfigManager.generateConfigFile()
 				if(!profileEn) {
-					configManager.generateConfigFile(genCopr,coprEnv,coprType);
+					configManager.generateConfigFile(genCopr,coprType);
 				}	
 			} catch (Exception e) {
 				System.out.println("Exception on doXdfCodeGenerationList!");
@@ -462,7 +462,7 @@ public class MDCBackend extends AbstractBackend {
 					bestValues.get(profiler.POWER) + " nW, " +
 					bestValues.get(profiler.FREQ) + " kHz.");
 			//OrccLogger.traceln("netMapList.get(0) " + netMapList.get(0) );
-			printer.printReport(bestInputMap,bestNetwork,outputPath,genCopr,coprType,coprEnv);
+			printer.printReport(bestInputMap,bestNetwork,outputPath,genCopr,coprType);
 			bestNetwork.setName("multi_dataflow");
 		}
 			
@@ -533,29 +533,16 @@ public class MDCBackend extends AbstractBackend {
 		if(!genCopr) {
 			hdlDir = new File(outputPath + File.separator + "hdl");
 		} else {
-			if(coprEnv.equals("ISE")) {
-				if(coprType.equals("MEMORY-MAPPED")) {
-					hdlDir = new File(outputPath + File.separator + "mm_accelerator_v1_00_a" + File.separator  + "hdl");
-				} else {
-					hdlDir = new File(outputPath + File.separator + "s_accelerator_v1_00_a" + File.separator  + "hdl");
-				}
+			if(coprType.equals("MEMORY-MAPPED")) {
+				hdlDir = new File(outputPath + File.separator + "mm_accelerator" + File.separator  + "hdl");
 			} else {
-				if(coprType.equals("MEMORY-MAPPED")) {
-					hdlDir = new File(outputPath + File.separator + "mm_accelerator" + File.separator  + "hdl");
-				} else {
-					hdlDir = new File(outputPath + File.separator + "s_accelerator" + File.separator  + "hdl");
-				}
-			}
-				
+				hdlDir = new File(outputPath + File.separator + "s_accelerator" + File.separator  + "hdl");
+			}	
 		}
 		// if directory doesn't exist, create it
 		if (!hdlDir.exists()) {
 			hdlDir.mkdirs();
 		}
-
-		
-		if(profileEn)
-			OrccLogger.traceln("*\tComposing network name: " + network.getName());
 		
 		/// <li> set network name
 		network.setName("multi_dataflow"); 
@@ -731,63 +718,11 @@ public class MDCBackend extends AbstractBackend {
 					///</ol>  
 			}
 
-			String pcoresDir = outputPath + File.separator + "pcores";
 			/// <li> If the Coprocessor generation is enabled
-			
-			
 			/// <li> generate coprocessor HDL code
 			if(genCopr){
 				// TODO  uniformare nomi reti (include path ora) per config id
-				hdlWriter.generateCopr(coprType,coprEnv,luts,networkVertexMap);
-				if(coprEnv.equals("ISE")) {
-					/// <ol> <li> Generate coprocessor for Xilinx ISE
-					if(coprType.equals("STREAM")) { 
-						copier.copy(outputPath + File.separator + "s_accelerator_v1_00_a", pcoresDir + File.separator + "s_accelerator_v1_00_a");
-						copier.copy(outputPath + File.separator + "rtl", pcoresDir + File.separator + "s_accelerator_v1_00_a" + File.separator + "hdl" + File.separator + "verilog");
-						File delDir = new File(outputPath + File.separator + "sim");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "testbench");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "s_accelerator_v1_00_a");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a" + File.separator + "hdl" + File.separator + "verilog" + File.separator + "report");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "rtl");
-						copier.delete(delDir);
-					} else if(coprType.equals("MEMORY-MAPPED")) {
-						///  <li> Generate coprocessor for Xilinx Vivado </ol>
-						copier.copy(outputPath + File.separator + "mm_accelerator_v1_00_a", pcoresDir + File.separator + "mm_accelerator_v1_00_a");
-						copier.copy(outputPath + File.separator + "rtl", pcoresDir + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl" + File.separator + "verilog");
-						File delDir = new File(outputPath + File.separator + "sim");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "testbench");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "mm_accelerator_v1_00_a");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl" + File.separator + "verilog" + File.separator + "report");
-						copier.delete(delDir);
-						delDir = new File(outputPath + File.separator + "rtl");
-						copier.delete(delDir); 
-					}
-				} else {
-					String prefix = "";
-					if(coprType.equals("MEMORY-MAPPED")) {
-						prefix = "mm";
-					} else if(coprType.equals("STREAM")) {	
-						prefix = "s";
-					} else {
-						//TODO hybrid
-					}
-					copier.copy(outputPath + File.separator + "rtl", outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl");
-					File delDir = new File(outputPath + File.separator + "sim");
-					copier.delete(delDir);
-					delDir = new File(outputPath + File.separator + "testbench");
-					copier.delete(delDir);
-					delDir = new File(outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl" + File.separator + "report");
-					copier.delete(delDir);
-					delDir = new File(outputPath + File.separator + "rtl");
-					copier.delete(delDir);
-				}
+				hdlWriter.generateCopr(coprType,luts,networkVertexMap);
 			}
 			
 		}catch(Exception e) {
@@ -795,7 +730,25 @@ public class MDCBackend extends AbstractBackend {
 			for(StackTraceElement se : e.getStackTrace())
 				System.out.println("" + se);
 		}
-				
+		
+		// HDL component library import
+		// TODO fix folder
+		String subfolder = "";
+		if(genCopr) {
+			if(coprType.equals("MEMORY-MAPPED")) {
+				subfolder = "mm_accelerator" + File.separator;
+			} else if(coprType.equals("STREAM")) {	
+				subfolder = "s_accelerator" + File.separator;
+			} else {
+				//TODO hybrid
+			}
+		}
+		try {
+			copier.copy(hdlCompLib, outputPath + File.separator + subfolder + "hdl");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		// -----------------------------------------------------
 		// Libraries files export
 		// -----------------------------------------------------
@@ -858,12 +811,12 @@ public class MDCBackend extends AbstractBackend {
 		genHDL = getOption("it.unica.diee.mdc.genHDL", false);
 		
 		protocolFile= getOption("it.unica.diee.mdc.protocolFile", "<unknown>");
+		hdlCompLib= getOption("it.mdc.tool.hdlCompLib", "<unknown>");
 			   
 		lrEn = getOption("it.unica.diee.mdc.computeLogicRegions",false);
 
 		genCopr = getOption("it.unica.diee.mdc.genCopr",false);
 		coprType = getOption("it.unica.diee.mdc.tilType","<unknown>");
-		coprEnv = getOption("it.unica.diee.mdc.tilEnv","<unknown>");
 		
 		profileEn = getOption("it.unica.diee.mdc.profile", false);
 		
@@ -894,67 +847,40 @@ public class MDCBackend extends AbstractBackend {
 	 * Libraries extraction*/
 	protected Result doLibrariesExtraction() {
 				
-		final Result result;
+		final Result result = FilesManagerMdc.extract("","");
 		
-		/// If coprocessor generation is enabled, extract libraries depending on the adopted software and on the processor-coprocessor communication
-		/// <ul> <li> ISE
+		/// If coprocessor generation is enabled, extract libraries depending on the processor-coprocessor communication
 		if(genCopr) {
-			if(coprEnv.equals("ISE")) {
-				/// <ol> <li> MEMORY-MAPPED
-				if(coprType.equals("MEMORY-MAPPED")) {
-					result = FilesManagerMdc.extract("/bundle/copr/mm/hdl/verilog", (outputPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl"));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/mm/hdl/vhdl", (outputPath + File.separator + "pcores" + File.separator + "mm_accelerator_v1_00_a" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/mm/data", (outputPath + File.separator + "pcores" +  File.separator + "mm_accelerator_v1_00_a")));
-					/// <li> STREAM </ol>
-				} else if(coprType.equals("STREAM")) {
-					result = FilesManagerMdc.extract("/bundle/copr/stream/hdl/verilog", (outputPath + File.separator + "pcores" + File.separator + "s_accelerator_v1_00_a" + File.separator + "hdl"));
-				} else {
-					result = FilesManagerMdc.extract("/bundle/copr/stream", (outputPath + File.separator + "hdl" + File.separator + "verilog"));
+			/// <ol> <li> MEMORY-MAPPED
+			if(coprType.equals("MEMORY-MAPPED")) {
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/front_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/back_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/axi_full_ipif.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/local_memory.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				if (lrEn){ // power gating not allowed for coprocessor generator
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator + "mm_accelerator" + File.separator +"hdl")));
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath + File.separator + "mm_accelerator" + File.separator +"hdl")));
 				}
-			} else { /// <li> Vivado
-				String prefix = "";
-				
-				if(coprType.equals("MEMORY-MAPPED")) {
-					prefix = "mm";
-				} else {
-					prefix = "s";
+			/// <li> STREAM </ol>
+			} else if(coprType.equals("STREAM")) {
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/front_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/back_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
+				if (lrEn){ // power gating not allowed for coprocessor generator
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator + "s_accelerator" + File.separator +"hdl")));
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath + File.separator + "s_accelerator" + File.separator +"hdl")));
 				}
-				result = FilesManagerMdc.extract("/bundle/lib/SystemBuilder/sbfifo.vhdl", (outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl"));
-				result.merge(FilesManagerMdc.extract("/bundle/lib/SystemBuilder/sbfifo_behavioral.vhdl", (outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl")));
-				result.merge(FilesManagerMdc.extract("/bundle/lib/SystemBuilder/sbtypes.vhdl", (outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl")));
-				result.merge(FilesManagerMdc.extract("/bundle/lib/SystemMdc/mdc.vhd", (outputPath + File.separator + prefix + "_accelerator" + File.separator + "hdl")));
-				/// <ol> <li> MEMORY-MAPPED
-				if(coprType.equals("MEMORY-MAPPED")) {
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/front_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/back_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/axi_full_ipif.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/local_memory.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
-					/// <li> STREAM </ol>
-				} else if(coprType.equals("STREAM")) {
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/front_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
-					result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/back_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
-				}
-				/// </ul>
 			}
-		} else if (lrEn){
-			//lrTech.equals("POWER_GATING")
-			//System.out.println("FSM extraction in " +  (outputPath + File.separator + "hdl" + File.separator + "verilog"));
-			/// If logic regions identification is enabled, extract libraries for clock gating and/or power gating.
-			result = FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath +  File.separator +"hdl" + File.separator + "verilog"));
-			result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath +  File.separator +"hdl" + File.separator + "verilog")));
-	
-		}
-		
-		else {
-
-			result = FilesManagerMdc.extract("/bundle/lib/SystemBuilder", (outputPath + File.separator + "lib"));
-			result.merge(FilesManagerMdc.extract("/bundle/lib/SystemMdc", (outputPath + File.separator + "lib")));
-		}
-		if (lrEn){	// TODO  possible problem --> libraries in else if!!		
-			 if(lrTech.equals("POWER_GATING")) {
-				 result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath +  File.separator +"hdl" + File.separator + "verilog")));
-			 }
+		/// </ul>
+		} else {
+			if(lrEn){	// TODO  possible problem --> libraries in else if!!		
+				if(lrTech.equals("POWER_GATING")) {
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator +"hdl")));
+				} else {
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator +"hdl")));
+					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath + File.separator +"hdl")));
+				}
+			}
 		}
 				
 		
@@ -1284,12 +1210,12 @@ public class MDCBackend extends AbstractBackend {
 		options.addOption("x", "sboxCal", false, "Generate sbox Cal");
 		options.addOption("y", "calType", false, "Sbox Cal type");
 		options.addOption("h", "writeHdl", false, "Write HDL top module");
-		options.addOption("f", "protFile", false, "Hardware Communication protocol file");
+		options.addOption("f", "protocolFile", false, "Hardware Communication protocol file");
+		options.addOption("f", "hdlCompLib", false, "HDL Component Library");
 		options.addOption("i", "importBS", false, "Import Buffer Size Files");
 		options.addOption("b", "folderBS", false, "Folder of Buffer Size Files");
 		options.addOption("t", "genCopr", false, "Generate Coprocessor Template Layer");
 		options.addOption("k", "coprType", false, "Coprocessor TIL type");
-		options.addOption("v", "coprEnv", false, "Coprocessor environment");
 		options.addOption("e", "lrEn", false, "Enable logic regions computing");
 		options.addOption("s", "desFlow", false, "Type of design flow");
 		options.addOption("c", "cgCells", false, "Clock gating cells number");
@@ -1323,10 +1249,10 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.unica.diee.mdc.genCAL", line.getOptionValue('x'));
 			optionMap.put("it.unica.diee.mdc.calType", line.getOptionValue('y'));
 			optionMap.put("it.unica.diee.mdc.genHDL", line.getOptionValue('h'));
-			optionMap.put("it.unica.diee.mdc.protFile", line.getOptionValue('f'));
+			optionMap.put("it.unica.diee.mdc.protocolFile", line.getOptionValue('f'));
+			optionMap.put("it.mdc.tool.hdlCompLib", line.getOptionValue('l'));
 			optionMap.put("it.unica.diee.mdc.genCopr", line.getOptionValue('t'));
 			optionMap.put("it.unica.diee.mdc.coprType", line.getOptionValue('k'));
-			optionMap.put("it.unica.diee.mdc.coprEnv", line.getOptionValue('v'));
 			optionMap.put("it.unica.diee.mdc.computeLogicRegions", line.getOptionValue('e'));
 			optionMap.put("it.unica.diee.mdc.importBufferSizeFileList", line.getOptionValue('i'));
 			optionMap.put("it.unica.diee.mdc.bufferSizeFilesFolder", line.getOptionValue('b'));

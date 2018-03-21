@@ -301,12 +301,7 @@ public class NetworkPrinter extends PlatformComposer {
 				&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("POWER_GATING")
 					|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
 
-		File dir; 
-		if((Boolean) options.get("it.unica.diee.mdc.genCopr")) {
-			dir = new File(hdlPath);
-		} else {
-			dir = new File(hdlPath + File.separator + "verilog");
-		}
+		File dir= new File(hdlPath);
 		// If directory doesn't exist, create it
 		if (!dir.exists()) {
 			dir.mkdirs();

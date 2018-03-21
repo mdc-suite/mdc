@@ -137,6 +137,8 @@
                   id="it.unica.diee.mdc.protocolFile">
             </optionRef>
             <optionRef
+                  id="it.mdc.tool.hdlCompLib"></optionRef>
+            <optionRef
                   id="it.unica.diee.mdc.computeLogicRegions">
             </optionRef>
             <option
@@ -174,20 +176,6 @@
                         </comboBoxItem>
                         <comboBoxItem
                               id="STREAM">
-                        </comboBoxItem>
-                     </comboBox>
-                  </option>
-                  <option
-                        defaultValue="VIVADO"
-                        description="Vivado 2015.2 or ISE 14.7"
-                        id="it.unica.diee.mdc.tilEnv"
-                        name="Targeted Environment">
-                     <comboBox>
-                        <comboBoxItem
-                              id="VIVADO">
-                        </comboBoxItem>
-                        <comboBoxItem
-                              id="ISE">
                         </comboBoxItem>
                      </comboBox>
                   </option></checkBox>
@@ -305,6 +293,15 @@
                   id="MOREANO">
             </comboBoxItem>
          </comboBox>
+      </option>
+      <option
+            id="it.mdc.tool.hdlCompLib"
+            name="HDL Component Library">
+         <browseFile
+               folder="true"
+               optional="true"
+               workspace="false">
+         </browseFile>
       </option>
    </extension>
 
