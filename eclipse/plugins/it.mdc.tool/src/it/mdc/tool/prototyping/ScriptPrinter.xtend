@@ -27,7 +27,7 @@ class ScriptPrinter {
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
 	String lib_name = "caph"
-	String proc = "arm"
+	String proc = "ublaze"
 
 	def initScriptPrinter(String partname, String boardpart, String coupling, String lib_name){
 		this.partname = partname;
@@ -90,6 +90,7 @@ class ScriptPrinter {
 		set_property -dict [list CONFIG.PRIM_SOURCE {Single_ended_clock_capable_pin} CONFIG.USE_LOCKED {false} CONFIG.USE_RESET {false}] [get_bd_cells clk_wiz_1]
 		delete_bd_objs [get_bd_nets clk_wiz_1_locked]
 		apply_bd_automation -rule xilinx.com:bd_rule:board -config {Board_Interface "sys_clock ( System clock ) " }  [get_bd_pins clk_wiz_1/clk_in1]
+		apply_bd_automation -rule xilinx.com:bd_rule:board -config {rst_polarity "ACTIVE_LOW" }  [get_bd_pins rst_clk_wiz_1_100M/ext_reset_in]
 		«ENDIF»
 		
 		#import IP
