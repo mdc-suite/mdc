@@ -21,6 +21,7 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
+	protected boolean enDMA = true;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
@@ -96,13 +97,15 @@ class ScriptPrinter {
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
 		«ENDIF»
 		endgroup
-		«ELSE»
+		
+		
+		
+		«ELSE»		
 		startgroup
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 		endgroup
 		
-		
-		# AManage connection for each accelerator port
+		# Manage connection for each accelerator port
 		
 		«FOR input : inputMap.keySet()»
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
@@ -126,29 +129,47 @@ class ScriptPrinter {
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
 		«ENDFOR»
 		
-
-			
+		«IF enDMA»
+		«FOR i : 0..fifoNum-1»
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_«i»
+		endgroup
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/S_AXI_LITE]
+		startgroup
+		set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_include_stscntrl_strm {0}] [get_bd_cells axi_dma_«i»]
+		endgroup
+		«IF i < inputMap.size»
+		connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS] [get_bd_intf_pins axi_dma_«i»/M_AXIS_MM2S]
+		«ENDIF»
+		«IF i < outputMap.size»
+		connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS] [get_bd_intf_pins axi_dma_«i»/S_AXIS_S2MM]
+		«ENDIF»
+		startgroup
+		set_property -dict [list CONFIG.PCW_USE_S_AXI_HP«i» {1}] [get_bd_cells processing_system7_0]
+		endgroup
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_dma_«i»/M_AXI_MM2S" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins processing_system7_0/S_AXI_HP«i»]
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/processing_system7_0/S_AXI_HP«i»" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
+		«ENDFOR»
+		
+		
+		«ELSE»
 		«FOR i : 0..fifoNum-1»
 		startgroup
 		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
 		endgroup
 		set_property -dict [list CONFIG.INTERFACES {S_AXI}] [get_bd_cells axi_mm2s_mapper_«i»]
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXI]
-		
 		«IF i < inputMap.size»
 		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/M_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
 		«ENDIF»
-		
-		«IF i < inputMap.size»
+		«IF i < outputMap.size»
 		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXIS] [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS]
 		«ENDIF»
 		
 		«ENDFOR»
 		
-		
-		
+		«ENDIF»
 
-		
 		«ENDIF»
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
