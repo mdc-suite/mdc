@@ -19,7 +19,6 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
-import it.mdc.tool.prototyping.IpDriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.TilPrinter;
 import it.mdc.tool.prototyping.TilPrinterEdkMm;
