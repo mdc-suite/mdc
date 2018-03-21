@@ -209,19 +209,18 @@ class TilPrinterVivadoStream extends TilPrinter {
 		
 		'''
 		module s_accelerator#
-		(
-			// Parameters of Axi Slave Bus Interface S00_AXI
-			parameter integer C_S00_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S00_AXI_ADDR_WIDTH	= «computeSizePointer+2»,
-			
+		(		
 			«FOR input : inputMap.keySet»// Parameters of Axi Slave Bus Interface S«getLongId(inputMap.get(input))»_AXIS
 			parameter integer C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH	= 32,
 			«ENDFOR»
 
 			«FOR output : outputMap.keySet»// Parameters of Axi Master Bus Interface M«getLongId(outputMap.get(output))»_AXIS
 			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH	= 32,
-			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_START_COUNT	= 32
+			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_START_COUNT	= 32,
 			«ENDFOR»
+			// Parameters of Axi Slave Bus Interface S00_AXI
+			parameter integer C_S00_AXI_DATA_WIDTH	= 32,
+			parameter integer C_S00_AXI_ADDR_WIDTH	= «computeSizePointer+2»
 		)
 		(
 			«FOR input : inputMap.keySet»// Ports of Axi Slave Bus Interface S«getLongId(inputMap.get(input))»_AXIS
