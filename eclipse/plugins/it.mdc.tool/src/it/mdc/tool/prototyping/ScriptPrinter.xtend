@@ -27,6 +27,7 @@ class ScriptPrinter {
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
 	String lib_name = "caph"
+	String proc = "arm"
 
 	def initScriptPrinter(String partname, String boardpart, String coupling, String lib_name){
 		this.partname = partname;
@@ -78,11 +79,18 @@ class ScriptPrinter {
 		###########################
 		#create block design
 		create_bd_design $bd_design
-		startgroup
+		
+		«IF proc.equals("arm")»
 		create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
-		endgroup
 		apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
 		connect_bd_net [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK0]
+		«ELSE»
+		create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:10.0 microblaze_0
+		apply_bd_automation -rule xilinx.com:bd_rule:microblaze -config {preset "None" local_mem "8KB" ecc "None" cache "None" debug_module "Debug Only" axi_periph "Enabled" axi_intc "0" clk "New Clocking Wizard (100 MHz)" }  [get_bd_cells microblaze_0]
+		set_property -dict [list CONFIG.PRIM_SOURCE {Single_ended_clock_capable_pin} CONFIG.USE_LOCKED {false} CONFIG.USE_RESET {false}] [get_bd_cells clk_wiz_1]
+		delete_bd_objs [get_bd_nets clk_wiz_1_locked]
+		apply_bd_automation -rule xilinx.com:bd_rule:board -config {Board_Interface "sys_clock ( System clock ) " }  [get_bd_pins clk_wiz_1/clk_in1]
+		«ENDIF»
 		
 		#import IP
 		
@@ -90,18 +98,20 @@ class ScriptPrinter {
 		create_bd_cell -type ip -vlnv user.org:user:$ip_name:$ip_version $ip_name\_0
 		endgroup
 		
+		startgroup
 		«IF coupling.equals("mm")»		
-		startgroup
+		
+		«IF proc.equals("arm")»
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
-		«IF coupling == "mm"»
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
-		«ENDIF»
 		endgroup
+		«ELSE»
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s00_axi]
+		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s01_axi]
+		«ENDIF»
 		
-		
-		
-		«ELSE»		
-		startgroup
+		«ELSE»	
+
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 		endgroup
 		
@@ -190,7 +200,7 @@ class ScriptPrinter {
 		set root "."
 		
 		set hdl_files_path $root/hdl
-		set lib_path $root/hdl/lib
+		set lib_path $root/hdl
 		
 		set lib_name «lib_name»
 		set constraints_files []
@@ -218,10 +228,10 @@ class ScriptPrinter {
 		add_files $lib_path/$lib_name
 		import_files -force
 		
-		set files [glob -tails -directory $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/$lib_name/ *]
+		set files [glob -tails -directory $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/$lib_name/ *]
 		foreach f $files {
 			set name $f
-			set_property library $lib_name [get_files  $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/$lib_name/$f]
+			set_property library $lib_name [get_files  $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/$lib_name/$f]
 		        }
 		
 		set_property top $ip_name [current_fileset]
@@ -239,9 +249,7 @@ class ScriptPrinter {
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_RUSER_WIDTH'))>0 [ipx::get_ports s01_axi_ruser -of_objects [ipx::current_core]]
 		
 		set bd_pkg_dir $root/bd
-		file mkdir $bd_pkg_dir
 		set bd_group [ipx::add_file_group -type xilinx_blockdiagram {} [ipx::current_core]]
-		file copy -force bd.tcl $bd_pkg_dir
 		ipx::add_file $bd_pkg_dir/bd.tcl $bd_group
 		
 		«ENDIF»

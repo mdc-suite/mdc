@@ -858,6 +858,7 @@ public class MDCBackend extends AbstractBackend {
 				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/axi_full_ipif.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
 				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/local_memory.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
 				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/bd.tcl", (outputPath + File.separator + "mm_accelerator" + File.separator + "bd")));
 				if (lrEn){ // power gating not allowed for coprocessor generator
 					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator + "mm_accelerator" + File.separator +"hdl")));
 					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath + File.separator + "mm_accelerator" + File.separator +"hdl")));
