@@ -248,18 +248,15 @@ public class NetworkPrinter extends PlatformComposer {
 	 * 			the protocol file path
 	 * @throws IOException
 	 */
-	public NetworkPrinter(String outPath, ConfigManager configManager, Network network, String protPath) throws IOException{
-		super(outPath,configManager,network);
+	public NetworkPrinter(String outPath, ConfigManager configManager, Network network, String protocolFile) throws IOException{
+		super(outPath,configManager,network,protocolFile);
 		
-		netSysSignals = new HashMap<String,Map<String,String>>();
-		modNames = new HashMap<String,String>();
-		modSysSignals = new HashMap<String,Map<String,Map<String,String>>>();
-		modCommSignals = new HashMap<String,Map<String,Map<String,String>>>();
-		modCommParms = new HashMap<String,Map<String,Map<String,String>>>();
+		netSysSignals = protocolManager.getNetSysSignals();
+		modNames = protocolManager.getModNames();
+		modSysSignals = protocolManager.getModSysSignals();
+		modCommSignals = protocolManager.getModCommSignals();
+		modCommParms = protocolManager.getModCommParms();
 		
-		if(!protPath.equals("")){
-			new ProtocolParser(protPath);
-		}
 		
 		System.out.println("netSysSignals " + netSysSignals);
 		System.out.println("modNames " + modNames);

@@ -54,7 +54,11 @@ public abstract class PlatformComposer {
 	 * General output path
 	 */
 	protected String hdlPath;
-	
+
+	/**
+	 * General output path
+	 */
+	protected ProtocolManager protocolManager;
 
 	/**
 	 * Clock domains of the network 
@@ -140,7 +144,7 @@ public abstract class PlatformComposer {
 	 * 		multi-dataflow network
 	 * @throws IOException
 	 */
-	public PlatformComposer(String outPath, ConfigManager configManager, Network network) throws IOException {
+	public PlatformComposer(String outPath, ConfigManager configManager, Network network, String protocolFile) throws IOException {
 		
 		this.hdlPath = outPath;
 		this.network = network;
@@ -148,6 +152,7 @@ public abstract class PlatformComposer {
 		logicRegions = new HashMap<String,Set<String>>();
 		netRegions = new HashMap<String,Set<String>>();
 		evaluator = new ExpressionEvaluator();
+		protocolManager = new ProtocolManager(protocolFile);
 	}
 	
 	/**

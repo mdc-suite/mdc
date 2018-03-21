@@ -45,7 +45,7 @@ public class RvcPrinter extends PlatformComposer {
 	 */
 	public RvcPrinter(String outPath, ConfigManager configManager, Network network) throws IOException
 	{
-		super(outPath,configManager,network);
+		super(outPath,configManager,network,null);
 	}
 	
 	

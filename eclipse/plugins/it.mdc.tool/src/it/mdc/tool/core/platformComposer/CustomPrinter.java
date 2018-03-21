@@ -45,7 +45,7 @@ public class CustomPrinter extends PlatformComposer {
 	
 	
 	public CustomPrinter(String outPath, ConfigManager configManager, Network network, String protPath) throws IOException{
-		super(outPath,configManager,network);
+		super(outPath,configManager,network,null);
 		signals = new ArrayList<String[]>();
 		extSignals = new ArrayList<String[]>();
 		clockSignal = null;
