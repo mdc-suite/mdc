@@ -39,7 +39,7 @@ public class ProtocolManager {
 	public static final String KIND = "kind";
 	public static final String CLOCK = "is_clock";
 	public static final String RST = "is_reset";
-	public static final String RSTN = "is_reset_n";
+	public static final String RSTN = "is_resetn";
 	public static final String DIR = "dir";
 	public static final String BROAD = "broadcast";
 	public static final String SIZE = "size";

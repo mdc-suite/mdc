@@ -14,6 +14,8 @@ import net.sf.orcc.df.Port
 import it.mdc.tool.core.ConfigManager
 import java.util.List
 
+import it.mdc.tool.core.platformComposer.ProtocolManager
+
 /**
  * Vivado Template Interface Layer 
  * Memory-Mapped HW Accelerator Printer
@@ -33,9 +35,13 @@ class WrapperPrinter extends TilPrinter {
 						Map<String,Map<String,Map<String,String>>> modCommSignals,
 						Map<String,Map<String,String>> wrapCommSignals
 	) {
+		System.out.print("WP intialization!!!");
 		this.netSysSignals = netSysSignals;
 		this.modCommSignals = modCommSignals;
 		this.wrapCommSignals = wrapCommSignals;
+		System.out.println("netSysSignals " + this.netSysSignals);
+		System.out.println("modCommSignals " + this.modCommSignals);
+		System.out.println("wrapCommSignals " + this.wrapCommSignals);
 	}
 	
 	def hasParameter(String portValue) {
@@ -155,55 +161,78 @@ class WrapperPrinter extends TilPrinter {
 		'''	
 		
 	}
+	
+	def getSizePrefix(String size) {
+		System.out.println("gsp " + size);
+		if(size.equals("1")) {
+			return ""
+		} else {
+			return "[" + size + "-1 : 0] "
+		}
+	}
+	
+	def getPortCommSigSize(Port port, String commSigId, Map<String,Map<String,String>> commSigIdMap) {
+		System.out.println("port " + port + " " + commSigId + " " + commSigIdMap);
+		if(commSigIdMap.containsKey(commSigId)){
+			if(commSigIdMap.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
+				System.out.println("var " + port.type + " " + port.type.sizeInBits + " " + port.type.sizeInBits.toString);
+				return port.type.sizeInBits.toString
+			} else {
+				return commSigIdMap.get(commSigId).get(ProtocolManager.SIZE)	
+			}
+		}
+		return null
+	}
 
 	def printTopSignals() {
 		
 		'''
 		// Wire(s) and Reg(s)
-		wire [31 : 0]				slv_reg0;
+		wire [31 : 0] slv_reg0;
 		«FOR port : portMap.keySet»
-		wire [31 : 0]				slv_reg«portMap.get(port)+1»;«ENDFOR»
+		wire [31 : 0] slv_reg«portMap.get(port)+1»;
+		«ENDFOR»
 		«IF dedicatedInterfaces»
 		«ELSE»
-		wire 						s01_axi_rden;
-		wire 						s01_axi_wren;
-		wire [C_S01_AXI_ADDR_WIDTH-3 : 0]				s01_axi_address;
-		wire [31 : 0]				s01_axi_data_in;
-		reg [31 : 0]				s01_axi_data_out;
+		wire s01_axi_rden;
+		wire s01_axi_wren;
+		wire [C_S01_AXI_ADDR_WIDTH-3 : 0] s01_axi_address;
+		wire [31 : 0] s01_axi_data_in;
+		reg [31 : 0] s01_axi_data_out;
 		«ENDIF»
+		«FOR input : inputMap.keySet()»
+		«FOR commSigId : getInFirstModCommSignals().keySet»
+		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+		«ENDFOR»
+		«ENDFOR»
 	    «FOR input : inputMap.keySet()»
-		wire [«input.type.sizeInBits-1» : 0]				«input.getName()»_data;
-		wire 						«input.getName()»_send;
-		wire						«input.getName()»_rdy;
-		wire						«input.getName()»_ack;
-		wire [15:0]					«input.getName()»_count;
-		wire 						en_«input.name»;
-		wire 						done_«input.name»;
-		wire [11:0]					count_«input.name»;
-		wire						wren_mem_«portMap.get(input)+1»;
-		wire						rden_mem_«portMap.get(input)+1»;
-		wire [7:0]					address_mem_«portMap.get(input)+1»;
-		wire [31:0]					data_in_mem_«portMap.get(input)+1»;
-		wire [31:0]					data_out_mem_«portMap.get(input)+1»;
-		wire [31:0]					data_out_«portMap.get(input)+1»;
-		wire						ce_«portMap.get(input)+1»;
+		wire en_«input.name»;
+		wire done_«input.name»;
+		wire [11:0]	count_«input.name»;
+		wire wren_mem_«portMap.get(input)+1»;
+		wire rden_mem_«portMap.get(input)+1»;
+		wire [7:0] address_mem_«portMap.get(input)+1»;
+		wire [31:0]	data_in_mem_«portMap.get(input)+1»;
+		wire [31:0]	data_out_mem_«portMap.get(input)+1»;
+		wire [31:0]	data_out_«portMap.get(input)+1»;
+		wire ce_«portMap.get(input)+1»;
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
-		wire [«output.type.sizeInBits-1» : 0]				«output.getName()»_data;
-		wire 						«output.getName()»_send;
-		wire						«output.getName()»_rdy;
-		wire						«output.getName()»_ack;
-		wire [15:0]					«output.getName()»_count;
-		wire 						en_«output.name»;
-		wire 						done_«output.name»;
-		wire [11:0]					count_«output.name»;
-		wire						rden_mem_«portMap.get(output)+1»;
-		wire						wren_mem_«portMap.get(output)+1»;
-		wire [7:0]					address_mem_«portMap.get(output)+1»;
-		wire [31:0]					data_in_mem_«portMap.get(output)+1»;
-		wire [31:0]					data_out_mem_«portMap.get(output)+1»;
-		wire [31:0]					data_out_«portMap.get(output)+1»;
-		wire						ce_«portMap.get(output)+1»;
+		«FOR commSigId : getOutLastModCommSignals().keySet»
+		wire «getSizePrefix(getPortCommSigSize(output,commSigId,getLastModCommSignals()))»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+		«ENDFOR»
+		«ENDFOR»
+		«FOR output : outputMap.keySet()»
+		wire en_«output.name»;
+		wire done_«output.name»;
+		wire [11:0] count_«output.name»;
+		wire rden_mem_«portMap.get(output)+1»;
+		wire wren_mem_«portMap.get(output)+1»;
+		wire [7:0] address_mem_«portMap.get(output)+1»;
+		wire [31:0]	data_in_mem_«portMap.get(output)+1»;
+		wire [31:0]	data_out_mem_«portMap.get(output)+1»;
+		wire [31:0]	data_out_«portMap.get(output)+1»;
+		wire ce_«portMap.get(output)+1»;
 		«ENDFOR»
 		'''
 		
@@ -580,11 +609,10 @@ class WrapperPrinter extends TilPrinter {
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.start(slv_reg0[0]),
 			.done(done_«input.name»),
-			.rdy(«input.name»_rdy),
-			.ack(«input.name»_ack),
+			.full(«input.name»_full),
 			.en(en_«input.name»),
 			.rden(rden_mem_«portMap.get(input)+1»),
-			.send(«input.name»_send)
+			.wr(«input.name»_wr)
 		);
 		
 		counter #(			
@@ -626,11 +654,10 @@ class WrapperPrinter extends TilPrinter {
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.start(slv_reg0[0]),
 			.done(done_«output.name»),
-			.send(«output.name»_send),
+			.wr(«output.name»_wr),
 			.wren(wren_mem_«portMap.get(output)+1»),
 			.en(en_«output.name»),
-			.rdy(«output.name»_rdy),
-			.ack(«output.name»_ack)
+			.full(«output.name»_full)
 		);
 		
 		counter #(			
@@ -660,15 +687,13 @@ class WrapperPrinter extends TilPrinter {
 			// Multi-Dataflow Input(s)
 			«FOR input : inputMap.keySet()»
 			«FOR commSigId : getInFirstModCommSignals().keySet»
-			«««TODO control on getInFirstModCommSignals().get(commSigId) for "" name and consequend removing of _
-			.«input.getName()»_«getInFirstModCommSignals().get(commSigId)»(«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get("CHANNEL"))»
+			.«input.getName()»«getSuffix(getInFirstModCommSignals(),commSigId)»(«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 			«ENDFOR»
 			«ENDFOR»
 			// Multi-Dataflow Output(s)
 			«FOR output : outputMap.keySet()»
 			«FOR commSigId : getOutLastModCommSignals().keySet»
-			«««TODO control on getOutLastModCommSignals().get(commSigId) for "" name and consequend removing of _
-			.«output.getName()»_«getOutLastModCommSignals().get(commSigId)»(«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get("CHANNEL"))»
+			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 			«ENDFOR»
 			«ENDFOR»
 			«FOR clockSignal : getClockSysSignals()»
@@ -683,70 +708,89 @@ class WrapperPrinter extends TilPrinter {
 		'''
 	}
 	
+	def getSuffix(Map<String,String> idNameMap, String id) {
+		if(idNameMap.containsKey(id)) {
+			if(idNameMap.get(id).equals("")) {
+				return ""
+			} else {
+				return "_" + idNameMap.get(id)
+			}
+		}
+		return null
+	}
+	
 	def getMatchingWrapMapping(String channel){
 		for(commSigId : wrapCommSignals.keySet) {
-			if(wrapCommSignals.get(commSigId).containsKey(channel)) {
-				return wrapCommSignals.get(commSigId).get(channel)
+			if(wrapCommSignals.get(commSigId).containsKey(ProtocolManager.CH)) {
+				if(channel.equals(wrapCommSignals.get(commSigId).get(ProtocolManager.CH))) {
+					return wrapCommSignals.get(commSigId).get(ProtocolManager.MAP)
+				}
 			}
 		}
 		return null
 	}
 		
 	def getOutLastModCommSignals(){
-		var Map<String,String> result new HashMap<String,String>();
+		var Map<String,String> result = new HashMap<String,String>();
 		for(commSigId : getLastModCommSignals().keySet) {
-			if( (getLastModCommSignals().get(commSigId).get("KIND").equals("output") 
-				&& getLastModCommSignals().get(commSigId).get("DIR").equals("direct") )
-				|| (getLastModCommSignals().get(commSigId).get("KIND").equals("input")
-				&& getLastModCommSignals().get(commSigId).get("DIR").equals("reverse") ) )
-			result.put(commSigId,getLastModCommSignals().get(commSigId).get("PORT"));	
+			if( (getLastModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("output") 
+					&& getLastModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
+					|| (getLastModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("input")
+					&& getLastModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("reverse") ) ) {
+				System.out.println("lmcs " + commSigId + " " + getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))
+				result.put(commSigId,getLastModCommSignals().get(commSigId).get(ProtocolManager.CH));	
+			}
 		}
 		return result
 	}
 	
 	def getLastModCommSignals(){
-		if(modCommSignals.containsKey("SUCC")) {
-			return modCommSignals.get("SUCC")
+		if(modCommSignals.containsKey(ProtocolManager.SUCC)) {
+			return modCommSignals.get(ProtocolManager.SUCC)
 		} else {
-			return modCommSignals.get("ACTOR")
+			return modCommSignals.get(ProtocolManager.ACTOR)
 		}
 	}
 	
 	def getInFirstModCommSignals(){
-		var Map<String,String> result new HashMap<String,String>();
+		var Map<String,String> result = new HashMap<String,String>();
 		for(commSigId : getFirstModCommSignals().keySet) {
-			if( (getFirstModCommSignals().get(commSigId).get("KIND").equals("input") 
-				&& getFirstModCommSignals().get(commSigId).get("DIR").equals("direct") )
-				|| (getFirstModCommSignals().get(commSigId).get("KIND").equals("output")
-				&& getFirstModCommSignals().get(commSigId).get("DIR").equals("reverse") ) )
-			result.put(commSigId,getFirstModCommSignals().get(commSigId).get("PORT"));	
+			if( (getFirstModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("input") 
+					&& getFirstModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
+					|| (getFirstModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("output")
+					&& getFirstModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("reverse") ) ) {
+				System.out.println("fmcs " + commSigId + " " + getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))
+				result.put(commSigId,getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH));		
+			}
 		}
 		return result
 	}
 	
 	def getFirstModCommSignals(){
-		if(modCommSignals.containsKey("PRED")) {
-			return modCommSignals.get("PRED")
+		if(modCommSignals.containsKey(ProtocolManager.PRED)) {
+			return modCommSignals.get(ProtocolManager.PRED)
 		} else {
-			return modCommSignals.get("ACTOR")
+			return modCommSignals.get(ProtocolManager.ACTOR)
 		}
 	}
 	
 	def getClockSysSignals(){
-		var List<String> result new ArrayList<String>();
+		var List<String> result = new ArrayList<String>();
 		for(String sysSigId : netSysSignals.keySet) {
-			if(netSysSignals.get(sysSigId).containsKey("CLOCK")) {
-				result.add(netSysSignals.get(sysSigId).get("NETP"))
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)) {
+				result.add(netSysSignals.get(sysSigId).get(ProtocolManager.NETP))
 			}
 		}
 		return result
 	}
 	
 	def getResetSysSignals(){
-		var Map<String,String> result new HashMap<String,String>();
+		var Map<String,String> result = new HashMap<String,String>();
 		for(String sysSigId : netSysSignals.keySet) {
-			if(netSysSignals.get(sysSigId).containsKey("RESET")) {
-				result.put(netSysSignals.get(sysSigId).get("NETP"),netSysSignals.get(sysSigId).get("LEVEL"))
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"HIGH")
+			} else if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"LOW")
 			}
 		}
 		return result

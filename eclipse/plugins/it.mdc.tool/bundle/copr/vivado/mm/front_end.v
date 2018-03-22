@@ -23,11 +23,10 @@ module front_end(
     input wire aresetn,
     input wire start,
     input wire done,
-    input wire rdy,
-    input wire ack,
+    input wire full,
     output reg en,
     output reg rden,
-    output reg send
+    output reg wr
 );
 
     parameter   IDLE = 2'd0,
@@ -43,7 +42,7 @@ module front_end(
         else
             state <= state_nxt;
             
-    always@(state or start or rdy or done)
+    always@(state or start or full or done)
         case(state)
             IDLE:   if(start)
                         state_nxt = WAIT;
@@ -51,19 +50,20 @@ module front_end(
                         state_nxt = IDLE;
             WAIT:   if(!start)
                         state_nxt = IDLE;
-                    else if(rdy&&!done)
+                    else if(!full && !done)
                         state_nxt = WORK;
                     else
                         state_nxt = WAIT; 
              WORK:   if(!start)
                         state_nxt = IDLE;
-                     else if(rdy)
-                      	if(done)
-                      		state_nxt = LAST;
-                  		else
-                        	state_nxt = WORK;
-                     else
-                        state_nxt = WAIT;
+                     else 
+						if(!full)
+							if(done)
+								state_nxt = LAST;
+							else
+								state_nxt = WORK;
+						else
+							state_nxt = WAIT;
         	LAST:	if(!start)
                         state_nxt = IDLE;
                     else
@@ -71,13 +71,13 @@ module front_end(
             default:    state_nxt = IDLE;
         endcase
                     
-    always@(state or ack or done or rdy)
+    always@(state or full or done)
         case(state)
-            IDLE:       {en,rden,send} = {1'b0,1'b0,1'b0};
-            WAIT:       {en,rden,send} = {rdy&&!done,1'b1,1'b0};
-            WORK:       {en,rden,send} = {ack&&!done,1'b1,rdy};
-            LAST:       {en,rden,send} = {1'b0,1'b1,1'b1};
-            default:    {en,rden,send} = 3'b000;
+            IDLE:       {en,rden,wr} = {1'b0,1'b0,1'b0};
+            WAIT:       {en,rden,wr} = {!full && !done,1'b1,1'b0};
+            WORK:       {en,rden,wr} = {!full && !done,1'b1,!full};
+            LAST:       {en,rden,wr} = {1'b0,1'b1,1'b1};
+            default:    {en,rden,wr} = 3'b000;
         endcase
                
 endmodule

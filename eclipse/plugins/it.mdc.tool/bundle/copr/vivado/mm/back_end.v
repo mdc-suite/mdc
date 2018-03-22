@@ -23,11 +23,10 @@ module back_end(
     input wire aresetn,
     input wire start,
     input wire done,
-    input wire send,
+    input wire wr,
     output reg en,
     output reg wren,
-    output reg rdy,
-    output reg ack
+    output reg full
 );
 
     parameter   IDLE = 1'b0,
@@ -54,11 +53,11 @@ module back_end(
             default:    state_nxt = IDLE;
         endcase
                     
-    always@(state or send)
+    always@(state or wr)
         case(state)
-            IDLE:       {en,wren,rdy,ack} = 4'b0000;
-            WORK:       {en,wren,rdy,ack} = {send,send,1'b1,send};
-            default:    {en,wren,rdy,ack} = 4'b0000;
+            IDLE:       {en,wren,full} = 4'b001;
+            WORK:       {en,wren,full} = {wr,wr,1'b0};
+            default:    {en,wren,full} = 4'b0000;
         endcase
                
 endmodule
