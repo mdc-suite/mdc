@@ -23,7 +23,7 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
-	protected boolean enDMA = false;
+	protected boolean enDMA = true;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
@@ -49,7 +49,8 @@ class ScriptPrinter {
 		
 		# user should properly set root path
 		set root "."
-		set projdir $root/project
+		set projdir $root/project_top
+		set ipdir $root/project_ip
 		
 		set constraints_files []
 		
@@ -74,7 +75,7 @@ class ScriptPrinter {
 		create_project -force $design $projdir -part $partname 
 		set_property board_part $boardpart [current_project]
 		set_property target_language Verilog [current_project]
-		set_property  ip_repo_paths $root [current_project]
+		set_property  ip_repo_paths $ipdir [current_project]
 		update_ip_catalog -rebuild -scan_changes
 		###########################
 		#create block design
@@ -101,16 +102,26 @@ class ScriptPrinter {
 		
 		startgroup
 		«IF coupling.equals("mm")»		
-		
-		«IF proc.equals("arm")»
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
-		endgroup
-		«ELSE»
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s00_axi]
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s01_axi]
-		«ENDIF»
-		
+			«IF proc.equals("arm")»
+				«IF enDMA»
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+				create_bd_cell -type ip -vlnv xilinx.com:ip:axi_cdma:4.1 axi_cdma_0
+				set_property -dict [list CONFIG.C_INCLUDE_SG {0}] [get_bd_cells axi_cdma_0]
+				connect_bd_intf_net [get_bd_intf_pins mm_accelerator_0/s01_axi] [get_bd_intf_pins axi_cdma_0/M_AXI]
+				apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config {Clk "/processing_system7_0/FCLK_CLK0 (100 MHz)" }  [get_bd_pins mm_accelerator_0/s01_axi_aclk]
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_cdma_0/S_AXI_LITE]
+				assign_bd_address
+				include_bd_addr_seg [get_bd_addr_segs -excluded axi_cdma_0/Data/SEG_mm_accelerator_0_reg0]
+				endgroup
+				«ELSE»
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
+				endgroup
+				«ENDIF»
+			«ELSE»
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s00_axi]
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s01_axi]
+			«ENDIF»
 		«ELSE»	
 
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
@@ -208,9 +219,9 @@ class ScriptPrinter {
 		
 		# user should properly set root path
 		set root "."
+		set ipdir $root/project_ip
 		
 		set hdl_files_path $root/hdl
-		set lib_path $hdl_files_path/lib
 		
 		set constraints_files []
 		
@@ -228,7 +239,7 @@ class ScriptPrinter {
 		# Create IP
 		###########################
 		
-		create_project -force $design $root/$ip_name -part $partname 
+		create_project -force $design $ipdir -part $partname 
 		set_property board_part $boardpart [current_project]
 		set_property target_language Verilog [current_project]
 		
@@ -236,16 +247,16 @@ class ScriptPrinter {
 		import_files -force
 		
 		«FOR lib : libraries»
-		set files [glob -tails -directory $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/ *]
+		set files [glob -tails -directory $ipdir/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/ *]
 		foreach f $files {
 			set name $f
-			set_property library «lib» [get_files  $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/$f]
+			set_property library «lib» [get_files  $ipdir/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/$f]
 		        }
 		 «ENDFOR»
 		
 		set_property top $ip_name [current_fileset]
 		
-		ipx::package_project -root_dir $root -vendor user.org -library user -taxonomy /UserIP
+		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy /UserIP
 		
 		«IF coupling == "mm"»
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_awid -of_objects [ipx::current_core]]
@@ -266,7 +277,7 @@ class ScriptPrinter {
 		ipx::create_xgui_files [ipx::current_core]
 		ipx::update_checksums [ipx::current_core]
 		ipx::save_core [ipx::current_core]
-		set_property  ip_repo_paths $root [current_project]
+		set_property  ip_repo_paths $ipdir [current_project]
 		update_ip_catalog
 		close_project
 		'''		
