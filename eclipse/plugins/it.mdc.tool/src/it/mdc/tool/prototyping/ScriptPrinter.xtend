@@ -21,13 +21,13 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
-	protected boolean enDMA = true;
+	protected boolean enDMA = false;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
 	String lib_name = "caph"
-	String proc = "ublaze"
+	String proc = "arm"
 
 	def initScriptPrinter(String partname, String boardpart, String coupling, String lib_name){
 		this.partname = partname;
@@ -180,6 +180,8 @@ class ScriptPrinter {
 		endgroup
 		set_property -dict [list CONFIG.INTERFACES {S_AXI}] [get_bd_cells axi_mm2s_mapper_«i»]
 		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXI]
+		set_property -dict [list CONFIG.TDATA_NUM_BYTES {4}] [get_bd_cells axi_mm2s_mapper_«i»]
+		set_property -dict [list CONFIG.ID_WIDTH {12}] [get_bd_cells axi_mm2s_mapper_«i»]
 		«IF i < inputMap.size»
 		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/M_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
 		«ENDIF»
