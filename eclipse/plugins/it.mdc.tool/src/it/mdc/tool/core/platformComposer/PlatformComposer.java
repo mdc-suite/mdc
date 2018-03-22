@@ -222,8 +222,8 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib) throws IOException {		
-		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib);
+	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) throws IOException {		
+		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib, partname, boardpart);
 	}
 	
 	/**
@@ -233,7 +233,7 @@ public abstract class PlatformComposer {
 	 * @throws IOException 
 	 */
 	private void generateCoprVivado(String type, List<SboxLut> luts,
-			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib) {
+			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) {
 		/// <ul>
 		String file;
 		String prefix = "";
@@ -319,8 +319,8 @@ public abstract class PlatformComposer {
 
 				
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
-		scriptPrinter.initScriptPrinter("xc7z020clg484-1",
-										"em.avnet.com:zed:part0:1.0",
+		scriptPrinter.initScriptPrinter(partname,
+										boardpart,
 										prefix,
 										libraries);
 		

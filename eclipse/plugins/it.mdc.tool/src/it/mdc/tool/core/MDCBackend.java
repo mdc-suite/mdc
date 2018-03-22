@@ -245,6 +245,16 @@ public class MDCBackend extends AbstractBackend {
 	 *Co-processing layer generation type
 	 */
 	private String coprType;
+	
+	/**
+	 *Co-processing board partname
+	 */
+	private String partname;
+	
+	/**
+	 *Co-processing board partname
+	 */
+	private String boardpart;
 	////////////////////////////////////////////////////////
 	
 	
@@ -712,7 +722,7 @@ public class MDCBackend extends AbstractBackend {
 			/// <li> generate coprocessor HDL code
 			if(genCopr){
 				// TODO  uniformare nomi reti (include path ora) per config id
-				hdlWriter.generateCopr(coprType,luts,networkVertexMap, hdlCompLib);
+				hdlWriter.generateCopr(coprType,luts,networkVertexMap, hdlCompLib, partname, boardpart);
 			}
 			
 		}catch(Exception e) {
@@ -774,6 +784,8 @@ public class MDCBackend extends AbstractBackend {
 	/**
 	 * Initialize general attributes with options set by the Users*/
 	protected void doInitializeOptions() {
+		
+		
 
 		printer = new Printer();
 				
@@ -788,6 +800,9 @@ public class MDCBackend extends AbstractBackend {
 			   
 		genCAL = getOption("it.unica.diee.mdc.genCAL", false);
 		
+		partname = getOption("it.unica.diee.mdc.partname","");
+		boardpart = getOption("it.unica.diee.mdc.boardpart","");
+	
 		if(genCAL) {
 			Calendar c = Calendar.getInstance();
 			String date = c.get(Calendar.DAY_OF_MONTH) + "_" + (c.get(Calendar.MONTH)+1) + "_" + c.get(Calendar.YEAR);
@@ -904,13 +919,13 @@ public class MDCBackend extends AbstractBackend {
 		} else if(mergingAlgorithm.equals("EMPIRIC")) {
 			merger = new EmpiricMerger();
 		}
-		//OrccLogger.traceln("*\tSelected merging algorithm: " + mergingAlgorithm);
+		OrccLogger.traceln("*\tSelected merging algorithm: " + mergingAlgorithm);
 		/// <li> instantiate and flatten networks 
 		for(Network net : netMap.keySet()){
 			
-			for(Connection existingConnection : net.getConnections()){
-				OrccLogger.traceln("ECB " + existingConnection + " " + existingConnection.getAttributes());	
-			}
+		//	for(Connection existingConnection : net.getConnections()){
+			//	OrccLogger.traceln("ECB " + existingConnection + " " + existingConnection.getAttributes());	
+		//	}
 				
 			//OrccLogger.traceln("Instantiating " + net + "...");
 			new Instantiator(false).doSwitch(net);
@@ -1215,6 +1230,8 @@ public class MDCBackend extends AbstractBackend {
 		options.addOption("w", "powerFile", false, "Power profiler file");
 		options.addOption("t", "timingFile", false, "Power profiler file");
 		options.addOption("r", "profEffort", false, "Profiling effort");
+		options.addOption("z", "partname", false, "Xilinx Board partname");
+		options.addOption("d", "boardpart", false, "Xilinx Board boardpart");
 
 		try {
 			
@@ -1244,6 +1261,8 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.mdc.tool.hdlCompLib", line.getOptionValue('l'));
 			optionMap.put("it.unica.diee.mdc.genCopr", line.getOptionValue('t'));
 			optionMap.put("it.unica.diee.mdc.coprType", line.getOptionValue('k'));
+			optionMap.put("it.unica.diee.mdc.partname", line.getOptionValue('z'));
+			optionMap.put("it.unica.diee.mdc.boardpart", line.getOptionValue('d'));
 			optionMap.put("it.unica.diee.mdc.computeLogicRegions", line.getOptionValue('e'));
 			optionMap.put("it.unica.diee.mdc.importBufferSizeFileList", line.getOptionValue('i'));
 			optionMap.put("it.unica.diee.mdc.bufferSizeFilesFolder", line.getOptionValue('b'));

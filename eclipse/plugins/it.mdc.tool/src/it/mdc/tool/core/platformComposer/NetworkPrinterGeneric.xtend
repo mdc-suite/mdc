@@ -183,12 +183,12 @@ class NetworkPrinterGeneric {
 		clockDomainsIndex.put(DEFAULT_CLOCK_DOMAIN, clkIndex);
 		clkIndex = clkIndex + 1;
 		
-		System.out.println("clockSets.keySet() " + clockSets.keySet());
+	//	System.out.println("clockSets.keySet() " + clockSets.keySet());
 		
 		for (String clkId : clockSets.keySet()) {
-			System.out.println("clkId " + clkId);
+		//	System.out.println("clkId " + clkId);
 			clockDomainsIndex.put(clkId.toString(), clkIndex);
-			System.out.println("clkIndex " + clkIndex);
+		//	System.out.println("clkIndex " + clkIndex);
 			clkIndex = clkIndex + 1;
 		}
 
