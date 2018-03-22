@@ -22,6 +22,7 @@ import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.TilPrinter;
 import it.mdc.tool.prototyping.TilPrinterVivadoMm;
 import it.mdc.tool.prototyping.TilPrinterVivadoStream;
+import it.mdc.tool.prototyping.WrapperPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
 import net.sf.orcc.df.Connection;
@@ -235,7 +236,11 @@ public abstract class PlatformComposer {
 		/// <li> Initialize TIL printer
 		TilPrinter printer;
 		if(type.equals("MEMORY-MAPPED")) {
-			printer = new TilPrinterVivadoMm();
+			printer = new WrapperPrinter();
+			((WrapperPrinter) printer).initWrapperPrinter(protocolManager.getNetSysSignals(),
+					protocolManager.getModCommSignals(),
+					protocolManager.getWrapCommSignals());
+			//printer = new TilPrinterVivadoMm();
 			prefix = "mm";
 		} else if(type.equals("STREAM")) {
 			printer = new TilPrinterVivadoStream();	
