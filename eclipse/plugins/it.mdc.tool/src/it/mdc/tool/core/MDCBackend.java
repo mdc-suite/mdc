@@ -852,7 +852,7 @@ public class MDCBackend extends AbstractBackend {
 	 * Libraries extraction*/
 	protected Result doLibrariesExtraction() {
 				
-		final Result result = FilesManagerMdc.extract("","");
+		final Result result = FilesManagerMdc.extract("","outputPath");
 		
 		/// If coprocessor generation is enabled, extract libraries depending on the processor-coprocessor communication
 		if(genCopr) {
