@@ -3,6 +3,7 @@ package it.mdc.tool.core.platformComposer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -111,6 +112,11 @@ public abstract class PlatformComposer {
 	protected Network network;
 	
 	/**
+	 * HDL component library
+	 */
+	private String hdlCompLib;
+	
+	/**
 	 * Protocol signals flags
 	 */
 	protected final static int DIRECTION = 0;
@@ -216,8 +222,8 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap) throws IOException {		
-		generateCoprVivado(type, luts, networkVertexMap);
+	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib) throws IOException {		
+		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib);
 	}
 	
 	/**
@@ -227,7 +233,7 @@ public abstract class PlatformComposer {
 	 * @throws IOException 
 	 */
 	private void generateCoprVivado(String type, List<SboxLut> luts,
-			Map<String, Map<String, String>> networkVertexMap) {
+			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib) {
 		/// <ul>
 		String file;
 		String prefix = "";
@@ -249,6 +255,8 @@ public abstract class PlatformComposer {
 			//TODO hybrid
 			printer = null;
 		}
+		
+
 		
 		////////////////////////
 		/// <li> HDL sources 
@@ -295,11 +303,28 @@ public abstract class PlatformComposer {
 		/////////////////////////
 		
 		// TODO to be replaced with tcl scripts generation
+		System.out.println("hdlPath " + hdlCompLib);
+		// Get libraries
+		List<String> libraries = new ArrayList<String>();
+		File compFolder = new File(hdlCompLib);
+		File libFolder = new File(hdlCompLib+"/lib");
+		
+		if(libFolder.exists()){
+			File[] listOfFiles = libFolder.listFiles();
+		    for (int i = 0; i < listOfFiles.length; i++) {
+		    	if (listOfFiles[i].isDirectory()) {
+		        System.out.println("Directory " + listOfFiles[i].getName());
+		        libraries.add(listOfFiles[i].getName());
+		      }
+		    }
+		}
+
+				
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
 		scriptPrinter.initScriptPrinter("xc7z020clg484-1",
 										"em.avnet.com:zed:part0:1.0",
 										prefix,
-										"caph");
+										libraries);
 		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
 		sequence = scriptPrinter.printIpScript();
 		try {

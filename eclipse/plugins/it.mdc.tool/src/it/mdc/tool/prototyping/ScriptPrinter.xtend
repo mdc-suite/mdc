@@ -7,6 +7,8 @@ import net.sf.orcc.df.Network
 import java.util.Map
 import java.util.HashMap
 import net.sf.orcc.df.Port
+import java.util.ArrayList
+import java.util.List
 
 /**
  * Vivado Script Printer
@@ -26,14 +28,14 @@ class ScriptPrinter {
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
-	String lib_name = "caph"
+	List<String> libraries = new ArrayList<String>()
 	String proc = "arm"
 
-	def initScriptPrinter(String partname, String boardpart, String coupling, String lib_name){
+	def initScriptPrinter(String partname, String boardpart, String coupling, List<String> libraries){
 		this.partname = partname;
 		this.boardpart = boardpart;
 		this.coupling = coupling;
-		this.lib_name = lib_name;
+		this.libraries = libraries;
 	}
 
 	def printTopScript(Network network) {
@@ -50,8 +52,6 @@ class ScriptPrinter {
 		set projdir $root/project
 		
 		set constraints_files []
-		
-		set lib_name «lib_name»
 		
 		# FPGA device
 		set partname "«partname»"
@@ -210,9 +210,8 @@ class ScriptPrinter {
 		set root "."
 		
 		set hdl_files_path $root/hdl
-		set lib_path $root/hdl
+		set lib_path $hdl_files_path/lib
 		
-		set lib_name «lib_name»
 		set constraints_files []
 		
 		# FPGA device
@@ -234,15 +233,15 @@ class ScriptPrinter {
 		set_property target_language Verilog [current_project]
 		
 		add_files $hdl_files_path
-		#import «lib_name» lib
-		add_files $lib_path/$lib_name
 		import_files -force
 		
-		set files [glob -tails -directory $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/$lib_name/ *]
+		«FOR lib : libraries»
+		set files [glob -tails -directory $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/ *]
 		foreach f $files {
 			set name $f
-			set_property library $lib_name [get_files  $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/$lib_name/$f]
+			set_property library «lib» [get_files  $root/$ip_name/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/$f]
 		        }
+		 «ENDFOR»
 		
 		set_property top $ip_name [current_fileset]
 		

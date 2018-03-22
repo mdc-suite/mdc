@@ -712,7 +712,7 @@ public class MDCBackend extends AbstractBackend {
 			/// <li> generate coprocessor HDL code
 			if(genCopr){
 				// TODO  uniformare nomi reti (include path ora) per config id
-				hdlWriter.generateCopr(coprType,luts,networkVertexMap);
+				hdlWriter.generateCopr(coprType,luts,networkVertexMap, hdlCompLib);
 			}
 			
 		}catch(Exception e) {
