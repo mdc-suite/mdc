@@ -1,7 +1,5 @@
 package it.mdc.tool.core;
 
-import org.xronos.orcc.backend.Xronos;
-
 import static it.mdc.tool.profiling.Profiler.DONT_MERGE;
 import static net.sf.orcc.OrccLaunchConstants.BACKEND;
 import static net.sf.orcc.OrccLaunchConstants.OUTPUT_FOLDER;
@@ -19,8 +17,6 @@ import java.util.Set;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.OrccRuntimeException;
 import net.sf.orcc.backends.AbstractBackend;
-import net.sf.orcc.backends.Backend;
-import net.sf.orcc.backends.BackendFactory;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.DfFactory;
@@ -54,25 +50,19 @@ import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.osgi.framework.Bundle;
 
-import it.mdc.tool.core.platformComposer.*;
-import it.mdc.tool.profiling.*;
-import it.mdc.tool.core.sboxManagement.*;
 import it.mdc.tool.utility.*;
 import it.mdc.tool.core.multiDataflowGenerator.EmpiricMerger;
 import it.mdc.tool.core.multiDataflowGenerator.Merger;
 import it.mdc.tool.core.multiDataflowGenerator.MoreanoMerger;
-import it.mdc.tool.core.platformComposer.CustomPrinter;
 import it.mdc.tool.core.platformComposer.LogicRegionFinder;
 import it.mdc.tool.core.platformComposer.LogicRegionMerger;
 import it.mdc.tool.core.platformComposer.NetworkPrinter;
 import it.mdc.tool.core.platformComposer.PlatformComposer;
-import it.mdc.tool.core.platformComposer.RvcPrinter;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.profiling.CombinationsGenerator;
 import it.mdc.tool.profiling.Profiler;
 import it.mdc.tool.utility.FileCopier;
 import it.mdc.tool.utility.Printer;
-import it.mdc.tool.core.multiDataflowGenerator.*;
 
 import java.io.File;
 import java.io.IOException;
