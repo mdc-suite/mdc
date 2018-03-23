@@ -46,7 +46,7 @@ module back_end(
                         state_nxt = WORK;
                     else
                         state_nxt = IDLE;
-            WORK:   if(start && !done)
+            WORK:   if(start && (!done || (done && !wr)))
                         state_nxt = WORK;
                     else
                         state_nxt = IDLE; 
@@ -61,3 +61,4 @@ module back_end(
         endcase
                
 endmodule
+
