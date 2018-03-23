@@ -324,7 +324,7 @@ public abstract class PlatformComposer {
 										prefix,
 										libraries);
 		
-		File scriptDir = new File(hdlPath.replace("hdl", "scripts"));
+		File scriptDir = new File(hdlPath.replace(prefix + "_accelerator" + File.separator + "hdl", "scripts"));
 		// If directory doesn't exist, create it
 		if (!scriptDir.exists()) {
 			scriptDir.mkdirs();

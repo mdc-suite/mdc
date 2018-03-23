@@ -50,7 +50,7 @@ class ScriptPrinter {
 		# user should properly set root path
 		set root "."
 		set projdir $root/project_top
-		set ipdir $root/project_ip
+		set ipdir $root/«coupling»_accelerator/project_ip
 		
 		set constraints_files []
 		
@@ -219,9 +219,9 @@ class ScriptPrinter {
 		
 		# user should properly set root path
 		set root "."
-		set ipdir $root/project_ip
+		set ipdir $root/«coupling»_accelerator/project_ip
 		
-		set hdl_files_path $root/hdl
+		set hdl_files_path $root/«coupling»_accelerator/hdl
 		
 		set constraints_files []
 		
