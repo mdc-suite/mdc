@@ -219,9 +219,13 @@ class ScriptPrinter {
 		
 		# user should properly set root path
 		set root "."
-		set ipdir $root/«coupling»_accelerator/project_ip
+		set iproot $root/«coupling»_accelerator
+		set ipdir $iproot/project_ip
 		
 		set hdl_files_path $root/«coupling»_accelerator/hdl
+		
+		set bd_pkg_dir «coupling»_accelerator/bd
+		set drivers_dir «coupling»_accelerator/drivers
 		
 		set constraints_files []
 		
@@ -268,11 +272,26 @@ class ScriptPrinter {
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ARUSER_WIDTH'))>0 [ipx::get_ports s01_axi_aruser -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_RUSER_WIDTH'))>0 [ipx::get_ports s01_axi_ruser -of_objects [ipx::current_core]]
 		
-		set bd_pkg_dir $root/bd
-		set bd_group [ipx::add_file_group -type xilinx_blockdiagram {} [ipx::current_core]]
-		ipx::add_file $bd_pkg_dir/bd.tcl $bd_group
 		
+		
+		file copy -force $iproot/bd $ipdir
+		set bd_pkg_dir bd
+		set bd_group [ipx::add_file_group -type xilinx_blockdiagram {} [ipx::current_core]]
+		ipx::add_file $bd_pkg_dir/bd.tcl $bd_group		
 		«ENDIF»
+		
+		file copy -force $iproot/drivers $ipdir
+		set drivers_dir drivers
+		ipx::add_file_group -type software_driver {} [ipx::current_core]
+		ipx::add_file $drivers_dir/src/mm_accelerator_h.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/mm_accelerator_h.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/mm_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type tclSource [ipx::get_files $drivers_dir/data/mm_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/mm_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type mdd [ipx::get_files $drivers_dir/data/mm_accelerator.mdd -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+				
 		set_property core_revision 3 [ipx::current_core]
 		ipx::create_xgui_files [ipx::current_core]
 		ipx::update_checksums [ipx::current_core]
