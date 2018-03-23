@@ -178,7 +178,24 @@
                               id="STREAM">
                         </comboBoxItem>
                      </comboBox>
-                  </option></checkBox>
+                  </option>
+			      <option
+			         defaultValue="xc7z020clg484-1"
+			         description="fill with Xilinx FPGA Board data"
+			         id="it.unica.diee.mdc.partname"
+			         name="partname">
+			         <textBox>
+			            textBox body text
+			         </textBox>
+			      </option>
+			      <option
+			         defaultValue="em.avnet.com:zed:part0:1.0"
+			         id="it.unica.diee.mdc.boardpart"
+			         name="boardpart">
+			         <textBox>
+			            textBox body text
+			         </textBox>
+			      </option> </checkBox>
             </option>
          </checkBox>
       </option>

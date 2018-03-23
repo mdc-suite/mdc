@@ -111,7 +111,7 @@ abstract public class Merger {
 				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
 					return connection.getAttribute("bufferSize").getReferencedValue();
 				} else {
-					OrccLogger.debugln("CCCH " + connection + "   " + connection.getAttributes());
+				//	OrccLogger.debugln("CCCH " + connection + "   " + connection.getAttributes());
 					return (EObject) connection.getAttribute("bufferSize").getObjectValue();
 				}
 			}
@@ -131,7 +131,7 @@ abstract public class Merger {
 				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
 					return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getReferencedValue());
 				} else {
-					OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
+				//	OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
 					return evaluator.evaluateAsInteger((Expression) connection.getAttribute("bufferSize").getObjectValue());
 				}
 			}

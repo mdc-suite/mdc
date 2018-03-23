@@ -612,17 +612,17 @@ class WrapperPrinter extends TilPrinter {
 			.full(«input.name»_full),
 			.en(en_«input.name»),
 			.rden(rden_mem_«portMap.get(input)+1»),
-			.wr(«input.name»_wr)
+			.wr(«input.name»_push)
 		);
 		
 		counter #(			
-			.SIZE(12) ) 
+			.SIZE(8) ) 
 		i_counter_«input.name» (
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.clr(slv_reg0[1]),
 			.en(en_«input.name»),
-			.max(slv_reg«portMap.get(input)+1»[31:20]),
+			.max(slv_reg«portMap.get(input)+1»[7:0]),
 			.count(count_«input.name»),
 			.done(done_«input.name»)
 		);
@@ -654,20 +654,20 @@ class WrapperPrinter extends TilPrinter {
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.start(slv_reg0[0]),
 			.done(done_«output.name»),
-			.wr(«output.name»_wr),
+			.wr(«output.name»_push),
 			.wren(wren_mem_«portMap.get(output)+1»),
 			.en(en_«output.name»),
 			.full(«output.name»_full)
 		);
 		
 		counter #(			
-			.SIZE(12) ) 
+			.SIZE(8) ) 
 		i_counter_«output.name» (
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.clr(slv_reg0[1]),
 			.en(en_«output.name»),
-			.max(slv_reg«portMap.get(output)+1»[31:20]),
+			.max(slv_reg«portMap.get(output)+1»[7:0]),
 			.count(count_«output.name»),
 			.done(done_«output.name»)
 		);
@@ -1416,7 +1416,7 @@ class WrapperPrinter extends TilPrinter {
 			
 			// configure I/O
 			«FOR port : portMap.keySet»
-			*((int*) (MM_ACCELERATOR_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«portMap.get(port)»<<20;
+			*((int*) (MM_ACCELERATOR_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«portMap.get(port)»;
 			«ENDFOR»
 			
 			«FOR input : inputMap.keySet»

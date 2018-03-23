@@ -222,8 +222,8 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib) throws IOException {		
-		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib);
+	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) throws IOException {		
+		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib, partname, boardpart);
 	}
 	
 	/**
@@ -233,7 +233,7 @@ public abstract class PlatformComposer {
 	 * @throws IOException 
 	 */
 	private void generateCoprVivado(String type, List<SboxLut> luts,
-			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib) {
+			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) {
 		/// <ul>
 		String file;
 		String prefix = "";
@@ -303,7 +303,6 @@ public abstract class PlatformComposer {
 		/////////////////////////
 		
 		// TODO to be replaced with tcl scripts generation
-		System.out.println("hdlPath " + hdlCompLib);
 		// Get libraries
 		List<String> libraries = new ArrayList<String>();
 		File compFolder = new File(hdlCompLib);
@@ -313,7 +312,6 @@ public abstract class PlatformComposer {
 			File[] listOfFiles = libFolder.listFiles();
 		    for (int i = 0; i < listOfFiles.length; i++) {
 		    	if (listOfFiles[i].isDirectory()) {
-		        System.out.println("Directory " + listOfFiles[i].getName());
 		        libraries.add(listOfFiles[i].getName());
 		      }
 		    }
@@ -321,11 +319,18 @@ public abstract class PlatformComposer {
 
 				
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
-		scriptPrinter.initScriptPrinter("xc7z020clg484-1",
-										"em.avnet.com:zed:part0:1.0",
+		scriptPrinter.initScriptPrinter(partname,
+										boardpart,
 										prefix,
 										libraries);
-		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_ip.tcl";
+		
+		File scriptDir = new File(hdlPath.replace(prefix + "_accelerator" + File.separator + "hdl", "scripts"));
+		// If directory doesn't exist, create it
+		if (!scriptDir.exists()) {
+			scriptDir.mkdirs();
+		}
+		
+		file = scriptDir.getPath() + File.separator +  "generate_ip.tcl";
 		sequence = scriptPrinter.printIpScript();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -334,7 +339,7 @@ public abstract class PlatformComposer {
 		} catch (FileNotFoundException e) {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
-		file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "generate_top.tcl";
+		file = scriptDir.getPath() + File.separator +  File.separator +  "generate_top.tcl";
 		sequence = scriptPrinter.printTopScript(network);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
