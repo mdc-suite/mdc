@@ -56,7 +56,7 @@ class TilPrinter {
 	}
 	
 	protected def computeSizePointer() {
-		return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))
+		return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))+2
 	}
 	
 	protected def getLongId(int id) {
