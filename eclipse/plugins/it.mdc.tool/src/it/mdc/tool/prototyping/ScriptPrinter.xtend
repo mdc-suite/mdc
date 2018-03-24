@@ -23,13 +23,13 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
-	protected boolean enDMA = true;
+	protected boolean enDMA = false;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
 	List<String> libraries = new ArrayList<String>()
-	String proc = "arm"
+	String proc = ""
 
 	def initScriptPrinter(String partname, String boardpart, String coupling, List<String> libraries){
 		this.partname = partname;
@@ -205,6 +205,8 @@ class ScriptPrinter {
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
 		add_files -norecurse $projdir/$design.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
+		
+		generate_target hw_handoff [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd]
 		'''
 	}
 	
