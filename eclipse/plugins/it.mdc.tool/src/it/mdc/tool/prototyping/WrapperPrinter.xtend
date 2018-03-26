@@ -11,9 +11,7 @@ import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
 import net.sf.orcc.df.Port
-import it.mdc.tool.core.ConfigManager
 import java.util.List
-
 import it.mdc.tool.core.platformComposer.ProtocolManager
 
 /**
@@ -32,13 +30,7 @@ class WrapperPrinter {
 	int dataSize = 32;
 	Map<String,List<Port>> netPorts;
 	
-	int INOUT = 0;
-	int IN = 1;
-	int OUT = 2;
-	
-	
 	boolean dedicatedInterfaces = false
-	boolean useDMA = false
 	String coupling = ""
 	
 	Map<String,Map<String,String>> netSysSignals;
@@ -311,17 +303,16 @@ class WrapperPrinter {
 		«ENDFOR»
 		«ENDFOR»
 		«IF coupling.equals("mm")»
-	    «FOR input : inputMap.keySet()»
-		wire en_«input.name»;
-		wire done_«input.name»;
-		wire [7:0]	count_«input.name»;
-		wire wren_mem_«portMap.get(input)+1»;
-		wire rden_mem_«portMap.get(input)+1»;
-		wire [7:0] address_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_in_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_out_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_out_«portMap.get(input)+1»;
-		wire ce_«portMap.get(input)+1»;
+	    «FOR input : inputMap.keySet()»wire en_«input.name»;
+	    wire done_«input.name»;
+	    wire [7:0]	count_«input.name»;
+	    wire wren_mem_«portMap.get(input)+1»;
+	    wire rden_mem_«portMap.get(input)+1»;
+	    wire [7:0] address_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_in_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_out_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_out_«portMap.get(input)+1»;
+	    wire ce_«portMap.get(input)+1»;
 		«ENDFOR»
 		«ENDIF»
 		«FOR output : outputMap.keySet()»
@@ -791,7 +782,7 @@ class WrapperPrinter {
 		«ELSE»
 		«FOR input :inputMap.keySet»
 		assign s«getLongId(inputMap.get(input))»_axis_tready = !«input.getName()»_full;
-		assign «input.getName()»_data = s«getLongId(inputMap.get(input))»_axis_tdata;
+		assign «input.getName()»_data = s«getLongId(inputMap.get(input))»_axis_tdata«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
 		//assign = s«getLongId(inputMap.get(input))»_axis_tstrb;
 		//assign = s«getLongId(inputMap.get(input))»_axis_tlast;
 		assign «input.getName()»_push = s«getLongId(inputMap.get(input))»_axis_tvalid;
@@ -799,7 +790,7 @@ class WrapperPrinter {
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
 		assign m«getLongId(outputMap.get(output))»_axis_tvalid = «output.getName()»_push;
-		assign m«getLongId(outputMap.get(output))»_axis_tdata = «output.getName()»_data;
+		assign m«getLongId(outputMap.get(output))»_axis_tdata = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
 		assign m«getLongId(outputMap.get(output))»_axis_tstrb = 4'b111;
 		assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
 		assign «output.getName()»_full = !m«getLongId(outputMap.get(output))»_axis_tready;
@@ -841,6 +832,19 @@ class WrapperPrinter {
 		«ENDIF»
 		// ----------------------------------------------------------------------------
 		'''
+	}
+	
+	def getDataSize(Port port) {
+		for(commSigId : wrapCommSignals.keySet) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("data")) {
+				if(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
+					return port.type.sizeInBits
+				} else {
+					return Integer.parseInt(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE))
+				}
+			}
+		}
+		return 1
 	}
 	
 	def printTopDatapath() {

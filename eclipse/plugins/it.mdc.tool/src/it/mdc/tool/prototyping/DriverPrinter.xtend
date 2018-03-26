@@ -63,12 +63,12 @@ class DriverPrinter {
 		
 		'''
 		/*****************************************************************************
-		*  Filename:          «coupling»_accelerator_h.c
+		*  Filename:          «coupling»_accelerator.c
 		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator High Level Driver
 		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
 		*****************************************************************************/
 		
-		#include "«coupling»_accelerator_h.h"
+		#include "«coupling»_accelerator.h"
 
 		«FOR net : networkVertexMap.keySet SEPARATOR "\n"»
 		int «coupling»_accelerator_«net»(
@@ -129,10 +129,9 @@ class DriverPrinter {
 			«ENDFOR»
 		«ELSE»
 		«IF !useDMA»
-		«FOR port : portMap.keySet»
-			int idx_«portMap.get(port)»;
-			«ENDFOR»
-			«ENDIF»
+		«FOR port : portMap.keySet»int idx_«portMap.get(port)»;
+		«ENDFOR»
+		«ENDIF»
 			
 			// start execution
 			*((int*) S_ACCELERATOR_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
@@ -206,13 +205,13 @@ class DriverPrinter {
 		
 		'''
 		/*****************************************************************************
-		*  Filename:          «coupling»_accelerator_h.h
+		*  Filename:          «coupling»_accelerator.h
 		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator High Level Driver Header
 		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
 		*****************************************************************************/
 		
-		#ifndef «coupling.toUpperCase»_ACCELERATOR_H_H
-		#define «coupling.toUpperCase»_ACCELERATOR_H_H
+		#ifndef «coupling.toUpperCase»_ACCELERATOR_H
+		#define «coupling.toUpperCase»_ACCELERATOR_H
 		
 		/***************************** Include Files *******************************/		
 		#include "xparameters.h"
@@ -240,9 +239,31 @@ class DriverPrinter {
 		
 		«ENDFOR»
 		
-		#endif /** MM_ACCELERATOR_H_H */
+		#endif /** MM_ACCELERATOR_H */
 		'''
-	}	
+	}
+	
+	def printDriverTcl() {
+		// TODO BASE/HIGH ADDRESSES not used at the moment
+		'''
+		proc generate {drv_handle} {
+			xdefine_include_file $drv_handle "xparameters.h" "«coupling»_accelerator" "NUM_INSTANCES" "DEVICE_ID"  "C_S00_AXI_BASEADDR" "C_S00_AXI_HIGHADDR" «IF coupling.equals("mm")»"C_S01_AXI_BASEADDR" "C_S01_AXI_HIGHADDR"«ELSE»"fsl.h"«ENDIF»
+		}
+		'''
+	}
+	
+	def printDriverMdd() {
+		'''
+		OPTION psf_version = 2.1;
+		
+		BEGIN DRIVER «coupling»_accelerator
+			OPTION supported_peripherals = («coupling»_accelerator);
+			OPTION copyfiles = all;
+			OPTION VERSION = 1.0;
+			OPTION NAME = «coupling»_accelerator;
+		END DRIVER
+		'''
+	}
 	
 
 }

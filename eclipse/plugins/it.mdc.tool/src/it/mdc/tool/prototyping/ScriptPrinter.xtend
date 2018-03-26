@@ -3,6 +3,7 @@
  */
  
 package it.mdc.tool.prototyping
+
 import net.sf.orcc.df.Network
 import java.util.Map
 import java.util.HashMap
@@ -323,14 +324,14 @@ class ScriptPrinter {
 		file copy -force $iproot/drivers $ipdir
 		set drivers_dir drivers
 		ipx::add_file_group -type software_driver {} [ipx::current_core]
-		ipx::add_file $drivers_dir/src/mm_accelerator_h.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/src/mm_accelerator_h.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/data/mm_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type tclSource [ipx::get_files $drivers_dir/data/mm_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/data/mm_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type mdd [ipx::get_files $drivers_dir/data/mm_accelerator.mdd -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/«coupling»_accelerator.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/«coupling»_accelerator.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/«coupling»_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type tclSource [ipx::get_files $drivers_dir/data/«coupling»_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/«coupling»_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type mdd [ipx::get_files $drivers_dir/data/«coupling»_accelerator.mdd -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
 				
 		set_property core_revision 3 [ipx::current_core]
 		ipx::create_xgui_files [ipx::current_core]
