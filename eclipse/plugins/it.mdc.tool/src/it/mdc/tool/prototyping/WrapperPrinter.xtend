@@ -208,7 +208,7 @@ class WrapperPrinter extends TilPrinter {
 	    «FOR input : inputMap.keySet()»
 		wire en_«input.name»;
 		wire done_«input.name»;
-		wire [11:0]	count_«input.name»;
+		wire [7:0]	count_«input.name»;
 		wire wren_mem_«portMap.get(input)+1»;
 		wire rden_mem_«portMap.get(input)+1»;
 		wire [7:0] address_mem_«portMap.get(input)+1»;
@@ -225,7 +225,7 @@ class WrapperPrinter extends TilPrinter {
 		«FOR output : outputMap.keySet()»
 		wire en_«output.name»;
 		wire done_«output.name»;
-		wire [11:0] count_«output.name»;
+		wire [7:0] count_«output.name»;
 		wire rden_mem_«portMap.get(output)+1»;
 		wire wren_mem_«portMap.get(output)+1»;
 		wire [7:0] address_mem_«portMap.get(output)+1»;
@@ -630,7 +630,6 @@ class WrapperPrinter extends TilPrinter {
 		assign address_mem_«portMap.get(input)+1» = count_«input.name»+slv_reg«portMap.get(input)+1»[11:4];
 		assign wren_mem_«portMap.get(input)+1» = 1'b0;
 		assign data_in_mem_«portMap.get(input)+1» = 32'b0;
-		assign «input.name»_count = {8'b0,slv_reg«portMap.get(input)+1»[31:20]-count_«input.name»};
 		
 		«ENDFOR»
 		// ----------------------------------------------------------------------------
