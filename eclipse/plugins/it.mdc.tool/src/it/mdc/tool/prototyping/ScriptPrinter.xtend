@@ -328,6 +328,8 @@ class ScriptPrinter {
 		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
 		ipx::add_file $drivers_dir/src/«coupling»_accelerator.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
 		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/Makefile [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type unknown [ipx::get_files $drivers_dir/src/Makefile -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
 		ipx::add_file $drivers_dir/data/«coupling»_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
 		set_property type tclSource [ipx::get_files $drivers_dir/data/«coupling»_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
 		ipx::add_file $drivers_dir/data/«coupling»_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]

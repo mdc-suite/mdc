@@ -854,9 +854,17 @@ public class MDCBackend extends AbstractBackend {
 				
 		final Result result = FilesManagerMdc.extract("","outputPath");
 		
+		String prefix;
+		if(coprType.equals("MEMORY-MAPPED")) {
+			prefix = "mm";
+		} else {
+			prefix = "s";
+		}
+		
 		/// If coprocessor generation is enabled, extract libraries depending on the processor-coprocessor communication
 		if(genCopr) {
 			/// <ol> <li> MEMORY-MAPPED
+			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/Makefile", (outputPath + File.separator + prefix + "_accelerator" + File.separator + "drivers" + File.separator + "src")));
 			if(coprType.equals("MEMORY-MAPPED")) {
 				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/front_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
 				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/back_end.v", (outputPath + File.separator + "mm_accelerator" + File.separator + "hdl")));
