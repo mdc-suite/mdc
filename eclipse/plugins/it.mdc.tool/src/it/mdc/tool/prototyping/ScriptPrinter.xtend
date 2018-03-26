@@ -305,13 +305,13 @@ class ScriptPrinter {
 		
 		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
 		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
-		set_property value C_S00_AXI_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
-		set_property value C_S00_AXI_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
+		set_property value C_CFG_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
+		set_property value C_CFG_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
 		«IF coupling == "mm"»
 		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
 		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
-		set_property value C_S01_AXI_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
-		set_property value C_S01_AXI_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+		set_property value C_MEM_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+		set_property value C_MEM_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
 			
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_awid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_AWUSER_WIDTH'))>0 [ipx::get_ports s01_axi_awuser -of_objects [ipx::current_core]]
