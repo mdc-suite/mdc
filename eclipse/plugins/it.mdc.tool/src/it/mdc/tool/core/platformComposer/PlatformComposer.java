@@ -19,10 +19,8 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
+import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
-import it.mdc.tool.prototyping.TilPrinter;
-import it.mdc.tool.prototyping.TilPrinterVivadoMm;
-import it.mdc.tool.prototyping.TilPrinterVivadoStream;
 import it.mdc.tool.prototyping.WrapperPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
@@ -238,24 +236,24 @@ public abstract class PlatformComposer {
 		String file;
 		String prefix = "";
 		CharSequence sequence;
-		
-		/// <li> Initialize TIL printer
-		TilPrinter printer;
+
+		WrapperPrinter wrapperPrinter;
 		if(type.equals("MEMORY-MAPPED")) {
-			printer = new WrapperPrinter();
-			((WrapperPrinter) printer).initWrapperPrinter(protocolManager.getNetSysSignals(),
-					protocolManager.getModCommSignals(),
-					protocolManager.getWrapCommSignals());
 			//printer = new TilPrinterVivadoMm();
 			prefix = "mm";
 		} else if(type.equals("STREAM")) {
-			printer = new TilPrinterVivadoStream();	
+			//printer = new TilPrinterVivadoStream();	
 			prefix = "s";
 		} else {
 			//TODO hybrid
-			printer = null;
+			wrapperPrinter = null;
 		}
-		
+		/// <li> Initialize TIL printer
+		wrapperPrinter = new WrapperPrinter();
+		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,
+				protocolManager.getNetSysSignals(),
+				protocolManager.getModCommSignals(),
+				protocolManager.getWrapCommSignals());
 
 		
 		////////////////////////
@@ -269,7 +267,7 @@ public abstract class PlatformComposer {
 		
 		/// <ol> <li> Generate top module
 		file = hdlDir.getPath() + File.separator +  prefix + "_accelerator.v";
-		sequence = printer.printHdlSource(network,"TOP");
+		sequence = wrapperPrinter.printHdlSource(network,"TOP");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -280,7 +278,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate configuration register modules
 		file = hdlDir.getPath() + File.separator +  "config_regs.v";
-		sequence = printer.printHdlSource(network,"CFG_REGS");
+		sequence = wrapperPrinter.printHdlSource(network,"CFG_REGS");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -291,7 +289,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate test bench module
 		file = hdlDir.getPath() + File.separator +  "tb_" + prefix + "_accelerator.v";
-		sequence = printer.printHdlSource(network,"TBENCH");
+		sequence = wrapperPrinter.printHdlSource(network,"TBENCH");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -404,6 +402,9 @@ public abstract class PlatformComposer {
 		
 		//////////////////////////
 		/// <li> SW drivers 
+		DriverPrinter driverPrinter = new DriverPrinter();
+		driverPrinter.initDriverPrinter(prefix, wrapperPrinter.getPortMap(),
+				wrapperPrinter.getInputMap(),wrapperPrinter.getOutputMap());
 
 		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
 		// If directory doesn't exist, create it
@@ -413,7 +414,7 @@ public abstract class PlatformComposer {
 		
 		/// <ol> <li> Generate High Level Driver Header
 		file = srcDir.getPath() + File.separator +  prefix + "_accelerator_h.h";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_HEAD");
+		sequence = driverPrinter.printHighDriverHeader(network,networkVertexMap);
 				
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -425,7 +426,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate High Level Driver Source
 		file = srcDir.getPath() + File.separator +  prefix + "_accelerator_h.c";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_SRC");
+		sequence = driverPrinter.printHighDriver(network, networkVertexMap, configManager);
 						
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
