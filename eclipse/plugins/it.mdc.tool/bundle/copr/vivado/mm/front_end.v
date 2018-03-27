@@ -22,19 +22,21 @@ module front_end(
     input wire aclk,
     input wire aresetn,
     input wire start,
-    input wire done,
+    input wire last,
     input wire full,
     output reg en,
     output reg rden,
-    output reg wr
+    output reg wr,
+    output reg done
 );
 
-    parameter   IDLE = 2'd0,
-                WAIT = 2'd1,
-                WORK = 2'd2,
-                LAST = 2'd3;
+    parameter   IDLE = 3'd0,
+                FIRST = 3'd1,
+                WORK = 3'd2,
+                LAST = 3'd3,
+                DONE = 3'd4;
 
-    reg [1:0]  state, state_nxt;
+    reg [2:0]  state, state_nxt;
     
     always@(posedge aclk or negedge aresetn)
         if(!aresetn)
@@ -42,42 +44,42 @@ module front_end(
         else
             state <= state_nxt;
             
-    always@(state or start or full or done)
+    always@(state or start or full or last)
         case(state)
             IDLE:   if(start)
-                        state_nxt = WAIT;
+                        state_nxt = FIRST;
                     else
                         state_nxt = IDLE;
-            WAIT:   if(!start)
-                        state_nxt = IDLE;
-                    else if(!full && !done)
-                        state_nxt = WORK;
+			FIRST:  if(!full)
+            			if(!last)
+                			state_nxt = WORK;
+                	 	else
+                    		state_nxt = LAST;
                     else
-                        state_nxt = WAIT; 
-             WORK:   if(!start)
-                        state_nxt = IDLE;
-                     else 
-						if(!full)
-							if(done)
-								state_nxt = LAST;
-							else
-								state_nxt = WORK;
-						else
-							state_nxt = WAIT;
-        	LAST:	if(!start)
-                        state_nxt = IDLE;
+                        state_nxt = FIRST; 
+         	WORK:   if(!full)
+						if(last)
+							state_nxt = LAST;
+								else
+							state_nxt = WORK;
+					else
+						state_nxt = FIRST;
+        	LAST:	state_nxt = DONE;
+        	DONE:	if(last)
+        				state_nxt = DONE;
                     else
-                        state_nxt = WAIT; 
+                        state_nxt = IDLE; 
             default:    state_nxt = IDLE;
         endcase
                     
-    always@(state or full or done)
+    always@(state or full or last)
         case(state)
-            IDLE:       {en,rden,wr} = {1'b0,1'b0,1'b0};
-            WAIT:       {en,rden,wr} = {!full && !done,1'b1,1'b0};
-            WORK:       {en,rden,wr} = {!full && !done,1'b1,!full};
-            LAST:       {en,rden,wr} = {1'b0,1'b1,1'b1};
-            default:    {en,rden,wr} = 3'b000;
+            IDLE:       {en,rden,wr,done} = {1'b0,1'b0,1'b0,1'b0};
+            FIRST:      {en,rden,wr,done} = {!full && !last,1'b1,1'b0,1'b0};
+            WORK:       {en,rden,wr,done} = {!full && !last,1'b1,!full,1'b0};
+            LAST:       {en,rden,wr,done} = {1'b0,1'b1,1'b1,1'b0};
+            DONE:		{en,rden,wr,done} = {1'b0,1'b0,1'b0,1'b1};
+            default:    {en,rden,wr,done} = 4'b0000;
         endcase
                
 endmodule

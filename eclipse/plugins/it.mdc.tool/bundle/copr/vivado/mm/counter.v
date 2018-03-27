@@ -27,24 +27,24 @@ module counter#(
     input wire en,
     input wire [SIZE-1 : 0] max,
     output reg [SIZE-1 : 0] count,
-    output wire done
+    output wire last
 );
 
-always@(posedge aclk or negedge aresetn)
-	if(!aresetn)
-		count <= 0;
-	else
-		if(clr)
+	always@(posedge aclk or negedge aresetn)
+		if(!aresetn)
 			count <= 0;
 		else
-			if(en)
-				if(count < max-1)
-					count <= count +1;
-				else
-					count <= 0;
+			if(clr)
+				count <= 0;
 			else
-				count <= count;
-			
-assign done = count == max-1;
+				if(en)
+					if(count < max-1)
+						count <= count +1;
+					else
+						count <= 0;
+				else
+					count <= count;
+				
+	assign last = (!clr) && (count == max-1);
 
 endmodule

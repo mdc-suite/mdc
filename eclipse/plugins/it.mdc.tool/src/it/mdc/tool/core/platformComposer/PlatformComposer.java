@@ -345,7 +345,7 @@ public abstract class PlatformComposer {
 		
 		/// <ol> <li> Generate Driver Header
 		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.h";
-		sequence = driverPrinter.printHighDriverHeader(network,networkVertexMap);
+		sequence = driverPrinter.printDriverHeader(network,networkVertexMap);
 				
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -357,7 +357,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate Driver Source
 		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.c";
-		sequence = driverPrinter.printHighDriver(network, networkVertexMap, configManager);
+		sequence = driverPrinter.printDriverSource(network, networkVertexMap, configManager);
 						
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
