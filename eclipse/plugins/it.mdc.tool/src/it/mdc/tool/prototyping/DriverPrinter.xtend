@@ -35,7 +35,7 @@ class DriverPrinter {
 		this.outputMap = outputMap;						
 	}
 	
-	def printHighDriver(Network network, Map<String,Map<String,String>> networkVertexMap, ConfigManager configManager) {
+	def printDriverSource(Network network, Map<String,Map<String,String>> networkVertexMap, ConfigManager configManager) {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
@@ -64,7 +64,7 @@ class DriverPrinter {
 		'''
 		/*****************************************************************************
 		*  Filename:          «coupling»_accelerator.c
-		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator High Level Driver
+		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator Driver
 		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
 		*****************************************************************************/
 		
@@ -84,13 +84,10 @@ class DriverPrinter {
 			int idx_«portMap.get(port)»;
 			«ENDFOR»
 			«ENDIF»
-			
-			// clear counters
-			*((int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+2)»;
-			
+
 			// configure I/O
 			«FOR port : portMap.keySet»
-			*((int*) (XPAR_MM_ACCELERATOR_0_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«portMap.get(port)»<<20;
+			*((int*) (XPAR_MM_ACCELERATOR_0_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«portMap.get(port)»;
 			«ENDFOR»
 			
 			«FOR input : inputMap.keySet»
@@ -112,6 +109,9 @@ class DriverPrinter {
 			// start execution
 			*((int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
 			
+			// wait for completion
+			//while( (*((int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR) & 0x00000004) != 0x4 );
+						
 			«FOR output : outputMap.keySet»
 			// receive data port «output.name»
 			«IF useDMA»
@@ -167,17 +167,17 @@ class DriverPrinter {
 			«ENDFOR»
 		«ENDIF»
 					
-					// stop execution
-					*((int*) XPAR_«coupling.toUpperCase»_ACCELERATOR_0_CFG_BASEADDR) = 0x«Integer.toHexString(0)»;
-					
-					return 0;
-				}
+			// stop execution
+			*((int*) XPAR_«coupling.toUpperCase»_ACCELERATOR_0_CFG_BASEADDR) = 0x«Integer.toHexString(0)»;
+			
+			return 0;
+		}
 		«ENDFOR»
 		'''
 		
 	}	
 	
-	def printHighDriverHeader(Network network, Map<String,Map<String,String>> networkVertexMap) {
+	def printDriverHeader(Network network, Map<String,Map<String,String>> networkVertexMap) {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
@@ -206,7 +206,7 @@ class DriverPrinter {
 		'''
 		/*****************************************************************************
 		*  Filename:          «coupling»_accelerator.h
-		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator High Level Driver Header
+		*  Description:       «IF coupling.equals("mm")»Memory-Mapped«ELSE»Stream«ENDIF» Accelerator Driver Header
 		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
 		*****************************************************************************/
 		

@@ -22,17 +22,19 @@ module back_end(
     input wire aclk,
     input wire aresetn,
     input wire start,
-    input wire done,
+    input wire last,
     input wire wr,
     output reg en,
     output reg wren,
-    output reg full
+    output reg full,
+    output reg done
 );
 
-    parameter   IDLE = 1'b0,
-                WORK = 1'b1;
+    parameter   IDLE = 2'd0,
+                WORK = 2'd1,
+                DONE = 2'd2;
 
-    reg  state, state_nxt;
+    reg [1:0]  state, state_nxt;
     
     always@(posedge aclk or negedge aresetn)
         if(!aresetn)
@@ -40,24 +42,29 @@ module back_end(
         else
             state <= state_nxt;
             
-    always@(state or start or done)
+    always@(state or start or last or wr)
         case(state)
             IDLE:   if(start)
                         state_nxt = WORK;
                     else
                         state_nxt = IDLE;
-            WORK:   if(start && (!done || (done && !wr)))
-                        state_nxt = WORK;
+            WORK:   if(last && wr)
+                        state_nxt = DONE;
                     else
-                        state_nxt = IDLE; 
+            			state_nxt = WORK;
+			DONE:	if(last)
+						state_nxt = DONE;
+					else
+						state_nxt = IDLE;
             default:    state_nxt = IDLE;
         endcase
                     
     always@(state or wr)
         case(state)
-            IDLE:       {en,wren,full} = 4'b001;
-            WORK:       {en,wren,full} = {wr,wr,1'b0};
-            default:    {en,wren,full} = 4'b0000;
+            IDLE:       {en,wren,full,done} = 4'b0010;
+            WORK:       {en,wren,full,done} = {wr,wr,1'b0,1'b0};
+            DONE:		{en,wren,full,done} = 4'b0001;
+            default:    {en,wren,full,done} = 4'b0000;
         endcase
                
 endmodule
