@@ -11,31 +11,126 @@ import java.util.ArrayList
 import java.util.Map
 import java.util.HashMap
 import net.sf.orcc.df.Port
-import it.mdc.tool.core.ConfigManager
 import java.util.List
-
 import it.mdc.tool.core.platformComposer.ProtocolManager
 
 /**
- * Vivado Template Interface Layer 
- * Memory-Mapped HW Accelerator Printer
+ * Vivado AXI IP Wrapper Printer 
  * 
+ * @author Tiziana Fanni
  * @author Carlo Sau
  */
-class WrapperPrinter extends TilPrinter {
+class WrapperPrinter {
+
+	Map <Port,Integer> inputMap;
+	Map <Port,Integer> outputMap;
+	Map <Port,Integer> portMap;
+	List <Integer> signals;
+	int portSize;
+	int dataSize = 32;
+	Map<String,List<Port>> netPorts;
 	
 	boolean dedicatedInterfaces = false
-	boolean useDMA = false
+	String coupling = ""
 	
 	Map<String,Map<String,String>> netSysSignals;
 	Map<String,Map<String,Map<String,String>>> modCommSignals;
 	Map<String,Map<String,String>> wrapCommSignals;
 	
-	def initWrapperPrinter(	Map<String,Map<String,String>> netSysSignals, 
+	def computeNetsPorts(Map<String,Map<String,String>> networkVertexMap) {
+		
+		netPorts = new HashMap<String,List<Port>>();
+		
+		for(String net : networkVertexMap.keySet()) {
+			for(int id : portMap.values.sort) {
+				for(Port port : portMap.keySet) {
+					if(portMap.get(port).equals(id)) {
+						if(networkVertexMap.get(net).values.contains(port.name)) {
+							if(netPorts.containsKey(net)) {
+								netPorts.get(net).add(port);
+							} else {
+								var List<Port> ports = new ArrayList<Port>();
+								ports.add(port);
+								netPorts.put(net,ports);
+							}	
+						}
+					}
+				}
+			}	
+		}					
+	}
+	
+	def computeSizePointer() {
+		return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))+2
+	}
+	
+	def getLongId(int id) {
+		if(id<10) {
+			return "0"+id.toString();
+		} else {
+			return id.toString();	
+		}
+	}
+		
+	def mapInOut(Network network) {
+		
+		var index=0;
+		var size=0;
+		
+		inputMap = new HashMap<Port,Integer>();
+		outputMap = new HashMap<Port,Integer>();
+		portMap = new HashMap<Port,Integer>();
+		
+		for(Port input : network.getInputs()) {
+			inputMap.put(input,index);
+			portMap.put(input,index);
+			index=index+1;
+		}
+		
+		index=0;
+		for(Port output : network.getOutputs()) {
+			outputMap.put(output,index);
+			portMap.put(output,index+inputMap.size);
+			index=index+1;
+		}
+		
+		size = Math.max(inputMap.size,outputMap.size);
+		portSize = Math.round((((Math.log10(size)/Math.log10(2))+0.5) as float));
+		
+	}
+		
+	def mapSignals() {
+		
+		var size = Math.max(inputMap.size,outputMap.size);
+		var index = 1;
+		signals = new ArrayList(size);
+		
+		while(index<=size) {
+			signals.add(index-1,index)
+			index = index + 1;
+		}
+				
+	}
+	
+	def getPortMap(){
+		return portMap;
+	}
+	
+	def getInputMap(){
+		return inputMap;
+	}
+		
+	def getOutputMap(){
+		return outputMap;
+	}
+		
+	def initWrapperPrinter(String coupling,
+						Map<String,Map<String,String>> netSysSignals, 
 						Map<String,Map<String,Map<String,String>>> modCommSignals,
 						Map<String,Map<String,String>> wrapCommSignals
 	) {
 		System.out.print("WP intialization!!!");
+		this.coupling = coupling;
 		this.netSysSignals = netSysSignals;
 		this.modCommSignals = modCommSignals;
 		this.wrapCommSignals = wrapCommSignals;
@@ -104,7 +199,7 @@ class WrapperPrinter extends TilPrinter {
 		return direction;
 	}
 	
-	override printHdlSource(Network network, String module){
+	def printHdlSource(Network network, String module){
 		
 		if(module.equals("TOP")) {
 			printTop(network);
@@ -192,6 +287,7 @@ class WrapperPrinter extends TilPrinter {
 		«FOR port : portMap.keySet»
 		wire [31 : 0] slv_reg«portMap.get(port)+1»;
 		«ENDFOR»
+		«IF coupling.equals("mm")»
 		«IF dedicatedInterfaces»
 		«ELSE»
 		wire s01_axi_rden;
@@ -200,32 +296,35 @@ class WrapperPrinter extends TilPrinter {
 		wire [31 : 0] s01_axi_data_in;
 		reg [31 : 0] s01_axi_data_out;
 		«ENDIF»
+		«ENDIF»
 		«FOR input : inputMap.keySet()»
 		«FOR commSigId : getInFirstModCommSignals().keySet»
 		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
 		«ENDFOR»
 		«ENDFOR»
-	    «FOR input : inputMap.keySet()»
-		wire en_«input.name»;
-		wire done_«input.name»;
-		wire [11:0]	count_«input.name»;
-		wire wren_mem_«portMap.get(input)+1»;
-		wire rden_mem_«portMap.get(input)+1»;
-		wire [7:0] address_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_in_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_out_mem_«portMap.get(input)+1»;
-		wire [31:0]	data_out_«portMap.get(input)+1»;
-		wire ce_«portMap.get(input)+1»;
+		«IF coupling.equals("mm")»
+	    «FOR input : inputMap.keySet()»wire en_«input.name»;
+	    wire done_«input.name»;
+	    wire [7:0]	count_«input.name»;
+	    wire wren_mem_«portMap.get(input)+1»;
+	    wire rden_mem_«portMap.get(input)+1»;
+	    wire [7:0] address_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_in_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_out_mem_«portMap.get(input)+1»;
+	    wire [31:0]	data_out_«portMap.get(input)+1»;
+	    wire ce_«portMap.get(input)+1»;
 		«ENDFOR»
+		«ENDIF»
 		«FOR output : outputMap.keySet()»
 		«FOR commSigId : getOutLastModCommSignals().keySet»
 		wire «getSizePrefix(getPortCommSigSize(output,commSigId,getLastModCommSignals()))»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
 		«ENDFOR»
 		«ENDFOR»
+		«IF coupling.equals("mm")»
 		«FOR output : outputMap.keySet()»
 		wire en_«output.name»;
 		wire done_«output.name»;
-		wire [11:0] count_«output.name»;
+		wire [7:0] count_«output.name»;
 		wire rden_mem_«portMap.get(output)+1»;
 		wire wren_mem_«portMap.get(output)+1»;
 		wire [7:0] address_mem_«portMap.get(output)+1»;
@@ -234,6 +333,7 @@ class WrapperPrinter extends TilPrinter {
 		wire [31:0]	data_out_«portMap.get(output)+1»;
 		wire ce_«portMap.get(output)+1»;
 		«ENDFOR»
+		«ENDIF»
 		'''
 		
 		
@@ -242,8 +342,9 @@ class WrapperPrinter extends TilPrinter {
 	def printTopInterface() {
 		
 		'''
-		module mm_accelerator#
+		module «coupling»_accelerator#
 		(
+			«IF coupling.equals("mm")»
 			«IF dedicatedInterfaces»
 			«FOR port : portMap.keySet»
 			// Parameters of Axi Slave Bus Interface S«portMap.get(port)+1»_AXI
@@ -267,12 +368,23 @@ class WrapperPrinter extends TilPrinter {
 			parameter integer C_S01_AXI_RUSER_WIDTH	= 0,
 			parameter integer C_S01_AXI_BUSER_WIDTH	= 0,
 			«ENDIF»
+			«ELSE»
+			«FOR input : inputMap.keySet»// Parameters of Axi Slave Bus Interface S«getLongId(inputMap.get(input))»_AXIS
+			parameter integer C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH	= 32,
+			«ENDFOR»
+
+			«FOR output : outputMap.keySet»// Parameters of Axi Master Bus Interface M«getLongId(outputMap.get(output))»_AXIS
+			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH	= 32,
+			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_START_COUNT	= 32,
+			«ENDFOR»
+			«ENDIF»
 			
 			// Parameters of Axi Slave Bus Interface S00_AXI
 			parameter integer C_S00_AXI_DATA_WIDTH	= 32,
 			parameter integer C_S00_AXI_ADDR_WIDTH	= «computeSizePointer»
 		)
 		(
+			«IF coupling.equals("mm")»
 			«IF dedicatedInterfaces»
 			«FOR port : portMap.keySet»
 			// Ports of Axi Slave Bus Interface S«getLongId(portMap.get(port)+1)»_AXI
@@ -372,6 +484,27 @@ class WrapperPrinter extends TilPrinter {
 			output wire  s01_axi_rvalid,
 			input wire  s01_axi_rready,
 			«ENDIF»
+			«ELSE»
+			«FOR input : inputMap.keySet»// Ports of Axi Slave Bus Interface S«getLongId(inputMap.get(input))»_AXIS
+			input wire  s«getLongId(inputMap.get(input))»_axis_aclk,
+			input wire  s«getLongId(inputMap.get(input))»_axis_aresetn,
+			output wire  s«getLongId(inputMap.get(input))»_axis_tready,
+			input wire [C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH-1 : 0] s«getLongId(inputMap.get(input))»_axis_tdata,
+			input wire [(C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH/8)-1 : 0] s«getLongId(inputMap.get(input))»_axis_tstrb,
+			input wire  s«getLongId(inputMap.get(input))»_axis_tlast,
+			input wire  s«getLongId(inputMap.get(input))»_axis_tvalid,
+			input wire [31 : 0] s«getLongId(inputMap.get(input))»_axis_data_count,
+			«ENDFOR»
+			«FOR output : outputMap.keySet()»// Ports of Axi Master Bus Interface M«getLongId(outputMap.get(output))»_AXIS
+			input wire  m«getLongId(outputMap.get(output))»_axis_aclk,
+			input wire  m«getLongId(outputMap.get(output))»_axis_aresetn,
+			output wire  m«getLongId(outputMap.get(output))»_axis_tvalid,
+			output wire [C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH-1 : 0] m«getLongId(outputMap.get(output))»_axis_tdata,
+			output wire [(C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH/8)-1 : 0] m«getLongId(outputMap.get(output))»_axis_tstrb,
+			output wire  m«getLongId(outputMap.get(output))»_axis_tlast,
+			input wire  m«getLongId(outputMap.get(output))»_axis_tready,
+			«ENDFOR»
+			«ENDIF»
 			
 			// Ports of Axi Slave Bus Interface S00_AXI
 			input wire  s00_axi_aclk,
@@ -437,6 +570,7 @@ class WrapperPrinter extends TilPrinter {
 		);
 		// ----------------------------------------------------------------------------
 		
+		«IF coupling.equals("mm")»
 		// Local Memories
 		// ----------------------------------------------------------------------------
 		// Instantiation of Local Memories
@@ -630,22 +764,41 @@ class WrapperPrinter extends TilPrinter {
 		assign address_mem_«portMap.get(input)+1» = count_«input.name»+slv_reg«portMap.get(input)+1»[11:4];
 		assign wren_mem_«portMap.get(input)+1» = 1'b0;
 		assign data_in_mem_«portMap.get(input)+1» = 32'b0;
-		assign «input.name»_count = {8'b0,slv_reg«portMap.get(input)+1»[31:20]-count_«input.name»};
 		
 		«ENDFOR»
+		«ENDIF»
 		// ----------------------------------------------------------------------------
 			
 		// Multi-Dataflow Reconfigurable Datapath
 		// ----------------------------------------------------------------------------
 		«printTopDatapath()»
+		«IF coupling.equals("mm")»
 		«FOR input :inputMap.keySet»
 		assign «input.name»_data = data_out_mem_«portMap.get(input)+1»«IF input.type.sizeInBits<32»[«input.type.sizeInBits-1»:0]«ENDIF»;
 		«ENDFOR»
 		«FOR output :outputMap.keySet»
 		assign data_in_mem_«portMap.get(output)+1» = «IF output.type.sizeInBits<32»{{«output.type.sizeInBits»{1'b0}},«output.name»_data}«ELSE»«output.name»_data«ENDIF»;
 		«ENDFOR»
+		«ELSE»
+		«FOR input :inputMap.keySet»
+		assign s«getLongId(inputMap.get(input))»_axis_tready = !«input.getName()»_full;
+		assign «input.getName()»_data = s«getLongId(inputMap.get(input))»_axis_tdata«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
+		//assign = s«getLongId(inputMap.get(input))»_axis_tstrb;
+		//assign = s«getLongId(inputMap.get(input))»_axis_tlast;
+		assign «input.getName()»_push = s«getLongId(inputMap.get(input))»_axis_tvalid;
+		//assign = s«getLongId(inputMap.get(input))»_axis_data_count;
+		«ENDFOR»
+		«FOR output : outputMap.keySet()»
+		assign m«getLongId(outputMap.get(output))»_axis_tvalid = «output.getName()»_push;
+		assign m«getLongId(outputMap.get(output))»_axis_tdata = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
+		assign m«getLongId(outputMap.get(output))»_axis_tstrb = 4'b111;
+		assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
+		assign «output.getName()»_full = !m«getLongId(outputMap.get(output))»_axis_tready;
+		«ENDFOR»
+		«ENDIF»
 		// ----------------------------------------------------------------------------	
 		
+		«IF coupling.equals("mm")»
 		// Coprocessor Back-End(s)
 		// ----------------------------------------------------------------------------
 		«FOR output : outputMap.keySet()»
@@ -676,8 +829,22 @@ class WrapperPrinter extends TilPrinter {
 		assign rden_mem_«portMap.get(output)+1» = 1'b0;
 		
 		«ENDFOR»
+		«ENDIF»
 		// ----------------------------------------------------------------------------
 		'''
+	}
+	
+	def getDataSize(Port port) {
+		for(commSigId : wrapCommSignals.keySet) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("data")) {
+				if(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
+					return port.type.sizeInBits
+				} else {
+					return Integer.parseInt(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE))
+				}
+			}
+		}
+		return 1
 	}
 	
 	def printTopDatapath() {
@@ -737,7 +904,6 @@ class WrapperPrinter extends TilPrinter {
 					&& getLastModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
 					|| (getLastModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("input")
 					&& getLastModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("reverse") ) ) {
-				System.out.println("lmcs " + commSigId + " " + getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))
 				result.put(commSigId,getLastModCommSignals().get(commSigId).get(ProtocolManager.CH));	
 			}
 		}
@@ -759,7 +925,6 @@ class WrapperPrinter extends TilPrinter {
 					&& getFirstModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
 					|| (getFirstModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("output")
 					&& getFirstModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("reverse") ) ) {
-				System.out.println("fmcs " + commSigId + " " + getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))
 				result.put(commSigId,getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH));		
 			}
 		}
@@ -1349,184 +1514,5 @@ class WrapperPrinter extends TilPrinter {
 	endmodule
 	'''
 	}
-
-	
-	override printSoftwareDriver(Network network, Map<String,Map<String,String>> networkVertexMap, ConfigManager configManager, String file){
-		
-		if (file.equals("HIGH_HEAD")) {
-			printHighDriverHeader(network,networkVertexMap);
-		} else if (file.equals("HIGH_SRC")) {
-			printHighDriver(network,networkVertexMap,configManager);
-		}
-		
-	}
-	
-	def printHighDriver(Network network, Map<String,Map<String,String>> networkVertexMap, ConfigManager configManager) {
-		
-		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		var date = new Date();
-		var Map<String,ArrayList<Port>> netIdPortMap = new HashMap<String,ArrayList<Port>>();		
-		var i = 0;
-		
-		for (String net : networkVertexMap.keySet()) {
-			i=0;
-			for(id : portMap.values.sort) {
-				for(port : portMap.keySet) {
-					if(portMap.get(port).equals(id)) {
-						if(networkVertexMap.get(net).values.contains(port.name)) {
-							if(!netIdPortMap.containsKey(net)) {
-								var newList = new ArrayList<Port>();
-								newList.add(i,port);
-								netIdPortMap.put(net,newList);
-							} else {
-								netIdPortMap.get(net).add(i,port);
-							}
-						}
-					}			
-				}
-			}
-		}
-		
-		'''
-		/*****************************************************************************
-		*  Filename:          mm_accelerator_h.c
-		*  Description:       Memory-Mapped Accelerator High Level Driver
-		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
-		*****************************************************************************/
-		
-		#include "mm_accelerator_h.h"
-
-		«FOR net : networkVertexMap.keySet SEPARATOR "\n"»
-		int mm_accelerator_«net»(
-			«FOR port : netIdPortMap.get(net) SEPARATOR ","»
-			// port «port.name»
-			int size_«portMap.get(port)», int* data_«portMap.get(port)»
-			«ENDFOR»
-			) {
-			
-			
-			«IF !useDMA»
-			«FOR port : portMap.keySet»
-			int idx_«portMap.get(port)»;
-			«ENDFOR»
-			«ENDIF»
-			
-			// clear counters
-			*((int*) MM_ACCELERATOR_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+2)»;
-			
-			// configure I/O
-			«FOR port : portMap.keySet»
-			*((int*) (MM_ACCELERATOR_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«portMap.get(port)»;
-			«ENDFOR»
-			
-			«FOR input : inputMap.keySet»
-			// send data port «input.name»
-			«IF useDMA»
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) = 0x00000002; // verify idle
-			//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x00>>2)) = 0x00001000;	// irq en (optional)
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x18>>2)) = (int) data_«portMap.get(input)»; // src
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x20>>2)) = MM_ACCELERATOR_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET; // dst
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x28>>2)) = size_«portMap.get(input)»*4; // size [B]
-			while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) & 0x2) != 0x2);
-			«ELSE»
-			for(idx_«portMap.get(input)»=0; idx_«portMap.get(input)»<size_«portMap.get(input)»; idx_«portMap.get(input)»++) {
-				*((int *) (MM_ACCELERATOR_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET + idx_«portMap.get(input)»*4)) = *(data_«portMap.get(input)»+idx_«portMap.get(input)»);
-			}
-			«ENDIF»
-			«ENDFOR»
-			
-			// start execution
-			*((int*) MM_ACCELERATOR_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
-			
-			«FOR output : outputMap.keySet»
-			// receive data port «output.name»
-			«IF useDMA»
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) = 0x00000002; // verify idle
-			//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x00>>2)) = 0x00001000;	// irq en (optional)
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x18>>2)) = MM_ACCELERATOR_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(output)+1»_OFFSET; // src
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x20>>2)) = (int) data_«portMap.get(output)»; // dst
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x28>>2)) = size_«portMap.get(output)»*4; // size [B]
-			while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) & 0x2) != 0x2);
-			«ELSE»
-			for(idx_«portMap.get(output)»=0; idx_«portMap.get(output)»<size_«portMap.get(output)»; idx_«portMap.get(output)»++) {
-				*(data_«portMap.get(output)»+idx_«portMap.get(output)») = *((int *) (MM_ACCELERATOR_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(output)+1»_OFFSET + idx_«portMap.get(output)»*4));
-			}
-			«ENDIF»
-			«ENDFOR»
-			
-			// stop execution
-			*((int*) MM_ACCELERATOR_CFG_BASEADDR) = 0x«Integer.toHexString(0)»;
-			
-			return 0;
-		}
-		«ENDFOR»
-		'''
-		
-	}	
-	
-	def printHighDriverHeader(Network network, Map<String,Map<String,String>> networkVertexMap) {
-		
-		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		var date = new Date();
-		var Map<String,ArrayList<Port>> netIdPortMap = new HashMap<String,ArrayList<Port>>();		
-		var i = 0;
-		
-		for (String net : networkVertexMap.keySet()) {
-			i=0;
-			for(id : portMap.values.sort) {
-				for(port : portMap.keySet) {
-					if(portMap.get(port).equals(id)) {
-						if(networkVertexMap.get(net).values.contains(port.name)) {
-							if(!netIdPortMap.containsKey(net)) {
-								var newList = new ArrayList<Port>();
-								newList.add(i,port);
-								netIdPortMap.put(net,newList);
-							} else {
-								netIdPortMap.get(net).add(i,port);
-							}
-						}
-					}			
-				}
-			}
-		}
-		
-		'''
-		/*****************************************************************************
-		*  Filename:          m_accelerator_h.h
-		*  Description:       Memory-Mapped Accelerator High Level Driver Header
-		*  Date:              «dateFormat.format(date)» (by Multi-Dataflow Composer - Platform Composer)
-		*****************************************************************************/
-		
-		#ifndef MM_ACCELERATOR_H_H
-		#define MM_ACCELERATOR_H_H
-		
-		/***************************** Include Files *******************************/		
-		#include "xparameters.h"
-		#include "fsl.h"
-		
-		/************************** Constant Definitions ***************************/
-		#define MM_ACCELERATOR_CFG_BASEADDR 0x44A00000
-		#define MM_ACCELERATOR_MEM_BASEADDR 0x76000000
-		«FOR port : portMap.keySet»
-		#define MM_ACCELERATOR_MEM_«portMap.get(port)+1»_OFFSET 0x«Integer.toHexString(portMap.get(port)*4*256)»
-		«ENDFOR»
-		
-		/************************* Functions Definitions ***************************/
-		
-		
-		«FOR net : networkVertexMap.keySet»
-		int mm_accelerator_«net»(
-			«FOR port : netIdPortMap.get(net) SEPARATOR ","»
-			// port «port.name»
-			int size_«portMap.get(port)», int* data_«portMap.get(port)»
-			«ENDFOR»
-		);
-		
-		«ENDFOR»
-		
-		#endif /** MM_ACCELERATOR_H_H */
-		'''
-	}	
-	
 
 }

@@ -19,10 +19,8 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.ConfigPrinter;
+import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
-import it.mdc.tool.prototyping.TilPrinter;
-import it.mdc.tool.prototyping.TilPrinterVivadoMm;
-import it.mdc.tool.prototyping.TilPrinterVivadoStream;
 import it.mdc.tool.prototyping.WrapperPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
@@ -110,11 +108,6 @@ public abstract class PlatformComposer {
 	 * Multi-dataflow network
 	 */
 	protected Network network;
-	
-	/**
-	 * HDL component library
-	 */
-	private String hdlCompLib;
 	
 	/**
 	 * Protocol signals flags
@@ -222,40 +215,29 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) throws IOException {		
-		generateCoprVivado(type, luts, networkVertexMap, hdlCompLib, partname, boardpart);
-	}
-	
-	/**
-	 * Generate a co-processing for Xilinx Vivado
-	 * 
-	 * @return
-	 * @throws IOException 
-	 */
-	private void generateCoprVivado(String type, List<SboxLut> luts,
-			Map<String, Map<String, String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) {
+	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) throws IOException {			
 		/// <ul>
 		String file;
 		String prefix = "";
 		CharSequence sequence;
-		
-		/// <li> Initialize TIL printer
-		TilPrinter printer;
+
+		WrapperPrinter wrapperPrinter;
 		if(type.equals("MEMORY-MAPPED")) {
-			printer = new WrapperPrinter();
-			((WrapperPrinter) printer).initWrapperPrinter(protocolManager.getNetSysSignals(),
-					protocolManager.getModCommSignals(),
-					protocolManager.getWrapCommSignals());
 			//printer = new TilPrinterVivadoMm();
 			prefix = "mm";
 		} else if(type.equals("STREAM")) {
-			printer = new TilPrinterVivadoStream();	
+			//printer = new TilPrinterVivadoStream();	
 			prefix = "s";
 		} else {
 			//TODO hybrid
-			printer = null;
+			wrapperPrinter = null;
 		}
-		
+		/// <li> Initialize TIL printer
+		wrapperPrinter = new WrapperPrinter();
+		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,
+				protocolManager.getNetSysSignals(),
+				protocolManager.getModCommSignals(),
+				protocolManager.getWrapCommSignals());
 
 		
 		////////////////////////
@@ -269,7 +251,7 @@ public abstract class PlatformComposer {
 		
 		/// <ol> <li> Generate top module
 		file = hdlDir.getPath() + File.separator +  prefix + "_accelerator.v";
-		sequence = printer.printHdlSource(network,"TOP");
+		sequence = wrapperPrinter.printHdlSource(network,"TOP");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -280,7 +262,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate configuration register modules
 		file = hdlDir.getPath() + File.separator +  "config_regs.v";
-		sequence = printer.printHdlSource(network,"CFG_REGS");
+		sequence = wrapperPrinter.printHdlSource(network,"CFG_REGS");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -291,7 +273,7 @@ public abstract class PlatformComposer {
 		
 		/// <li> Generate test bench module
 		file = hdlDir.getPath() + File.separator +  "tb_" + prefix + "_accelerator.v";
-		sequence = printer.printHdlSource(network,"TBENCH");
+		sequence = wrapperPrinter.printHdlSource(network,"TBENCH");
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -305,7 +287,6 @@ public abstract class PlatformComposer {
 		// TODO to be replaced with tcl scripts generation
 		// Get libraries
 		List<String> libraries = new ArrayList<String>();
-		File compFolder = new File(hdlCompLib);
 		File libFolder = new File(hdlCompLib+"/lib");
 		
 		if(libFolder.exists()){
@@ -350,60 +331,11 @@ public abstract class PlatformComposer {
 		}
 		
 		//////////////////////////
-		/// <li> IP package  
-		/// <ol><li> Generate XML component
-		/*file = hdlDir.getPath().replace(File.separator+"hdl", "") + File.separator +  "component.xml";
-		sequence = printer.printIpPackage(network,"COMPONENT");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-
-		/// <li> Generate GUI tcl
-		File guiDir = new File(hdlPath.replace("hdl", "xgui"));
-		// If directory doesn't exist, create it
-		if (!guiDir.exists()) {
-			guiDir.mkdirs();
-		}
-		
-		file = guiDir.getPath() + File.separator + prefix + "_accelerator.tcl";
-		sequence = printer.printIpPackage(network,"GUI_TCL");
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-
-		File dataDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + prefix + "_accelerator" + File.separator + "data");
-		// If directory doesn't exist, create it
-		if (!dataDir.exists()) {
-			dataDir.mkdirs();
-		}
-		
-		/// <li> Generate SW MDD
-		file = dataDir.getPath() + File.separator +  prefix + "_accelerator.mdd";
-		sequence = printer.printIpPackage(network,"SW_MDD");
-						
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		/// </ol>
-		// bd>bd.tcl
-		// example_designs>...*/
-		/////////////////////////
-		
-		//////////////////////////
 		/// <li> SW drivers 
+		//TODO add also Makefile generation?
+		DriverPrinter driverPrinter = new DriverPrinter();
+		driverPrinter.initDriverPrinter(prefix, wrapperPrinter.getPortMap(),
+				wrapperPrinter.getInputMap(),wrapperPrinter.getOutputMap());
 
 		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
 		// If directory doesn't exist, create it
@@ -411,9 +343,9 @@ public abstract class PlatformComposer {
 			srcDir.mkdirs();
 		}
 		
-		/// <ol> <li> Generate High Level Driver Header
-		file = srcDir.getPath() + File.separator +  prefix + "_accelerator_h.h";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_HEAD");
+		/// <ol> <li> Generate Driver Header
+		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.h";
+		sequence = driverPrinter.printHighDriverHeader(network,networkVertexMap);
 				
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -423,9 +355,9 @@ public abstract class PlatformComposer {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		
-		/// <li> Generate High Level Driver Source
-		file = srcDir.getPath() + File.separator +  prefix + "_accelerator_h.c";
-		sequence = printer.printSoftwareDriver(network,networkVertexMap,configManager,"HIGH_SRC");
+		/// <li> Generate Driver Source
+		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.c";
+		sequence = driverPrinter.printHighDriver(network, networkVertexMap, configManager);
 						
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -434,6 +366,37 @@ public abstract class PlatformComposer {
 		} catch (FileNotFoundException e) {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
+		
+		srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + "data");
+		// If directory doesn't exist, create it
+		if (!srcDir.exists()) {
+			srcDir.mkdirs();
+		}
+		
+		/// <ol> <li> Generate Driver Tcl
+		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.tcl";
+		sequence = driverPrinter.printDriverTcl();
+				
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// <li> Generate Driver Mdd
+		file = srcDir.getPath() + File.separator +  prefix + "_accelerator.mdd";
+		sequence = driverPrinter.printDriverMdd();
+						
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
 		/// </ol> </ul>
 		/////////////////////////
 	}

@@ -3,6 +3,7 @@
  */
  
 package it.mdc.tool.prototyping
+
 import net.sf.orcc.df.Network
 import java.util.Map
 import java.util.HashMap
@@ -11,7 +12,7 @@ import java.util.ArrayList
 import java.util.List
 
 /**
- * Vivado Script Printer
+ * Vivado AXI IP Script Printer 
  * 
  * @author Tiziana Fanni
  * @author Carlo Sau
@@ -23,13 +24,13 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
-	protected boolean enDMA = true;
+	protected boolean enDMA = false;
 	
 	String partname = "xc7z020clg400-1"
 	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
 	String coupling = "mm"
 	List<String> libraries = new ArrayList<String>()
-	String proc = "arm"
+	String proc = ""
 
 	def initScriptPrinter(String partname, String boardpart, String coupling, List<String> libraries){
 		this.partname = partname;
@@ -92,6 +93,7 @@ class ScriptPrinter {
 		delete_bd_objs [get_bd_nets clk_wiz_1_locked]
 		apply_bd_automation -rule xilinx.com:bd_rule:board -config {Board_Interface "sys_clock ( System clock ) " }  [get_bd_pins clk_wiz_1/clk_in1]
 		apply_bd_automation -rule xilinx.com:bd_rule:board -config {rst_polarity "ACTIVE_LOW" }  [get_bd_pins rst_clk_wiz_1_100M/ext_reset_in]
+		set_property -dict [list CONFIG.C_FSL_LINKS {1}] [get_bd_cells microblaze_0]
 		«ENDIF»
 		
 		#import IP
@@ -116,20 +118,24 @@ class ScriptPrinter {
 				«ELSE»
 				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s01_axi]
-				endgroup
 				«ENDIF»
 			«ELSE»
 			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s00_axi]
 			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s01_axi]
 			«ENDIF»
+			endgroup
 		«ELSE»	
-
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
-		endgroup
+			«IF proc.equals("arm")»
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+			«ELSE»
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins s_accelerator_0/s00_axi]
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins s_accelerator_0/s00_axi]
+			«ENDIF»
+			endgroup
 		
 		# Manage connection for each accelerator port
-		
 		«FOR input : inputMap.keySet()»
+		«IF coupling.equals("mm")»
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
 		startgroup
@@ -137,10 +143,22 @@ class ScriptPrinter {
 		endgroup
 		connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«inputMap.get(input)»/M_AXIS] [get_bd_intf_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis]
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
-		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+		connect_bd_net [get_bd_pins rst_clk_wiz_1_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]		
+		«ELSE»
+		connect_bd_net [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk] [get_bd_pins clk_wiz_1/clk_out1]
+		connect_bd_net [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn] [get_bd_pins rst_clk_wiz_1_100M/peripheral_aresetn]
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_in_«inputMap.get(input)»
+		endgroup
+		connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«inputMap.get(input)»/M_AXIS] [get_bd_intf_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis]
+		connect_bd_net [get_bd_pins clk_wiz_1/clk_out1] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
+		connect_bd_net [get_bd_pins rst_clk_wiz_1_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+		«ENDIF»
 		«ENDFOR»
 		
+				
 		«FOR output : outputMap.keySet()»
+		«IF coupling.equals("mm")»
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]
 		startgroup
@@ -149,6 +167,16 @@ class ScriptPrinter {
 		connect_bd_intf_net [get_bd_intf_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis] [get_bd_intf_pins axis_data_fifo_out_«outputMap.get(output)»/S_AXIS]
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+		«ELSE»
+		connect_bd_net [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk] [get_bd_pins clk_wiz_1/clk_out1]
+		connect_bd_net [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn] [get_bd_pins rst_clk_wiz_1_100M/peripheral_aresetn]
+		startgroup
+		create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_out_«outputMap.get(output)»
+		endgroup
+		connect_bd_intf_net [get_bd_intf_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis] [get_bd_intf_pins axis_data_fifo_out_«outputMap.get(output)»/S_AXIS]
+		connect_bd_net [get_bd_pins clk_wiz_1/clk_out1] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
+		connect_bd_net [get_bd_pins rst_clk_wiz_1_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+		«ENDIF»
 		«ENDFOR»
 		
 		«IF enDMA»
@@ -185,26 +213,39 @@ class ScriptPrinter {
 		«ENDFOR»
 		
 		«ELSE»
+		«IF coupling.equals("mm")»
+			«FOR i : 0..fifoNum-1»
+			startgroup
+			create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
+			endgroup
+			set_property -dict [list CONFIG.INTERFACES {S_AXI}] [get_bd_cells axi_mm2s_mapper_«i»]
+			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXI]
+			set_property -dict [list CONFIG.TDATA_NUM_BYTES {4}] [get_bd_cells axi_mm2s_mapper_«i»]
+			set_property -dict [list CONFIG.ID_WIDTH {12}] [get_bd_cells axi_mm2s_mapper_«i»]
+			«IF i < inputMap.size»
+			connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/M_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
+			«ENDIF»
+			«IF i < outputMap.size»
+			connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXIS] [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS]
+			«ENDIF»
+			«ENDFOR»
+		«ELSE»
 		«FOR i : 0..fifoNum-1»
-		startgroup
-		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
-		endgroup
-		set_property -dict [list CONFIG.INTERFACES {S_AXI}] [get_bd_cells axi_mm2s_mapper_«i»]
-		apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXI]
-		set_property -dict [list CONFIG.TDATA_NUM_BYTES {4}] [get_bd_cells axi_mm2s_mapper_«i»]
-		set_property -dict [list CONFIG.ID_WIDTH {12}] [get_bd_cells axi_mm2s_mapper_«i»]
-		«IF i < inputMap.size»
-		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/M_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
-		«ENDIF»
-		«IF i < outputMap.size»
-		connect_bd_intf_net [get_bd_intf_pins axi_mm2s_mapper_«i»/S_AXIS] [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS]
-		«ENDIF»
+			«IF i < inputMap.size»
+			connect_bd_intf_net [get_bd_intf_pins microblaze_0/S«i»_AXIS] [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS]
+			«ENDIF»
+			«IF i < outputMap.size»
+			connect_bd_intf_net [get_bd_intf_pins microblaze_0/M«i»_AXIS] [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS]
+			«ENDIF»
 		«ENDFOR»
+		«ENDIF»
 		«ENDIF»
 		«ENDIF»
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
 		add_files -norecurse $projdir/$design.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
+		
+		generate_target hw_handoff [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd]
 		'''
 	}
 	
@@ -262,7 +303,16 @@ class ScriptPrinter {
 		
 		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy /UserIP
 		
+		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
+		set_property value C_CFG_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
+		set_property value C_CFG_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
 		«IF coupling == "mm"»
+		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
+		set_property value C_MEM_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+		set_property value C_MEM_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+			
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_awid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_AWUSER_WIDTH'))>0 [ipx::get_ports s01_axi_awuser -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_WUSER_WIDTH'))>0 [ipx::get_ports s01_axi_wuser -of_objects [ipx::current_core]]
@@ -283,14 +333,16 @@ class ScriptPrinter {
 		file copy -force $iproot/drivers $ipdir
 		set drivers_dir drivers
 		ipx::add_file_group -type software_driver {} [ipx::current_core]
-		ipx::add_file $drivers_dir/src/mm_accelerator_h.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/src/mm_accelerator_h.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type cSource [ipx::get_files $drivers_dir/src/mm_accelerator_h.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/data/mm_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type tclSource [ipx::get_files $drivers_dir/data/mm_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
-		ipx::add_file $drivers_dir/data/mm_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
-		set_property type mdd [ipx::get_files $drivers_dir/data/mm_accelerator.mdd -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/«coupling»_accelerator.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.c -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/«coupling»_accelerator.h [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type cSource [ipx::get_files $drivers_dir/src/«coupling»_accelerator.h -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/src/Makefile [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type unknown [ipx::get_files $drivers_dir/src/Makefile -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/«coupling»_accelerator.tcl [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type tclSource [ipx::get_files $drivers_dir/data/«coupling»_accelerator.tcl -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
+		ipx::add_file $drivers_dir/data/«coupling»_accelerator.mdd [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
+		set_property type mdd [ipx::get_files $drivers_dir/data/«coupling»_accelerator.mdd -of_objects [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]]
 				
 		set_property core_revision 3 [ipx::current_core]
 		ipx::create_xgui_files [ipx::current_core]
