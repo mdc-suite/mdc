@@ -78,6 +78,7 @@ class DriverPrinter {
 			«ENDFOR»
 			) {
 			
+			volatile int* config = (int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR;
 			«IF coupling.equals("mm")»
 			«IF !useDMA»
 			«FOR port : portMap.keySet»
@@ -107,10 +108,10 @@ class DriverPrinter {
 			«ENDFOR»
 			
 			// start execution
-			*((int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
+			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
 			
 			// wait for completion
-			//while( (*((int*) XPAR_MM_ACCELERATOR_0_CFG_BASEADDR) & 0x00000004) != 0x4 );
+			while( ((*(config)) & 0x4) != 0x4 );
 						
 			«FOR output : outputMap.keySet»
 			// receive data port «output.name»
