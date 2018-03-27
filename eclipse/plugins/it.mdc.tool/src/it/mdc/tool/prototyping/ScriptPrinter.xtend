@@ -244,8 +244,6 @@ class ScriptPrinter {
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
 		add_files -norecurse $projdir/$design.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
-		
-		generate_target hw_handoff [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd]
 		'''
 	}
 	
