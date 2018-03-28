@@ -1,4 +1,28 @@
-# mdc
+# MDC
 Welcome to the main reposirory of the **Multi-Dataflow Composer (MDC)** design suite.
 
-The _doc_ folder contains some useful documentation about **MDC**
+The _doc_ folder contains some useful documentation about **MDC**. In particular, the different features of the suite will be introduced separately below.
+
+## Baseline
+The baseline feature of MDC is...
+
+## Profiler
+The _profiler_ is..
+
+## Power Manager
+The _power manager_ is... 
+
+## Prototyper
+The _prototyper_ is in charge of generating a ready-to-use IP accelerator on the top of the CGR datapath provided by the _baseline_ feature.
+Here below its main characteristics.
+
+|target   | Xilinx FPGA               |
+|_________|___________________________|
+|processor|MicroBlaze   |ARM          |
+|_________|_____________|_____________|
+|DMA usage|no DMA|DMA   |no DMA|DMA   |
+|_________|______|______|______|______|
+|coupling |mm |s |mm |s |mm |s |mm |s |
+|_________|___|__|___|__|___|__|___|__|
+|status   |OK |OK|-  |- |-  |- |-  |- |
+
