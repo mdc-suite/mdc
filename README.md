@@ -16,10 +16,9 @@ The _power manager_ is...
 The _prototyper_ is in charge of generating a ready-to-use IP accelerator on the top of the CGR datapath provided by the _baseline_ feature.
 Here below its main characteristics.
 
-| target    | Xilinx FPGA                |
-| ---------:|:-------------------------: |
-| processor | MicroBlaze   |ARM          |
-| DMA usage | no DMA|DMA   |no DMA|DMA   |
-| coupling  | mm |s |mm |s |mm |s |mm |s |
-| status    | OK |OK|-  |- |-  |- |-  |- |
 
+--- | --- | --- | --- | --- | --- | --- | --- | ---
+**processor** | uBlaze | uBlaze | uBlaze | uBlaze | ARM | ARM | ARM | ARM
+**DMA** | no | yes | no | yes | no | yes | no | yes
+**coupling** | mm | s | mm | s | mm | s | mm | s |
+**status** | OK | no | OK | no | no | no | no | no |
