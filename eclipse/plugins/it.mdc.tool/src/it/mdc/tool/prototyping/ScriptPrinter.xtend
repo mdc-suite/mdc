@@ -24,19 +24,39 @@ class ScriptPrinter {
 	protected Map <Port,Integer> outputMap;
 	protected Map <Port,Integer> portMap;
 	protected int fifoNum;
-	protected boolean enDMA = false;
+	protected boolean enDma = false;
 	
-	String partname = "xc7z020clg400-1"
-	String boardpart = "digilentinc.com:arty-z7-20:part0:1.0"
-	String coupling = "mm"
-	List<String> libraries = new ArrayList<String>()
-	String proc = ""
+	String boardpart
+	String partname
+	String coupling
+	List<String> libraries
+	String processor
 
-	def initScriptPrinter(String partname, String boardpart, String coupling, List<String> libraries){
-		this.partname = partname;
+	def initScriptPrinter(List<String> libraries, String coupling, String processor, Boolean enDma,
+							String boardpart, String partname
+	){
 		this.boardpart = boardpart;
+		this.partname = partname;
 		this.coupling = coupling;
 		this.libraries = libraries;
+		this.processor = processor;
+		this.enDma = enDma;
+	}
+	
+	def isMemoryMapped(){
+		if(coupling.equals("mm")) {
+			return true
+		} else {
+			return false
+		}
+	}
+	
+	def isArm(){
+		if(coupling.equals("ARM")) {
+			return true
+		} else {
+			return false
+		}
 	}
 
 	def printTopScript(Network network) {
@@ -82,7 +102,7 @@ class ScriptPrinter {
 		#create block design
 		create_bd_design $bd_design
 		
-		«IF proc.equals("arm")»
+		«IF isArm»
 		create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
 		apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
 		connect_bd_net [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK0]
@@ -93,7 +113,7 @@ class ScriptPrinter {
 		delete_bd_objs [get_bd_nets clk_wiz_1_locked]
 		apply_bd_automation -rule xilinx.com:bd_rule:board -config {Board_Interface "sys_clock ( System clock ) " }  [get_bd_pins clk_wiz_1/clk_in1]
 		apply_bd_automation -rule xilinx.com:bd_rule:board -config {rst_polarity "ACTIVE_LOW" }  [get_bd_pins rst_clk_wiz_1_100M/ext_reset_in]
-		set_property -dict [list CONFIG.C_FSL_LINKS {1}] [get_bd_cells microblaze_0]
+		set_property -dict [list CONFIG.C_FSL_LINKS {«IF inputMap.size>outputMap.size»«inputMap.size»«ELSE»«outputMap.size»«ENDIF»}] [get_bd_cells microblaze_0]
 		«ENDIF»
 		
 		#import IP
@@ -103,9 +123,9 @@ class ScriptPrinter {
 		endgroup
 		
 		startgroup
-		«IF coupling.equals("mm")»		
-			«IF proc.equals("arm")»
-				«IF enDMA»
+		«IF isMemoryMapped»		
+			«IF isArm»
+				«IF enDma»
 				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 				create_bd_cell -type ip -vlnv xilinx.com:ip:axi_cdma:4.1 axi_cdma_0
 				set_property -dict [list CONFIG.C_INCLUDE_SG {0}] [get_bd_cells axi_cdma_0]
@@ -125,7 +145,7 @@ class ScriptPrinter {
 			«ENDIF»
 			endgroup
 		«ELSE»	
-			«IF proc.equals("arm")»
+			«IF isArm»
 			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 			«ELSE»
 			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins s_accelerator_0/s00_axi]
@@ -135,7 +155,7 @@ class ScriptPrinter {
 		
 		# Manage connection for each accelerator port
 		«FOR input : inputMap.keySet()»
-		«IF coupling.equals("mm")»
+		«IF isMemoryMapped»
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
 		startgroup
@@ -158,7 +178,7 @@ class ScriptPrinter {
 		
 				
 		«FOR output : outputMap.keySet()»
-		«IF coupling.equals("mm")»
+		«IF isMemoryMapped»
 		connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
 		connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]
 		startgroup
@@ -179,7 +199,7 @@ class ScriptPrinter {
 		«ENDIF»
 		«ENDFOR»
 		
-		«IF enDMA»
+		«IF enDma»
 		«FOR i : 0..fifoNum-1»
 		startgroup
 		create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_«i»
@@ -213,7 +233,7 @@ class ScriptPrinter {
 		«ENDFOR»
 		
 		«ELSE»
-		«IF coupling.equals("mm")»
+		«IF isMemoryMapped»
 			«FOR i : 0..fifoNum-1»
 			startgroup
 			create_bd_cell -type ip -vlnv xilinx.com:ip:axi_mm2s_mapper:1.1 axi_mm2s_mapper_«i»
@@ -244,6 +264,8 @@ class ScriptPrinter {
 		
 		make_wrapper -files [get_files $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd] -top
 		add_files -norecurse $projdir/$design.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
+		
+		generate_target all [get_files  $projdir/$design.srcs/sources_1/bd/design_1/design_1.bd]
 		'''
 	}
 	
@@ -305,7 +327,7 @@ class ScriptPrinter {
 		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
 		set_property value C_CFG_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
 		set_property value C_CFG_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
-		«IF coupling == "mm"»
+		«IF isMemoryMapped»
 		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
 		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
 		set_property value C_MEM_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]

@@ -215,7 +215,15 @@ public abstract class PlatformComposer {
 	 * @return
 	 * @throws IOException 
 	 */
-	public void generateCopr(String type, List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, String hdlCompLib, String partname, String boardpart) throws IOException {			
+	public void generateCopr(List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, Map<String,Object> options) throws IOException {			
+		
+		String hdlCompLib = (String) options.get("it.mdc.tool.hdlCompLib");
+		String type = (String) options.get("it.unica.diee.mdc.tilType");
+		String processor = (String) options.get("it.mdc.tool.ipProc");
+		Boolean enDma = (Boolean) options.get("it.mdc.tool.ipEnDma");
+		String boardpart = (String) options.get("it.mdc.tool.ipTgtBpart");
+		String partname = (String) options.get("it.mdc.tool.ipTgtPart");
+		
 		/// <ul>
 		String file;
 		String prefix = "";
@@ -300,10 +308,8 @@ public abstract class PlatformComposer {
 
 				
 		ScriptPrinter scriptPrinter = new ScriptPrinter();
-		scriptPrinter.initScriptPrinter(partname,
-										boardpart,
-										prefix,
-										libraries);
+		scriptPrinter.initScriptPrinter(libraries,prefix,processor,enDma,
+											boardpart,partname);
 		
 		File scriptDir = new File(hdlPath.replace(prefix + "_accelerator" + File.separator + "hdl", "scripts"));
 		// If directory doesn't exist, create it
@@ -334,8 +340,8 @@ public abstract class PlatformComposer {
 		/// <li> SW drivers 
 		//TODO add also Makefile generation?
 		DriverPrinter driverPrinter = new DriverPrinter();
-		driverPrinter.initDriverPrinter(prefix, wrapperPrinter.getPortMap(),
-				wrapperPrinter.getInputMap(),wrapperPrinter.getOutputMap());
+		driverPrinter.initDriverPrinter(prefix,processor, enDma,
+				wrapperPrinter.getPortMap(),wrapperPrinter.getInputMap(),wrapperPrinter.getOutputMap());
 
 		File srcDir = new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
 		// If directory doesn't exist, create it

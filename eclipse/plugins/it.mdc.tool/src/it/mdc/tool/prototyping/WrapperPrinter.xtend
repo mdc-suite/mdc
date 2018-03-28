@@ -289,10 +289,10 @@ class WrapperPrinter {
 		// Wire(s) and Reg(s)
 		wire start;
 		wire [31 : 0] slv_reg0;
+		«IF coupling.equals("mm")»
 		«FOR port : portMap.keySet»
 		wire [31 : 0] slv_reg«portMap.get(port)+1»;
 		«ENDFOR»
-		«IF coupling.equals("mm")»
 		«IF dedicatedInterfaces»
 		«ELSE»
 		wire s01_axi_rden;
@@ -1373,14 +1373,18 @@ class WrapperPrinter {
 		  if ( S_AXI_ARESETN == 1'b0 )
 		    begin
 		      slv_reg0 <= 0;
+		      «IF coupling.equals("mm")»
 		      «FOR port : portMap.keySet»
 		      slv_reg«portMap.get(port)+1» <= 0;
 		      «ENDFOR»
+		      «ENDIF»
 		    end 
 		  else begin
+		  	«IF coupling.equals("mm")»
 		  	if (done)
 		  		slv_reg0 <= {slv_reg0[31:3],1'b1,slv_reg0[1:0]};
-		    else
+  			else
+		    «ENDIF»
 			    if (slv_reg_wren)
 			      begin
 			        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )

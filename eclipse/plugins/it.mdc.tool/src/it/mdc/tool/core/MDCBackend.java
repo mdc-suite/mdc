@@ -18,7 +18,6 @@ import net.sf.orcc.OrccException;
 import net.sf.orcc.OrccRuntimeException;
 import net.sf.orcc.backends.AbstractBackend;
 import net.sf.orcc.df.Actor;
-import net.sf.orcc.df.Connection;
 import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
@@ -245,16 +244,6 @@ public class MDCBackend extends AbstractBackend {
 	 *Co-processing layer generation type
 	 */
 	private String coprType;
-	
-	/**
-	 *Co-processing board partname
-	 */
-	private String partname;
-	
-	/**
-	 *Co-processing board partname
-	 */
-	private String boardpart;
 	////////////////////////////////////////////////////////
 	
 	
@@ -722,7 +711,7 @@ public class MDCBackend extends AbstractBackend {
 			/// <li> generate coprocessor HDL code
 			if(genCopr){
 				// TODO  uniformare nomi reti (include path ora) per config id
-				hdlWriter.generateCopr(coprType,luts,networkVertexMap, hdlCompLib, partname, boardpart);
+				hdlWriter.generateCopr(luts,networkVertexMap,getOptions());
 			}
 			
 		}catch(Exception e) {
@@ -799,10 +788,6 @@ public class MDCBackend extends AbstractBackend {
 		}
 			   
 		genCAL = getOption("it.unica.diee.mdc.genCAL", false);
-		
-		partname = getOption("it.unica.diee.mdc.partname","");
-		boardpart = getOption("it.unica.diee.mdc.boardpart","");
-	
 		if(genCAL) {
 			Calendar c = Calendar.getInstance();
 			String date = c.get(Calendar.DAY_OF_MONTH) + "_" + (c.get(Calendar.MONTH)+1) + "_" + c.get(Calendar.YEAR);
@@ -814,17 +799,17 @@ public class MDCBackend extends AbstractBackend {
 		}
 		
 		genHDL = getOption("it.unica.diee.mdc.genHDL", false);
-		
-		protocolFile= getOption("it.unica.diee.mdc.protocolFile", "<unknown>");
-		hdlCompLib= getOption("it.mdc.tool.hdlCompLib", "<unknown>");
-			   
-		lrEn = getOption("it.unica.diee.mdc.computeLogicRegions",false);
-
-		genCopr = getOption("it.unica.diee.mdc.genCopr",false);
-		coprType = getOption("it.unica.diee.mdc.tilType","<unknown>");
+		if(genHDL) {
+			protocolFile = getOption("it.unica.diee.mdc.protocolFile","<unknown>");
+			hdlCompLib = getOption("it.mdc.tool.hdlCompLib","");
+			lrEn = getOption("it.unica.diee.mdc.computeLogicRegions",false);
+			genCopr = getOption("it.unica.diee.mdc.genCopr",false);
+			if(genCopr) {
+				coprType = getOption("it.unica.diee.mdc.tilType","<unknown>");
+			}
+		}
 		
 		profileEn = getOption("it.unica.diee.mdc.profile", false);
-		
 		if(profileEn) {
 			profiler = new Profiler();
 			String areaFile = getOption("it.unica.diee.mdc.areaFile", "<unknown>");
@@ -1269,8 +1254,8 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.mdc.tool.hdlCompLib", line.getOptionValue('l'));
 			optionMap.put("it.unica.diee.mdc.genCopr", line.getOptionValue('t'));
 			optionMap.put("it.unica.diee.mdc.coprType", line.getOptionValue('k'));
-			optionMap.put("it.unica.diee.mdc.partname", line.getOptionValue('z'));
-			optionMap.put("it.unica.diee.mdc.boardpart", line.getOptionValue('d'));
+			optionMap.put("it.mdc.tool.ipTgtBpart", line.getOptionValue('d'));
+			optionMap.put("it.mdc.tool.ipTgtPart", line.getOptionValue('z'));
 			optionMap.put("it.unica.diee.mdc.computeLogicRegions", line.getOptionValue('e'));
 			optionMap.put("it.unica.diee.mdc.importBufferSizeFileList", line.getOptionValue('i'));
 			optionMap.put("it.unica.diee.mdc.bufferSizeFilesFolder", line.getOptionValue('b'));
