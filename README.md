@@ -16,7 +16,7 @@ The _power manager_ is...
 The _prototyper_ is in charge of generating a ready-to-use IP accelerator on the top of the CGR datapath provided by the _baseline_ feature.
 Here below its main characteristics.
 
-|    **status** |   OK   |   OK   |   no   |   no   | no  | no  | no  | no  |
+|    **status** |   OK   |   OK   |   OK   |   no   | no  | no  | no  | no  |
 |--------------:|:------:|:------:|:------:|:------:|:---:|:---:|:---:|:---:|
 | **processor** | uBlaze | uBlaze | uBlaze | uBlaze | ARM | ARM | ARM | ARM |
 |       **DMA** |   no   |   no   |   yes  |   yes  |  no |  no | yes | yes |
