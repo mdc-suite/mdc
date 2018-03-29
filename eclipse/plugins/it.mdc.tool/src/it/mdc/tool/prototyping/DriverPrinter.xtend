@@ -116,6 +116,7 @@ class DriverPrinter {
 				*((int *) (XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET + idx_«input.name»*4)) = *(data_«input.name»+idx_«input.name»);
 			}
 			«ENDIF»
+			
 			«ENDFOR»
 			
 			«ENDIF»
@@ -136,20 +137,24 @@ class DriverPrinter {
 				putfsl(*(data_«input.name»+idx_«input.name»), «inputMap.get(input)»);
 			}
 			«ENDIF»
+			
 			«ENDFOR»
+			
 			«FOR output : outputMap.keySet»
 			«IF enDma»
-			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x00>>2)) = 0x00000001; // start
-			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x04>>2)) = 0x00000000; // reset idle
-			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x18>>2)) = (int) data_«output.name»; // dst
-			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x28>>2)) = size_«output.name»*4; // size [B]
-			while(((*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x04>>2))) & 0x2) != 0x2);
+			// receive data port «output.name»
+			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x30>>2)) = 0x00000001; // start
+			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x34>>2)) = 0x00000000; // reset idle
+			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x48>>2)) = (int) data_«output.name»; // dst
+			*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x58>>2)) = size_«output.name»*4; // size [B]
+			while(((*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x34>>2))) & 0x2) != 0x2);
 			«ELSE»
 			// receive data port «output.name»
 			for(idx_«output.name»=0; idx_«output.name»<size_«output.name»; idx_«output.name»++) {
 				getfsl(*(data_«output.name»+idx_«output.name»), «outputMap.get(output)»);
 			}
 			«ENDIF»
+			
 			«ENDFOR»
 			
 			«ELSE»
@@ -160,17 +165,18 @@ class DriverPrinter {
 			«FOR output : outputMap.keySet»
 			// receive data port «output.name»
 			«IF enDma»
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) = 0x00000002; // verify idle
-			//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x00>>2)) = 0x00001000;	// irq en (optional)
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x18>>2)) = XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(output)+1»_OFFSET; // src
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x20>>2)) = (int) data_«output.name»; // dst
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x28>>2)) = size_«output.name»*4; // size [B]
-			while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) & 0x2) != 0x2);
+			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x34>>2)) = 0x00000002; // verify idle
+			//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x30>>2)) = 0x00001000;	// irq en (optional)
+			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x48>>2)) = XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(output)+1»_OFFSET; // src
+			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x50>>2)) = (int) data_«output.name»; // dst
+			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x58>>2)) = size_«output.name»*4; // size [B]
+			while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x34>>2)) & 0x2) != 0x2);
 			«ELSE»
 			for(idx_«output.name»=0; idx_«output.name»<size_«output.name»; idx_«output.name»++) {
 				*(data_«output.name»+idx_«output.name») = *((int *) (XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(output)+1»_OFFSET + idx_«output.name»*4));
 			}
 			«ENDIF»
+			
 			«ENDFOR»
 			«ENDIF»
 								

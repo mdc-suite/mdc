@@ -287,9 +287,9 @@ class WrapperPrinter {
 		
 		'''
 		// Wire(s) and Reg(s)
-		wire start;
 		wire [31 : 0] slv_reg0;
 		«IF coupling.equals("mm")»
+		wire start;
 		«FOR port : portMap.keySet»
 		wire [31 : 0] slv_reg«portMap.get(port)+1»;
 		«ENDFOR»
@@ -301,9 +301,9 @@ class WrapperPrinter {
 		wire [31 : 0] s01_axi_data_in;
 		reg [31 : 0] s01_axi_data_out;
 		«ENDIF»
-		«ENDIF»
 		wire done;
 		wire done_input;
+		«ENDIF»
 		«FOR input : inputMap.keySet()»
 		«FOR commSigId : getInFirstModCommSignals().keySet»
 		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
