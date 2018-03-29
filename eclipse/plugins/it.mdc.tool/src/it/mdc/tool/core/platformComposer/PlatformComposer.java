@@ -257,6 +257,8 @@ public abstract class PlatformComposer {
 			hdlDir.mkdirs();
 		}
 		
+		// TODO fix stream with tlast signal generation (slv_reg and counter!)
+		
 		/// <ol> <li> Generate top module
 		file = hdlDir.getPath() + File.separator +  prefix + "_accelerator.v";
 		sequence = wrapperPrinter.printHdlSource(network,"TOP");
@@ -292,7 +294,6 @@ public abstract class PlatformComposer {
 		/// </ol>
 		/////////////////////////
 		
-		// TODO to be replaced with tcl scripts generation
 		// Get libraries
 		List<String> libraries = new ArrayList<String>();
 		File libFolder = new File(hdlCompLib+"/lib");
@@ -338,7 +339,6 @@ public abstract class PlatformComposer {
 		
 		//////////////////////////
 		/// <li> SW drivers 
-		//TODO add also Makefile generation?
 		DriverPrinter driverPrinter = new DriverPrinter();
 		driverPrinter.initDriverPrinter(prefix,processor, enDma,
 				wrapperPrinter.getPortMap(),wrapperPrinter.getInputMap(),wrapperPrinter.getOutputMap());
