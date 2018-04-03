@@ -14,6 +14,9 @@ import java.util.HashSet
 import java.util.HashMap
 import net.sf.orcc.df.Connection
 import net.sf.orcc.util.OrccLogger
+import net.sf.orcc.df.Actor
+import net.sf.orcc.df.Port
+import net.sf.orcc.graph.Edge
 
 /**
  * A CPF Template file printer.
@@ -25,6 +28,13 @@ import net.sf.orcc.util.OrccLogger
  * @author Tiziana Fanni
  */
 class CpfPrinter {
+	private Map<String,Map<String,Map<String,String>>> modCommSignals;
+	
+	private static final String ACTOR = "actor";
+
+	private static final String KIND = "kind";
+	private static final String DIR = "dir";
+	private static final String SIZE = "size";
 	
 	/**Config Manager description*/
 	var ConfigManager configManager;
@@ -50,11 +60,13 @@ class CpfPrinter {
 	/**Map of ON PDs, for each OFF PD. */
 	var Map<String,HashSet<String>> LrCrossIsoMap;
 	
+	/**Map of OFF PDs, for each OFF PD. */
+	var Map<String,HashSet<String>> offPDsMap;
+	
 	/**Map of ON PDs, for each ON PD. */
 	var Map<String,HashSet<String>> Compl_LrCrossIsoMap;
 	
 	var Map<String, Integer> powerSetIsoAmount;
-	var Map<String, Integer> powerSetIsoAmount_full;
 	
 	/** For each Logic Regions in this map, the key value is true if the LR is sequential, and false if LR is purely combinatorial*/
 	var Map<String,Boolean> logicRegionsSeqMap;
@@ -90,6 +102,19 @@ class CpfPrinter {
 				}
 			}
 		}
+
+	/**For each PDx, find PDs which are OFF when PDx is OFF*/	
+	def findOffLr(){
+		for(String lr : powerSets) {
+	//		System.out.println("lr is " + lr);
+			offPDsMap.put(lr, new HashSet<String>());		
+				for(String cross_lr: powerSets)
+					if(!LrCrossIsoMap.get(lr).contains(cross_lr))
+							offPDsMap.get(lr).add(cross_lr);
+	//	System.out.println("offPDs.get(lr) is " + offPDsMap.get(lr));
+		}
+	}
+
 		
 		
 	/**For each PDx, find PDs which are ON when PDx is on*/
@@ -101,10 +126,131 @@ class CpfPrinter {
 							Compl_LrCrossIsoMap.get(lr).add(cross_lr);
 		}
 	}	
+	
+
+/*«FOR output : actor.outputs»
+			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
+			«IF isOutputSide(ACTOR,commSigId)»
+			wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
+			«ENDIF»
+			«ENDFOR»
+			«IF modNames.containsKey(SUCC)»
+			«FOR commSigId : modCommSignals.get(SUCC).keySet»
+			«IF isOutputSide(SUCC,commSigId)»
+			wire «getCommSigDimension(SUCC,actor,commSigId,output)»«getModName(SUCC)»«actor.label»_«getSigName(SUCC,commSigId,output)»;
+			«ENDIF»
+			«ENDFOR»
+			«ENDIF»
+			«ENDFOR»;*/
 		
-		
-	/** find isolation cells number (only for ALBA custom protocol)*/
+	def boolean isInputSide(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
+			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true		
+		} else {
+			return false
+		}
+	}
+	
+	def boolean isOutputSide(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
+			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true		
+		} else {
+			return false
+		}
+	}	
+	
+		def int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
+		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable")) {
+			return port.type.sizeInBits
+		} else if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("broadcast")) {
+			if (actor !== null) {
+			 	if (actor.outgoingPortMap.containsKey(port)) {
+					if (actor.outgoingPortMap.get(port).get(0).hasAttribute("broadcast")) {
+						actor.outgoingPortMap.get(port).size
+					} else {
+						1
+					}
+				} else {
+					1
+				}
+			} else if (port !== null) {
+				if(port.outgoing.size != 0) {
+					if ((port.outgoing.get(0) as Connection).hasAttribute("broadcast")) {
+						port.outgoing.size
+					} else {
+						1
+					}
+				
+				} else {
+					1
+				}
+			} else {
+				1
+			}
+		} else {	
+			return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(SIZE))
+		}
+	}		
+
+		/** find isolation cells number*/
 	def findIsoCellsAmount(Network network){
+		for(String lr : powerSets) {
+			System.out.println("lr " + lr);
+			powerSetIsoAmount.put(lr,0);
+			for(Actor actor : network.getChildren().filter(typeof(Actor))) {				
+				if(logicRegions.get(lr).contains(actor.getSimpleName())){
+					var flag = true;
+					for(Connection connection: actor.getOutgoing().filter(typeof(Connection))) {						
+						if(!logicRegions.get(lr).contains(connection.target.label)){	
+									for(String crossLr : offPDsMap.get(lr)){
+											if(logicRegions.get(crossLr).contains(connection.target.label)){
+												flag = false;}
+											}
+						if(flag){
+							for(String commSigId : modCommSignals.get(ACTOR).keySet){
+									if (isOutputSide(ACTOR,commSigId)){
+										//gestire i broadcast. nella stima li conta due volte, ma le celle di isolamento sono messe al
+										// source prima del broadcast
+										System.out.println("connection is " + connection);
+										System.out.println("connection.target is " + connection.target.label);
+										System.out.println("connection size " + getCommSigSize(ACTOR,actor,commSigId,connection.getSourcePort()));
+										powerSetIsoAmount.put(lr,powerSetIsoAmount.get(lr) + getCommSigSize(ACTOR,actor,commSigId,connection.getSourcePort()));
+										}	
+							}
+						}			
+						}
+
+					}
+				}
+				
+				
+				/*if(logicRegions.get(lr).contains(actor) &&
+						!logicRegions.get(lr).contains(actor.getIncoming())) {					
+					var flag = true;													
+					for(String crossLr : Compl_LrCrossIsoMap.get(lr)){
+						if(logicRegions.get(crossLr).contains(actor.getIncoming())){
+							flag = false;}								
+					}
+					if(flag){
+					for(output : actor.outputs)
+						for(String commSigId : modCommSignals.get(ACTOR).keySet)
+							if (isInputSide(ACTOR,commSigId))
+								powerSetIsoAmount.put(lr,powerSetIsoAmount.get(lr) + getCommSigSize(ACTOR,actor,commSigId,output));
+							}
+				}*/
+			}
+		}
+	}	
+		
+		
+//	/** find isolation cells number (only for ALBA custom protocol)*/
+	/*def findIsoCellsAmount(Network network){
 		for(String lr : powerSets) {
 			powerSetIsoAmount.put(lr,0);
 			powerSetIsoAmount_full.put(lr,0);	
@@ -145,7 +291,7 @@ class CpfPrinter {
 				}
 			}
 		}
-	}
+	}*/
 
 	
 //		// find isolation cells number (only for ALBA custom protocol)
@@ -220,7 +366,6 @@ class CpfPrinter {
 		'''
 		«FOR lr: powerSets»
 		# PD«logicRegionID.get(lr)» amount of ISO cells: «powerSetIsoAmount.get(lr)»
-		# PD«logicRegionID.get(lr)» amount of ISO cells in full design: «powerSetIsoAmount_full.get(lr)»		
 		create_isolation_rule -name iso«logicRegionID.get(lr)» -from PD«logicRegionID.get(lr)»\
 		-to {PDdef «FOR reg: LrCrossIsoMap.get(lr)»PD«logicRegionID.get(reg)» «ENDFOR»} -exclude {«FOR region: powerSets» powerController_0/sw_ack«logicRegionID.get(region)»«ENDFOR»}\
 		-isolation_condition {!powerController_0/iso_en«logicRegionID.get(lr)»} -isolation_output low -isolation_target from
@@ -352,7 +497,8 @@ class CpfPrinter {
 		Map<String, Integer> logicRegionID, 
 		ConfigManager configManager, 
 		Set<String> powerSets,
-		Map<String,Boolean> logicRegionsSeqMap){
+		Map<String,Boolean> logicRegionsSeqMap,
+		Map<String,Map<String,Map<String,String>>> modCommSignals){
 		// Initialize members
 		this.logicRegions = logicRegions;
 		this.netRegions = netRegions;
@@ -361,16 +507,18 @@ class CpfPrinter {
 		this.configManager = configManager;
 		this.powerSets = powerSets;
 		this.logicRegionsSeqMap = logicRegionsSeqMap;
+		this.modCommSignals = modCommSignals;
 		
 		networks = new ArrayList<Network>();
 		LrCrossIsoMap = new HashMap<String,HashSet<String>>();
 		Compl_LrCrossIsoMap = new HashMap<String,HashSet<String>>();
+		offPDsMap = new HashMap<String,HashSet<String>>();
 		powerSetIsoAmount = new HashMap<String,Integer>();
-		powerSetIsoAmount_full = new HashMap<String,Integer>();
 		
 		computeNets();
 		findLrCrossIso();
 		compl_LrCrossIso();
+		findOffLr();
 		findIsoCellsAmount(network);
 		
 		

@@ -334,7 +334,7 @@ public class NetworkPrinter extends PlatformComposer {
 			String CPFfile = cpfDir.getPath() + File.separator + network.getSimpleName() + ".cpf";
 			CpfPrinter printCPF = new CpfPrinter();
 			CharSequence sequenceCPF = printCPF.printCPF(network, luts, logicRegions, 
-					netRegions, logicRegionID, configManager, powerSets, logicRegionsSeqMap);
+					netRegions, logicRegionID, configManager, powerSets, logicRegionsSeqMap,modCommSignals);
 			//System.out.println("sequenceCPF  " + sequenceCPF);
 			
 			try {

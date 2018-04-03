@@ -839,11 +839,13 @@ public class MDCBackend extends AbstractBackend {
 				
 		final Result result = FilesManagerMdc.extract("","outputPath");
 		
-		String prefix;
-		if(coprType.equals("MEMORY-MAPPED")) {
-			prefix = "mm";
-		} else {
-			prefix = "s";
+		String prefix = "";
+		if(genCopr){
+			if(coprType.equals("MEMORY-MAPPED")) {
+				prefix = "mm";
+			} else {
+				prefix = "s";
+			}
 		}
 		
 		/// If coprocessor generation is enabled, extract libraries depending on the processor-coprocessor communication
