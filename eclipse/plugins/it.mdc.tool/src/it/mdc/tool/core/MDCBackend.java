@@ -865,8 +865,7 @@ public class MDCBackend extends AbstractBackend {
 				}
 			/// <li> STREAM </ol>
 			} else if(coprType.equals("STREAM")) {
-				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/front_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
-				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/back_end.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
+				result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/stream/counter.v", (outputPath + File.separator + "s_accelerator" + File.separator + "hdl")));
 				if (lrEn){ // power gating not allowed for coprocessor generator
 					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM_cg.v", (outputPath + File.separator + "s_accelerator" + File.separator +"hdl")));
 					result.merge(FilesManagerMdc.extract("/bundle/powerGating/FSM.v", (outputPath + File.separator + "s_accelerator" + File.separator +"hdl")));

@@ -64,7 +64,7 @@ class WrapperPrinter {
 		if(coupling.equals("mm")) {
 			return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))
 		} else {
-			return 1
+			return Math.round((((Math.log10(outputMap.size)/Math.log10(2))+0.5) as float))
 		}
 	}
 	
@@ -289,60 +289,65 @@ class WrapperPrinter {
 		// Wire(s) and Reg(s)
 		wire [31 : 0] slv_reg0;
 		«IF coupling.equals("mm")»
-		wire start;
-		«FOR port : portMap.keySet»
-		wire [31 : 0] slv_reg«portMap.get(port)+1»;
-		«ENDFOR»
-		«IF dedicatedInterfaces»
-		«ELSE»
-		wire s01_axi_rden;
-		wire s01_axi_wren;
-		wire [C_S01_AXI_ADDR_WIDTH-3 : 0] s01_axi_address;
-		wire [31 : 0] s01_axi_data_in;
-		reg [31 : 0] s01_axi_data_out;
-		«ENDIF»
-		wire done;
-		wire done_input;
+			wire start;
+			«FOR port : portMap.keySet»
+				wire [31 : 0] slv_reg«portMap.get(port)+1»;
+			«ENDFOR»
+			«IF dedicatedInterfaces»
+			«ELSE»
+				wire s01_axi_rden;
+				wire s01_axi_wren;
+				wire [C_S01_AXI_ADDR_WIDTH-3 : 0] s01_axi_address;
+				wire [31 : 0] s01_axi_data_in;
+				reg [31 : 0] s01_axi_data_out;
+			«ENDIF»
+			wire done;
+			wire done_input;
 		«ENDIF»
 		«FOR input : inputMap.keySet()»
-		«FOR commSigId : getInFirstModCommSignals().keySet»
-		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
-		«ENDFOR»
+			«FOR commSigId : getInFirstModCommSignals().keySet»
+				wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+			«ENDFOR»
 		«ENDFOR»
 		«IF coupling.equals("mm")»
-	    «FOR input : inputMap.keySet()»wire en_«input.name»;
-	    wire done_«input.name»;
-	    wire last_«input.name»;
-	    wire [7:0]	count_«input.name»;
-	    wire wren_mem_«portMap.get(input)+1»;
-	    wire rden_mem_«portMap.get(input)+1»;
-	    wire [7:0] address_mem_«portMap.get(input)+1»;
-	    wire [31:0]	data_in_mem_«portMap.get(input)+1»;
-	    wire [31:0]	data_out_mem_«portMap.get(input)+1»;
-	    wire [31:0]	data_out_«portMap.get(input)+1»;
-	    wire ce_«portMap.get(input)+1»;
-		«ENDFOR»
+		    «FOR input : inputMap.keySet()»
+			    wire en_«input.name»;
+			    wire done_«input.name»;
+			    wire last_«input.name»;
+			    wire [7:0]	count_«input.name»;
+			    wire wren_mem_«portMap.get(input)+1»;
+			    wire rden_mem_«portMap.get(input)+1»;
+			    wire [7:0] address_mem_«portMap.get(input)+1»;
+			    wire [31:0]	data_in_mem_«portMap.get(input)+1»;
+			    wire [31:0]	data_out_mem_«portMap.get(input)+1»;
+			    wire [31:0]	data_out_«portMap.get(input)+1»;
+			    wire ce_«portMap.get(input)+1»;
+			«ENDFOR»
 		«ENDIF»
 		«FOR output : outputMap.keySet()»
-		«FOR commSigId : getOutLastModCommSignals().keySet»
-		wire «getSizePrefix(getPortCommSigSize(output,commSigId,getLastModCommSignals()))»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
-		«ENDFOR»
+			«FOR commSigId : getOutLastModCommSignals().keySet»
+				wire «getSizePrefix(getPortCommSigSize(output,commSigId,getLastModCommSignals()))»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+			«ENDFOR»
 		«ENDFOR»
 		«IF coupling.equals("mm")»
-		wire done_output;
-		«FOR output : outputMap.keySet()»
-		wire en_«output.name»;
-		wire done_«output.name»;
-		wire last_«output.name»;
-		wire [7:0] count_«output.name»;
-		wire rden_mem_«portMap.get(output)+1»;
-		wire wren_mem_«portMap.get(output)+1»;
-		wire [7:0] address_mem_«portMap.get(output)+1»;
-		wire [31:0]	data_in_mem_«portMap.get(output)+1»;
-		wire [31:0]	data_out_mem_«portMap.get(output)+1»;
-		wire [31:0]	data_out_«portMap.get(output)+1»;
-		wire ce_«portMap.get(output)+1»;
-		«ENDFOR»
+			wire done_output;
+			«FOR output : outputMap.keySet()»
+				wire en_«output.name»;
+				wire done_«output.name»;
+				wire last_«output.name»;
+				wire [7:0] count_«output.name»;
+				wire rden_mem_«portMap.get(output)+1»;
+				wire wren_mem_«portMap.get(output)+1»;
+				wire [7:0] address_mem_«portMap.get(output)+1»;
+				wire [31:0]	data_in_mem_«portMap.get(output)+1»;
+				wire [31:0]	data_out_mem_«portMap.get(output)+1»;
+				wire [31:0]	data_out_«portMap.get(output)+1»;
+				wire ce_«portMap.get(output)+1»;
+			«ENDFOR»
+		«ELSE»
+			«FOR output : outputMap.keySet»
+				wire [31 : 0] slv_reg«outputMap.get(output)+1»;
+			«ENDFOR»
 		«ENDIF»
 		'''
 		
@@ -577,6 +582,10 @@ class WrapperPrinter {
 			.start(start),«FOR port : portMap.keySet»
 			.slv_reg«portMap.get(port)+1»(slv_reg«portMap.get(port)+1»),
 		    «ENDFOR»
+		    «ELSE»
+		    «FOR output : outputMap.keySet»
+		    .slv_reg«outputMap.get(output)+1»(slv_reg«outputMap.get(output)+1»),
+		    «ENDFOR»
 		    «ENDIF»
 		    .slv_reg0(slv_reg0)
 		);
@@ -806,7 +815,7 @@ class WrapperPrinter {
 		assign m«getLongId(outputMap.get(output))»_axis_tvalid = «output.getName()»_push;
 		assign m«getLongId(outputMap.get(output))»_axis_tdata = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
 		assign m«getLongId(outputMap.get(output))»_axis_tstrb = 4'b111;
-		assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
+		//assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
 		assign «output.getName()»_full = !m«getLongId(outputMap.get(output))»_axis_tready;
 		«ENDFOR»
 		«ENDIF»
@@ -846,6 +855,24 @@ class WrapperPrinter {
 		«ENDFOR»
 		assign done_output = «FOR output : outputMap.keySet() SEPARATOR " && "»done_«output.name»«ENDFOR»;
 		assign done = done_input && done_output;
+		
+		«ELSE»
+		
+		«FOR output : outputMap.keySet()»
+		// Output Counter(s)
+		// ----------------------------------------------------------------------------
+		counter #(			
+			.SIZE(8) ) 
+		i_counter_«output.name» (
+			.aclk(s00_axi_aclk),
+			.aresetn(s00_axi_aresetn),
+			.clr(slv_reg0[2]),
+			.en(«output.getName()»_push),
+			.max(slv_reg«outputMap.get(output)+1»[7:0]),
+			.count(),
+			.last(m«getLongId(outputMap.get(output))»_axis_tlast)
+		);
+		«ENDFOR»
 		«ENDIF»
 		// ----------------------------------------------------------------------------
 		'''
@@ -1157,7 +1184,7 @@ class WrapperPrinter {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
-		var size_pointer = computeSizePointer();
+		var log2_regnumb = computeSizePointer();
 		
 		'''
 	// ----------------------------------------------------------------------------
@@ -1175,14 +1202,17 @@ class WrapperPrinter {
 		// Width of S_AXI data bus
 		parameter integer C_S_AXI_DATA_WIDTH	= 32,
 		// Width of S_AXI address bus
-		parameter integer C_S_AXI_ADDR_WIDTH	= «size_pointer+2»
+		parameter integer C_S_AXI_ADDR_WIDTH	= «log2_regnumb+2»
 	)
 	(
 		«IF coupling.equals("mm")»
-		input done,	
+		input done,
 		«FOR port : portMap.keySet»output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.get(port)+1»,
 		«ENDFOR»
 		output start,
+		«ELSE»
+		«FOR output : outputMap.keySet»output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«outputMap.get(output)+1»,
+		«ENDFOR»
 		«ENDIF»
 		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg0,
 
@@ -1266,7 +1296,7 @@ class WrapperPrinter {
 		// ADDR_LSB = 2 for 32 bits (n downto 2)
 		// ADDR_LSB = 3 for 64 bits (n downto 3)
 		localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1;
-		localparam integer OPT_MEM_ADDR_BITS = «size_pointer»;
+		localparam integer OPT_MEM_ADDR_BITS = «log2_regnumb»;
 		//----------------------------------------------
 		//-- Signals for user logic register space example
 		//------------------------------------------------
@@ -1377,6 +1407,10 @@ class WrapperPrinter {
 		      «FOR port : portMap.keySet»
 		      slv_reg«portMap.get(port)+1» <= 0;
 		      «ENDFOR»
+		      «ELSE»
+  		      «FOR output : outputMap.keySet»
+  		      slv_reg«outputMap.get(output)+1» <= 0;
+  		      «ENDFOR»
 		      «ENDIF»
 		    end 
 		  else begin
@@ -1388,7 +1422,7 @@ class WrapperPrinter {
 			    if (slv_reg_wren)
 			      begin
 			        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-			          «size_pointer»'h0:
+			          «log2_regnumb»'h0:
 			            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 			              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 			                // Respective byte enables are asserted as per write strobes 
@@ -1396,7 +1430,7 @@ class WrapperPrinter {
 			                slv_reg0[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 			              end
 			          «IF coupling.equals("mm")»
-		          	  «FOR port : portMap.keySet»«size_pointer»'h«portMap.get(port)+1»:
+		          	  «FOR port : portMap.keySet»«log2_regnumb»'h«portMap.get(port)+1»:
 		          	  	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 		          	  		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 		          	  			// Respective byte enables are asserted as per write strobes
@@ -1404,12 +1438,24 @@ class WrapperPrinter {
 		          	  			slv_reg«portMap.get(port)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 		          	  			end
 		              «ENDFOR»
+		              «ELSE»
+  		          	  «FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»:
+  		          	  	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+  		          	  		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+  		          	  			// Respective byte enables are asserted as per write strobes
+  		          	  			// Slave register «outputMap.get(output)+1»
+  		          	  			slv_reg«outputMap.get(output)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+  		          	  			end
+  		              «ENDFOR»
 		              «ENDIF»
 			          default : begin
 			                      slv_reg0 <= slv_reg0;
 			                      «IF coupling.equals("mm")»
 			                      «FOR port : portMap.keySet»slv_reg«portMap.get(port)+1» <= slv_reg«portMap.get(port)+1»;
 								  «ENDFOR»
+								  «ELSE»
+  			                      «FOR output : outputMap.keySet»slv_reg«outputMap.get(output)+1» <= slv_reg«outputMap.get(output)+1»;
+  								  «ENDFOR»
 								  «ENDIF»
 			                    end
 			        endcase
@@ -1520,8 +1566,10 @@ class WrapperPrinter {
 		begin
 		      // Address decoding for reading registers
 		      case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-		        «size_pointer»'h0   : reg_data_out <= slv_reg0;
-	            «IF coupling.equals("mm")»«FOR port : portMap.keySet»«size_pointer»'h«portMap.get(port)+1»   : reg_data_out <= slv_reg«portMap.get(port)+1»;
+		        «log2_regnumb»'h0   : reg_data_out <= slv_reg0;
+	            «IF coupling.equals("mm")»«FOR port : portMap.keySet»«log2_regnumb»'h«portMap.get(port)+1»   : reg_data_out <= slv_reg«portMap.get(port)+1»;
+				«ENDFOR»
+				«ELSE»«FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»   : reg_data_out <= slv_reg«outputMap.get(output)+1»;
 				«ENDFOR»«ENDIF»
 		        default : reg_data_out <= 0;
 		      endcase

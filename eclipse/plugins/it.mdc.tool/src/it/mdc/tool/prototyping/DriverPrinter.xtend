@@ -97,29 +97,33 @@ class DriverPrinter {
 			«ENDIF»
 
 			«IF isMemoryMapped»
-			// configure I/O
-			«FOR port : portMap.keySet»
-			*((int*) (XPAR_MM_ACCELERATOR_0_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«port.name»;
-			«ENDFOR»
-			
-			«FOR input : inputMap.keySet»
-			// send data port «input.name»
-			«IF enDma»
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) = 0x00000002; // verify idle
-			//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x00>>2)) = 0x00001000;	// irq en (optional)
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x18>>2)) = (int) data_«input.name»; // src
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x20>>2)) = XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET; // dst
-			*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x28>>2)) = size_«input.name»*4; // size [B]
-			while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) & 0x2) != 0x2);
+				// configure I/O
+				«FOR port : portMap.keySet»
+					*((int*) (XPAR_MM_ACCELERATOR_0_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«port.name»;
+				«ENDFOR»
+				
+				«FOR input : inputMap.keySet»
+					// send data port «input.name»
+					«IF enDma»
+						*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) = 0x00000002; // verify idle
+						//*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x00>>2)) = 0x00001000;	// irq en (optional)
+						*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x18>>2)) = (int) data_«input.name»; // src
+						*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x20>>2)) = XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET; // dst
+						*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x28>>2)) = size_«input.name»*4; // size [B]
+						while((*((volatile int*) XPAR_AXI_CDMA_0_BASEADDR + (0x04>>2)) & 0x2) != 0x2);
+					«ELSE»
+						for(idx_«input.name»=0; idx_«input.name»<size_«input.name»; idx_«input.name»++) {
+							*((int *) (XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET + idx_«input.name»*4)) = *(data_«input.name»+idx_«input.name»);
+						}
+					«ENDIF»
+				«ENDFOR»
 			«ELSE»
-			for(idx_«input.name»=0; idx_«input.name»<size_«input.name»; idx_«input.name»++) {
-				*((int *) (XPAR_MM_ACCELERATOR_0_MEM_BASEADDR + MM_ACCELERATOR_MEM_«portMap.get(input)+1»_OFFSET + idx_«input.name»*4)) = *(data_«input.name»+idx_«input.name»);
-			}
+				// configure I/O
+				«FOR output : outputMap.keySet»
+					*((int*) (XPAR_S_ACCELERATOR_0_CFG_BASEADDR + «outputMap.get(output)+1»*4)) = size_«output.name»;
+				«ENDFOR»
 			«ENDIF»
 			
-			«ENDFOR»
-			
-			«ENDIF»
 			// start execution
 			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
 			
