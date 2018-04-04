@@ -29,12 +29,24 @@ import net.sf.orcc.graph.Edge
  */
 class CpfPrinter {
 	private Map<String,Map<String,Map<String,String>>> modCommSignals;
+	private Map<String,String> modNames;
 	
 	private static final String ACTOR = "actor";
+	private static final String PRED = "predecessor";
+	private static final String SUCC = "successor";
 
+	private static final String NAME = "name";
+
+	private static final String NETP = "net_port";
+	private static final String ACTP = "port";
+	private static final String CH = "channel";
 	private static final String KIND = "kind";
+	private static final String CLOCK = "is_clock";
 	private static final String DIR = "dir";
+	private static final String BROAD = "broadcast";
 	private static final String SIZE = "size";
+	private static final String VAL = "value";
+	private static final String FILTER = "filter";
 	
 	/**Config Manager description*/
 	var ConfigManager configManager;
@@ -126,23 +138,7 @@ class CpfPrinter {
 							Compl_LrCrossIsoMap.get(lr).add(cross_lr);
 		}
 	}	
-	
-
-/*«FOR output : actor.outputs»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isOutputSide(ACTOR,commSigId)»
-			wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
-			«ENDIF»
-			«ENDFOR»
-			«IF modNames.containsKey(SUCC)»
-			«FOR commSigId : modCommSignals.get(SUCC).keySet»
-			«IF isOutputSide(SUCC,commSigId)»
-			wire «getCommSigDimension(SUCC,actor,commSigId,output)»«getModName(SUCC)»«actor.label»_«getSigName(SUCC,commSigId,output)»;
-			«ENDIF»
-			«ENDFOR»
-			«ENDIF»
-			«ENDFOR»;*/
-		
+			
 	def boolean isInputSide(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
@@ -205,6 +201,65 @@ class CpfPrinter {
 			powerSetIsoAmount.put(lr,0);
 			for(Actor actor : network.getChildren().filter(typeof(Actor))) {				
 				if(logicRegions.get(lr).contains(actor.getSimpleName())){
+					for(Port output: actor.outputs) {
+						var flag = true;						
+						if(!logicRegions.get(lr).contains(actor.outgoingPortMap.get(output).get(0).target.label)){	
+									for(String crossLr : offPDsMap.get(lr)){
+											if(logicRegions.get(crossLr).contains(actor.outgoingPortMap.get(output).get(0).target.label)){
+												flag = false;}
+											}
+											if(flag){
+												for(String commSigId : modCommSignals.get(ACTOR).keySet){
+														if (isOutputSide(ACTOR,commSigId) && (modCommSignals.get(ACTOR).get(commSigId).get(DIR).equals("direct"))){
+															//gestire i broadcast. nella stima li conta due volte, ma le celle di isolamento sono messe al
+															// source prima del broadcast
+															System.out.println("connection is " + actor.outgoingPortMap.get(output));
+															System.out.println("connection.target is " + actor.outgoingPortMap.get(output).get(0).target.label);
+															System.out.println("connection size " + getCommSigSize(ACTOR,actor,commSigId,output));
+															powerSetIsoAmount.put(lr,powerSetIsoAmount.get(lr) + getCommSigSize(ACTOR,actor,commSigId,output));
+															}	
+												}
+											}			
+						}
+
+					}
+					
+					for(Port input: actor.inputs) {
+						var flag = true;						
+						if(!logicRegions.get(lr).contains(actor.incomingPortMap.get(input).source.label)){	
+									for(String crossLr : offPDsMap.get(lr)){
+											if(logicRegions.get(crossLr).contains(actor.incomingPortMap.get(input).source.label)){
+												flag = false;}
+											}
+											if(flag){
+												for(String commSigId : modCommSignals.get(ACTOR).keySet){
+														if (isInputSide(ACTOR,commSigId) && (modCommSignals.get(ACTOR).get(commSigId).get(DIR).equals("reverse"))){
+															//gestire i broadcast. nella stima li conta due volte, ma le celle di isolamento sono messe al
+															// source prima del broadcast
+															System.out.println("connection is " + actor.incomingPortMap.get(input));
+															System.out.println("connection.target is " + actor.incomingPortMap.get(input).source.label);
+															System.out.println("connection size " + getCommSigSize(ACTOR,actor,commSigId,input));
+															powerSetIsoAmount.put(lr,powerSetIsoAmount.get(lr) + getCommSigSize(ACTOR,actor,commSigId,input));
+															}	
+												}
+											}			
+						}
+
+					}						
+				}
+				
+			}
+		}
+	}	
+		
+		
+/*
+ 	def findIsoCellsAmount(Network network){
+		for(String lr : powerSets) {
+			System.out.println("lr " + lr);
+			powerSetIsoAmount.put(lr,0);
+			for(Actor actor : network.getChildren().filter(typeof(Actor))) {				
+				if(logicRegions.get(lr).contains(actor.getSimpleName())){
 					var flag = true;
 					for(Connection connection: actor.getOutgoing().filter(typeof(Connection))) {						
 						if(!logicRegions.get(lr).contains(connection.target.label)){	
@@ -229,24 +284,9 @@ class CpfPrinter {
 					}
 				}
 				
-				
-				/*if(logicRegions.get(lr).contains(actor) &&
-						!logicRegions.get(lr).contains(actor.getIncoming())) {					
-					var flag = true;													
-					for(String crossLr : Compl_LrCrossIsoMap.get(lr)){
-						if(logicRegions.get(crossLr).contains(actor.getIncoming())){
-							flag = false;}								
-					}
-					if(flag){
-					for(output : actor.outputs)
-						for(String commSigId : modCommSignals.get(ACTOR).keySet)
-							if (isInputSide(ACTOR,commSigId))
-								powerSetIsoAmount.put(lr,powerSetIsoAmount.get(lr) + getCommSigSize(ACTOR,actor,commSigId,output));
-							}
-				}*/
 			}
 		}
-	}	
+	}	*/		
 		
 		
 //	/** find isolation cells number (only for ALBA custom protocol)*/
@@ -329,17 +369,19 @@ class CpfPrinter {
 	 * create the power domain in the CPF file.
 	 * A Logic Region is switchable when it is not Always ON (not shared by all of the networks in the multi-functional architecture).
 	 */
-	def createPowerDomains() {			
+	def createPowerDomains(Network network) {			
 		'''
 		create_power_domain -name PDdef -default	
 					
 		«FOR lr: powerSets»
-		create_power_domain -name PD«logicRegionID.get(lr)» -instances {«FOR inst: logicRegions.get(lr)»«IF inst.contains("sbox")»«inst»«ELSE»actor_«inst»«ENDIF» «ENDFOR»}\
+		create_power_domain -name PD«logicRegionID.get(lr)» -instances {«FOR inst: logicRegions.get(lr)»«IF inst.contains("sbox")»«inst»«ELSE»actor_«inst»«ENDIF» «IF modNames.containsKey(PRED)»«FOR input : network.getChild(inst).getAdapter(Actor).inputs»«modNames.get(PRED)»_«inst»_«input.label»«ENDFOR»«ENDIF» «IF modNames.containsKey(SUCC)»«FOR output : network.getChild(inst).getAdapter(Actor).outputs»«modNames.get(SUCC)»_«inst»_«output.label»«ENDFOR»«ENDIF»«ENDFOR»}\
 		-shutoff_condition {powerController_0/pw_switch_en«logicRegionID.get(lr)»} -base_domains {PDdef}
 		
 		«ENDFOR»			
 		'''
 	}	
+	
+	
 	
 	/**
 	 * For each functionality of the multi-functional network,
@@ -498,7 +540,8 @@ class CpfPrinter {
 		ConfigManager configManager, 
 		Set<String> powerSets,
 		Map<String,Boolean> logicRegionsSeqMap,
-		Map<String,Map<String,Map<String,String>>> modCommSignals){
+		Map<String,Map<String,Map<String,String>>> modCommSignals,
+		Map<String,String> modNames){
 		// Initialize members
 		this.logicRegions = logicRegions;
 		this.netRegions = netRegions;
@@ -508,6 +551,7 @@ class CpfPrinter {
 		this.powerSets = powerSets;
 		this.logicRegionsSeqMap = logicRegionsSeqMap;
 		this.modCommSignals = modCommSignals;
+		this.modNames = modNames;
 		
 		networks = new ArrayList<Network>();
 		LrCrossIsoMap = new HashMap<String,HashSet<String>>();
@@ -595,7 +639,7 @@ class CpfPrinter {
 		set_design multi_dataflow
 		
 		# create power domains
-		«createPowerDomains()»
+		«createPowerDomains(network)»
 		
 		# create nominal conditions
 		create_nominal_condition -name high -voltage 1.08 -state on
