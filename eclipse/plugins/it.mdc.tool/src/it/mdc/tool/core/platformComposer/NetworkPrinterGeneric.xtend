@@ -803,14 +803,14 @@ class NetworkPrinterGeneric {
 			«FOR input : actor.inputs»
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")»
-			 wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«actor.label»_«getSigName(pred,commSigId,input)»;
+			 wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(pred,commSigId,input)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			«FOR output : actor.outputs»
 			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
 			«IF isOutputSide(succ,commSigId)»
-			 wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«actor.label»_«getSigName(succ,commSigId,output)»;
+			 wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(succ,commSigId,output)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
