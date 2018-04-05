@@ -712,6 +712,19 @@ class NetworkPrinterGeneric {
 	 */
 	def printInternalSignals(List<SboxLut> luts) {
 		
+		var String pred;
+		var String succ;
+		if (modNames.containsKey(PRED)) {
+			pred = PRED;
+		} else {
+			pred = ACTOR;	
+	 	}
+		if (modNames.containsKey(SUCC)) {
+			succ = SUCC;
+		} else {
+			succ = ACTOR;	
+	 	}
+		
 		'''	
 		«IF !luts.empty»
 		// Sboxes Config Wire(s)
@@ -775,23 +788,37 @@ class NetworkPrinterGeneric {
 			«FOR input : actor.inputs»
 			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
 			«IF isInputSide(ACTOR,commSigId) && !input.label.equals("sel")»
-			wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»;
+			// wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			«FOR output : actor.outputs»
 			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
 			«IF isOutputSide(ACTOR,commSigId)»
-			wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
+			// wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			
+			«FOR input : actor.inputs»
+			«FOR commSigId : modCommSignals.get(pred).keySet»
+			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")»
+			 wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«actor.label»_«getSigName(pred,commSigId,input)»;
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			«FOR output : actor.outputs»
+			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
+			«IF isOutputSide(succ,commSigId)»
+			 wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«actor.label»_«getSigName(succ,commSigId,output)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			«ENDIF»	
-				
 		«ENDFOR»
 		'''
 	}
-	
+		
 	def Integer getBufferSizeIntegerValue(Connection connection) {
 		if(connection.hasAttribute("bufferSize")) {
 			if(connection.getAttribute("bufferSize").getContainedValue() != null) {
