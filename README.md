@@ -4,8 +4,8 @@ Welcome to the main reposirory of the **Multi-Dataflow Composer (MDC)** design s
 The _doc_ folder contains some useful documentation about **MDC**. In particular, the different features of the suite will be introduced separately below.
 
 ## Baseline
-The baseline feature of MDC is the composition of a coarse-grained reconfigurable (CGR) hardware datapath starting from a set of dataflow applications.
-The baseline feature involves two main components:
+The _baseline_ feature of MDC is the composition of a coarse-grained reconfigurable (CGR) hardware datapath starting from a set of dataflow applications.
+The _baseline_ feature involves two main components:
 - Multi-Dataflow Generator (MDG): it merges together different dataflows into one unique reconfigurable multi-dataflow by the insertion of switching modules named _SBoxes_. Two different merging algorithms are supported: empiric and Moreano. The former is more suitable for non-recursive dataflows but less optimized than the latter.
 - Platform composer (PC): it derives the RTL description of the CGR datapath from the multi-dataflow. It requires the user to define the communication protocol between actors in hardware (XML) and the RTL description of the actors involved in the dataflows (HDL Components Library, HCL).
 
