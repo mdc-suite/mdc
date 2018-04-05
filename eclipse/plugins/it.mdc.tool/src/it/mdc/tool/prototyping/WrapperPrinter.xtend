@@ -783,7 +783,7 @@ class WrapperPrinter {
 			.last(last_«input.name»)
 		);
 		
-		assign address_mem_«portMap.get(input)+1» = count_«input.name»+slv_reg«portMap.get(input)+1»[11:4];
+		assign address_mem_«portMap.get(input)+1» = count_«input.name»;
 		assign wren_mem_«portMap.get(input)+1» = 1'b0;
 		assign data_in_mem_«portMap.get(input)+1» = 32'b0;
 		«ENDFOR»
@@ -849,7 +849,7 @@ class WrapperPrinter {
 			.last(last_«output.name»)
 		);
 		
-		assign address_mem_«portMap.get(output)+1» = count_«output.name»+slv_reg«portMap.get(output)+1»[11:4];
+		assign address_mem_«portMap.get(output)+1» = count_«output.name»;
 		assign rden_mem_«portMap.get(output)+1» = 1'b0;
 		
 		«ENDFOR»
