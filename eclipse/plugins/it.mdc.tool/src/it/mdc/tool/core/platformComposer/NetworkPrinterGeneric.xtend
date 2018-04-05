@@ -895,11 +895,11 @@ class NetworkPrinterGeneric {
 			
 			// System Signal(s)
 			«FOR sysSigId : modSysSignals.get(PRED).keySet SEPARATOR ","»
-«««			«IF modSysSignals.get(PRED).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
-«««			.«modSysSignals.get(PRED).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(SUCC).get(sysSigId).get(PRED)»«ENDIF»)
-«««			«ELSE»
+			«IF modSysSignals.get(PRED).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
+			.«modSysSignals.get(PRED).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(PRED).get(sysSigId).get(NETP)»«ENDIF»)
+ 			«ELSE»
 			.«modSysSignals.get(PRED).get(sysSigId).get(ACTP)»(«modSysSignals.get(PRED).get(sysSigId).get(NETP)»)
-«««			«ENDIF»
+			«ENDIF»
 			«ENDFOR»
 		);
 		«ENDFOR»
@@ -916,20 +916,24 @@ class NetworkPrinterGeneric {
 			// Input Signal(s)
 			«FOR input : actor.inputs SEPARATOR ","»«FOR commSigId : getActorInputCommSignals(actor) SEPARATOR ","»
 			.«getActorPortSignal(commSigId,input)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»)
-			«ENDFOR»«ENDFOR»«IF !getActorOutputCommSignals(actor).empty»,«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			«IF !getActorOutputCommSignals(actor).empty»,«ENDIF»
 			
 			// Output Signal(s)
 			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : getActorOutputCommSignals(actor) SEPARATOR ","»
 			.«getActorPortSignal(commSigId,output)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»)
-			«ENDFOR»«ENDFOR»«IF !getActorSysSignals(actor).empty»,«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			«IF !getActorSysSignals(actor).empty»,«ENDIF»
 			
 			// System Signal(s)
 			«FOR sysSigId : getActorSysSignals(actor) SEPARATOR ","»	
 			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
 «««			«IF modSysSignals.get(ACTOR).get(sysSigId).get(ACTP).equals(CLOCK) && (enableClockGating || enablePowerGating)»
-				.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»«ENDIF»)
+			.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»«ENDIF»)
 			«ELSE»
-				.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»)
+			.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»)
 			«ENDIF»
 			«ENDFOR»
 		);
@@ -977,11 +981,11 @@ class NetworkPrinterGeneric {
 			
 			// System Signal(s)
 			«FOR sysSigId : modSysSignals.get(SUCC).keySet SEPARATOR ","»
-«««			«IF modSysSignals.get(SUCC).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
-«««			.«modSysSignals.get(SUCC).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(SUCC).get(sysSigId).get(NETP)»«ENDIF»)
-«««			«ELSE»
+			«IF modSysSignals.get(SUCC).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
+			.«modSysSignals.get(SUCC).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(SUCC).get(sysSigId).get(NETP)»«ENDIF»)
+			«ELSE»
 			.«modSysSignals.get(SUCC).get(sysSigId).get(ACTP)»(«modSysSignals.get(SUCC).get(sysSigId).get(NETP)»)
-«««			«ENDIF»
+			«ENDIF»
 			«ENDFOR»
 		);
 		«ENDFOR»
