@@ -26,6 +26,7 @@ class ScriptPrinter {
 	protected int fifoNum;
 	protected boolean enDma = false;
 	
+	//TODO boardpart refine input (not always a board is selected)
 	String boardpart
 	String partname
 	String coupling
@@ -52,7 +53,7 @@ class ScriptPrinter {
 	}
 	
 	def isArm(){
-		if(coupling.equals("ARM")) {
+		if(processor.equals("ARM")) {
 			return true
 		} else {
 			return false
@@ -61,7 +62,6 @@ class ScriptPrinter {
 
 	def printTopScript(Network network) {
 		mapInOut(network);
-		// TODO merge common parts
 		'''
 		###########################
 		# IP Settings
@@ -79,8 +79,10 @@ class ScriptPrinter {
 		# FPGA device
 		set partname "«partname»"
 		
+		«IF boardpart!="none"»
 		# Board part
 		set boardpart "«boardpart»"
+		«ENDIF»
 		
 		# Design name
 		set design system
@@ -95,7 +97,7 @@ class ScriptPrinter {
 		# Create Project
 		###########################
 		create_project -force $design $projdir -part $partname 
-		set_property board_part $boardpart [current_project]
+		«IF boardpart!="none"»set_property board_part $boardpart [current_project]«ENDIF»
 		set_property target_language Verilog [current_project]
 		set_property  ip_repo_paths $ipdir [current_project]
 		update_ip_catalog -rebuild -scan_changes
@@ -282,7 +284,6 @@ class ScriptPrinter {
 	
 		
 	def printIpScript() {
-		// TODO merge common parts
 		'''
 		###########################
 		# IP Settings
@@ -305,8 +306,11 @@ class ScriptPrinter {
 		# FPGA device
 		set partname "«partname»"
 		
+		
+		«IF boardpart != "none"»
 		# Board part
 		set boardpart "«boardpart»"
+		«ENDIF»
 		
 		# Design name
 		set ip_name "«coupling»_accelerator"
@@ -317,7 +321,7 @@ class ScriptPrinter {
 		###########################
 		
 		create_project -force $design $ipdir -part $partname 
-		set_property board_part $boardpart [current_project]
+		«IF boardpart != "none"»set_property board_part $boardpart [current_project]«ENDIF»
 		set_property target_language Verilog [current_project]
 		
 		add_files $hdl_files_path
@@ -333,25 +337,33 @@ class ScriptPrinter {
 		
 		set_property top $ip_name [current_fileset]
 		
-		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy /UserIP
+		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy AXI_Peripheral
 		
-		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
-		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
-		set_property value C_CFG_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
-		set_property value C_CFG_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
+		ipx::remove_address_block reg0 [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]
+		ipx::add_address_block s00_axi_reg [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]
+		set_property usage register [ipx::get_address_blocks s00_axi_reg -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks s00_axi_reg -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks s00_axi_reg -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]
+		set_property value C_CFG_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks s00_axi_reg -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]
+		set_property value C_CFG_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks s00_axi_reg -of_objects [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]]]	
 		«IF isMemoryMapped»
-		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
-		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
-		set_property value C_MEM_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
-		set_property value C_MEM_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks reg0 -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+		ipx::remove_address_block reg0 [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]
+		ipx::add_address_block s01_axi_mem [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]
+		set_property usage memory [ipx::get_address_blocks s01_axi_mem -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_BASE_PARAM [ipx::get_address_blocks s01_axi_mem -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
+		ipx::add_address_block_parameter OFFSET_HIGH_PARAM [ipx::get_address_blocks s01_axi_mem -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]
+		set_property value C_MEM_BASEADDR [ipx::get_address_block_parameters OFFSET_BASE_PARAM -of_objects [ipx::get_address_blocks s01_axi_mem -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
+		set_property value C_MEM_HIGHADDR [ipx::get_address_block_parameters OFFSET_HIGH_PARAM -of_objects [ipx::get_address_blocks s01_axi_mem -of_objects [ipx::get_memory_maps s01_axi -of_objects [ipx::current_core]]]]
 			
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_awid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_AWUSER_WIDTH'))>0 [ipx::get_ports s01_axi_awuser -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_WUSER_WIDTH'))>0 [ipx::get_ports s01_axi_wuser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_bid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_BUSER_WIDTH'))>0 [ipx::get_ports s01_axi_buser -of_objects [ipx::current_core]]
 		set_property enablement_dependency {spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH')) >0} [ipx::get_ports s01_axi_arid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ARUSER_WIDTH')) [ipx::get_ports s01_axi_aruser -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ARUSER_WIDTH'))>0 [ipx::get_ports s01_axi_aruser -of_objects [ipx::current_core]]
+		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_ID_WIDTH'))>0 [ipx::get_ports s01_axi_rid -of_objects [ipx::current_core]]
 		set_property enablement_dependency spirit:decode(id('MODELPARAM_VALUE.C_S01_AXI_RUSER_WIDTH'))>0 [ipx::get_ports s01_axi_ruser -of_objects [ipx::current_core]]
 		
 		

@@ -598,7 +598,7 @@ class WrapperPrinter {
 		// ----------------------------------------------------------------------------
 		«IF dedicatedInterfaces»
 		«FOR port : portMap.keySet»// local memory «portMap.get(port)+1»
-		axi_full_ipif # (
+		S01_AXI_ipif # (
 			.C_S_AXI_ID_WIDTH(C_S«getLongId(portMap.get(port)+1)»_AXI_ID_WIDTH),
 			.C_S_AXI_DATA_WIDTH(C_S«getLongId(portMap.get(port)+1)»_AXI_DATA_WIDTH),
 			.C_S_AXI_ADDR_WIDTH(C_S«getLongId(portMap.get(port)+1)»_AXI_ADDR_WIDTH),
@@ -662,7 +662,7 @@ class WrapperPrinter {
 		);
 		«ENDFOR»
 		«ELSE»
-		axi_full_ipif # (
+		S01_AXI_ipif # (
 			.C_S_AXI_ID_WIDTH(C_S01_AXI_ID_WIDTH),
 			.C_S_AXI_DATA_WIDTH(C_S01_AXI_DATA_WIDTH),
 			.C_S_AXI_ADDR_WIDTH(C_S01_AXI_ADDR_WIDTH),

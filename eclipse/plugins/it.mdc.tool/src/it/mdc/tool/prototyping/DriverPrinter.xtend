@@ -36,6 +36,14 @@ class DriverPrinter {
 		}
 	}
 	
+	def isArm(){
+		if(processor.equals("ARM")) {
+			return true
+		} else {
+			return false
+		}
+	}
+	
 	def initDriverPrinter(String coupling, String processor, Boolean enDma,
 			Map <Port,Integer> portMap,Map <Port,Integer> inputMap,Map <Port,Integer> outputMap) {
 		this.coupling = coupling;
@@ -99,7 +107,7 @@ class DriverPrinter {
 			«IF isMemoryMapped»
 				// configure I/O
 				«FOR port : portMap.keySet»
-					*((int*) (XPAR_MM_ACCELERATOR_0_CFG_BASEADDR + «portMap.get(port)+1»*4)) = size_«port.name»;
+					*(config + «portMap.get(port)+1») = size_«port.name»;
 				«ENDFOR»
 				
 				«FOR input : inputMap.keySet»

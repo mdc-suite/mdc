@@ -326,6 +326,7 @@
             </option>
             <option
                   defaultValue="em.avnet.com:zed:part0:1.0"
+                  description="Put &quot;none&quot; if a board has not been selected yet."
                   id="it.mdc.tool.ipTgtBpart"
                   name="Board Part">
                <textBox>
