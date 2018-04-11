@@ -318,9 +318,9 @@ class WrapperPrinter {
 			    wire wren_mem_«portMap.get(input)+1»;
 			    wire rden_mem_«portMap.get(input)+1»;
 			    wire [7:0] address_mem_«portMap.get(input)+1»;
-			    wire [31:0]	data_in_mem_«portMap.get(input)+1»;
-			    wire [31:0]	data_out_mem_«portMap.get(input)+1»;
-			    wire [31:0]	data_out_«portMap.get(input)+1»;
+			    wire [31:0] data_in_mem_«portMap.get(input)+1»;
+			    wire [31:0] data_out_mem_«portMap.get(input)+1»;
+			    wire [31:0] data_out_«portMap.get(input)+1»;
 			    wire ce_«portMap.get(input)+1»;
 			«ENDFOR»
 		«ENDIF»
@@ -339,9 +339,9 @@ class WrapperPrinter {
 				wire rden_mem_«portMap.get(output)+1»;
 				wire wren_mem_«portMap.get(output)+1»;
 				wire [7:0] address_mem_«portMap.get(output)+1»;
-				wire [31:0]	data_in_mem_«portMap.get(output)+1»;
-				wire [31:0]	data_out_mem_«portMap.get(output)+1»;
-				wire [31:0]	data_out_«portMap.get(output)+1»;
+				wire [31:0] data_in_mem_«portMap.get(output)+1»;
+				wire [31:0] data_out_mem_«portMap.get(output)+1»;
+				wire [31:0] data_out_«portMap.get(output)+1»;
 				wire ce_«portMap.get(output)+1»;
 			«ENDFOR»
 		«ELSE»
