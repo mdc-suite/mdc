@@ -59,13 +59,12 @@ module back_end(
             default:    state_nxt = IDLE;
         endcase
                     
-    always@(state or wr)
+    always@(state or wr or last)
         case(state)
             IDLE:       {en,wren,full,done} = 4'b0010;
-            WORK:       {en,wren,full,done} = {wr,wr,1'b0,1'b0};
+            WORK:       {en,wren,full,done} = {wr && !last,wr,1'b0,1'b0};
             DONE:		{en,wren,full,done} = 4'b0001;
             default:    {en,wren,full,done} = 4'b0000;
         endcase
                
 endmodule
-
