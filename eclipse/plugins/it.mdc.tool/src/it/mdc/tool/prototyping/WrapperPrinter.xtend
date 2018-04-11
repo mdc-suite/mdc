@@ -314,7 +314,7 @@ class WrapperPrinter {
 			    wire en_«input.name»;
 			    wire done_«input.name»;
 			    wire last_«input.name»;
-			    wire [7:0]	count_«input.name»;
+			    wire [7:0] count_«input.name»;
 			    wire wren_mem_«portMap.get(input)+1»;
 			    wire rden_mem_«portMap.get(input)+1»;
 			    wire [7:0] address_mem_«portMap.get(input)+1»;
