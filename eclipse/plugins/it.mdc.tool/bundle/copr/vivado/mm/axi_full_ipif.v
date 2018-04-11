@@ -27,8 +27,8 @@ module S01_AXI_ipif #
 	)
 	(
 		// Users to add ports here
-        input wire rden,
-        input wire wren,
+        output wire rden,
+        output wire wren,
         output wire [C_S_AXI_ADDR_WIDTH-3:0] address,
         output wire [C_S_AXI_DATA_WIDTH-1:0] data_in,
         input wire [C_S_AXI_DATA_WIDTH-1:0] data_out,
