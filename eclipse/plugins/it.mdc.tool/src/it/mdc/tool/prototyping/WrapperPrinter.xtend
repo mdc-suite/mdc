@@ -1402,7 +1402,7 @@ class WrapperPrinter {
 		begin
 		  if ( S_AXI_ARESETN == 1'b0 )
 		    begin
-		      slv_reg0 <= 0;
+		      slv_reg0 <=  32'd4; //inizialize the accelerator as ready
 		      «IF coupling.equals("mm")»
 		      «FOR port : portMap.keySet»
 		      slv_reg«portMap.get(port)+1» <= 0;

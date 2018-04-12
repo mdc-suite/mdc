@@ -188,7 +188,7 @@ class DriverPrinter {
 			«ENDIF»
 			
 			// stop execution
-			*(config) = 0x«Integer.toHexString(0)»;
+			//*(config) = 0x«Integer.toHexString(0)»;
 			
 			return 0;
 		}
