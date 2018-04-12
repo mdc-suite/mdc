@@ -130,209 +130,209 @@ parameter IDLE_ON = 5'd0,
 	always@(state)
 	  case(state)
 	  IDLE_ON:	begin
-			status = 1; // Domani is on
-			en_iso = 0; //isolation is disabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b0; //isolation is disabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  ISO_ON:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  HOLD_ISO_ON:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  CG_ON:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  HOLD_CG_ON:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  SAVE:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  HOLD_SAVE1:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 	  HOLD_SAVE2:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  POWER_SW_OFF:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 0; //switches are off
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b1; //switches are off
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 
 	  WAIT_OFF_ACK:	begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 0; //switches are off
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b1; //switches are off
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  WAIT_OFF_COUNTER: begin
-			status = 1; // Domani is on
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 0; //switches are off
-			en_cg = 0; //clock gating is enabled
-			en_count = 1; //counting is enabled 
+			status = 1'b1; // Domani is on
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b1; //switches are off
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b1; //counting is enabled 
 			end
 
 	  IDLE_OFF:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 0; //switches are off
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b1; //switches are off
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  POWER_SW_ON:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  WAIT_ON_ACK:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  WAIT_ON_COUNTER:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 1;	//state retention is enabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 1; //counting is enabled
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b1;	//state retention is enabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b1; //counting is enabled
 			end
 
 	  RESTORE:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  HOLD_RESTORE1:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b0; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  HOLD_RESTORE2:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 0; //clock gating is enabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b0; //clock gating is enabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  CG_OFF:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  HOLD_CG_OFF:	begin
-			status = 0; // Domani is off
-			en_iso = 1; //isolation is enabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b1; //isolation is enabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  ISO_OFF:	begin
-			status = 0; // Domani is off
-			en_iso = 0; //isolation is disabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b0; //isolation is disabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  HOLD_ISO_OFF:	begin
-			status = 0; // Domani is off
-			en_iso = 0; //isolation is disabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0) 
+			status = 1'b0; // Domani is off
+			en_iso = 1'b0; //isolation is disabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0) 
 			end
 
 	  default: 	begin
-			status = 1; // Domani is on
-			en_iso = 0; //isolation is disabled
-			rtn = 0;	//state retention is disabled
-			en_pw_sw = 1; //switches are on
-			en_cg = 1; //clock gating is disabled
-			en_count = 0; //counting is disabled (count set to 0)
+			status = 1'b1; // Domani is on
+			en_iso = 1'b0; //isolation is disabled
+			rtn = 1'b0;	//state retention is disabled
+			en_pw_sw = 1'b1; //switches are on
+			en_cg = 1'b1; //clock gating is disabled
+			en_count = 1'b0; //counting is disabled (count set to 0)
 			end
 	  endcase
 endmodule
