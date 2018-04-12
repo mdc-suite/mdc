@@ -389,7 +389,8 @@ class NetworkPrinterGeneric {
 			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
 			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
 			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ELSE»
-			.rst(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
+			««« TODO: necessary to bring inside the info about the reset activity (low or high)
+			.rst(!«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
 			«ENDFOR»
 		);
 		
@@ -753,7 +754,8 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		
 		// Actors Wire(s)
-		«FOR actor : network.getChildren().filter(typeof(Actor))»	
+		«FOR actor : network.getChildren().filter(typeof(Actor))»
+			
 		// actor «actor.simpleName»
 		«IF !actor.hasAttribute("sbox")»
 			«FOR input : actor.inputs»
@@ -785,21 +787,20 @@ class NetworkPrinterGeneric {
 			«ENDIF»
 			«ENDFOR»
 		«ELSE»
-			«FOR input : actor.inputs»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isInputSide(ACTOR,commSigId) && !input.label.equals("sel")»
-			// wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»;
-			«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
-			«FOR output : actor.outputs»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isOutputSide(ACTOR,commSigId)»
-			// wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
-			«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
-			
+«««			«FOR input : actor.inputs»
+«««			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
+«««			«IF isInputSide(ACTOR,commSigId) && !input.label.equals("sel")»
+«««			// wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»;
+«««			«ENDIF»
+«««			«ENDFOR»
+«««			«ENDFOR»
+«««			«FOR output : actor.outputs»
+«««			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
+«««			«IF isOutputSide(ACTOR,commSigId)»
+«««			// wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
+«««			«ENDIF»
+«««			«ENDFOR»
+«««			«ENDFOR»
 			«FOR input : actor.inputs»
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")»
