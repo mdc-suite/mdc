@@ -283,9 +283,8 @@ class CpfPrinter {
 		'''	
 		create_power_mode -name PMdef -domain_conditions {PDdef@high «FOR lr: powerSets»PD«logicRegionID.get(lr)»@high «ENDFOR»} -default
 		«FOR network : networks»
-		#«network.getSimpleName()»
-		create_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» \
-		-domain_conditions {PDdef@high «FOR reg: powerSets»«IF netRegions.get(network.getSimpleName()).contains(reg)»PD«logicRegionID.get(reg)»@high «ELSE»PD«logicRegionID.get(reg)»@off «ENDIF» «ENDFOR»}
+		#design_«network.getSimpleName()»
+		create_power_mode -name PM«configManager.getNetworkId(network.getSimpleName())» -domain_conditions {PDdef@high «FOR reg: powerSets»«IF netRegions.get(network.getSimpleName()).contains(reg)»PD«logicRegionID.get(reg)»@high «ELSE»PD«logicRegionID.get(reg)»@off «ENDIF» «ENDFOR»}
 				
 		«ENDFOR»		
 		'''
