@@ -28,7 +28,7 @@ The _power manager_ is in charge of identifying on the multi-dataflow different 
 The _prototyper_ is in charge of generating a ready-to-use IP accelerator on the top of the CGR datapath provided by the _baseline_ feature. Wrapper logic, tcl scripts and software drivers are all provided.
 Here below its main characteristics.
 
-|    **status** |   OK   |   OK   |   OK   |   OK   | OK  | no  | no  | no  |
+|    **status** |   OK   |   OK   |   OK   |   OK   | OK  | OK  | OK  | OK  |
 |--------------:|:------:|:------:|:------:|:------:|:---:|:---:|:---:|:---:|
 | **processor** | uBlaze | uBlaze | uBlaze | uBlaze | ARM | ARM | ARM | ARM |
 |       **DMA** |   no   |   no   |   yes  |   yes  |  no |  no | yes | yes |
