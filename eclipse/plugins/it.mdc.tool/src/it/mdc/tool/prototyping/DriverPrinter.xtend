@@ -145,25 +145,45 @@ class DriverPrinter {
 						*((volatile int*) XPAR_AXI_DMA_«inputMap.get(input)»_BASEADDR + (0x28>>2)) = size_«input.name»*4; // size [B]
 						while(((*((volatile int*) XPAR_AXI_DMA_«inputMap.get(input)»_BASEADDR + (0x04>>2))) & 0x2) != 0x2);
 					«ELSE»
-						for(idx_«input.name»=0; idx_«input.name»<size_«input.name»; idx_«input.name»++) {
-							putfsl(*(data_«input.name»+idx_«input.name»), «inputMap.get(input)»);
-						}
+						«IF isArm()»
+							*((volatile int*) XPAR_AXI_FIFO_«inputMap.get(input)»_BASEADDR) = 0xFFFFFFFF;								// clear interrupts
+							*((volatile int*) (XPAR_AXI_FIFO_«inputMap.get(input)»_BASEADDR + 0x2C)) = 0x0;								// set user ID
+							for(idx_«input.name»=0; idx_«input.name»<size_«input.name»; idx_«input.name»++) {
+									*((volatile int*) XPAR_AXI_FIFO_«inputMap.get(input)»_AXI4_BASEADDR) = *(data_«input.name»+idx_«input.name»);	// send data
+							}
+							*((volatile int*) (XPAR_AXI_FIFO_«inputMap.get(input)»_BASEADDR + 0x14)) = size_«input.name»*4;				// tx length (start tx)
+							while((*((volatile int*) (XPAR_AXI_FIFO_«inputMap.get(input)»_BASEADDR)) & 0x08000000) != 0x08000000);		// wait for interrupt
+							*((volatile int*) (XPAR_AXI_FIFO_«inputMap.get(input)»_BASEADDR)) = 0xFFFFFFFF;								// clear interrupts
+						«ELSE»
+							for(idx_«input.name»=0; idx_«input.name»<size_«input.name»; idx_«input.name»++) {
+								putfsl(*(data_«input.name»+idx_«input.name»), «inputMap.get(input)»);
+							}
+						«ENDIF»
 					«ENDIF»
 				«ENDFOR»
 			
 				«FOR output : outputMap.keySet»
+					// receive data port «output.name»
 					«IF enDma»
-						// receive data port «output.name»
 						*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x30>>2)) = 0x00000001; // start
 						*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x34>>2)) = 0x00000000; // reset idle
 						*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x48>>2)) = (int) data_«output.name»; // dst
 						*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x58>>2)) = size_«output.name»*4; // size [B]
 						while(((*((volatile int*) XPAR_AXI_DMA_«outputMap.get(output)»_BASEADDR + (0x34>>2))) & 0x2) != 0x2);
 					«ELSE»
-						// receive data port «output.name»
-						for(idx_«output.name»=0; idx_«output.name»<size_«output.name»; idx_«output.name»++) {
-							getfsl(*(data_«output.name»+idx_«output.name»), «outputMap.get(output)»);
-						}
+						«IF isArm()»
+							while(*((volatile int*) (XPAR_AXI_FIFO_«outputMap.get(output)»_BASEADDR + 0x1C)) < size_«output.name»);	// verify read fifo occupancy
+							//while((*((volatile int*) (XPAR_AXI_FIFO_«outputMap.get(output)»_BASEADDR)) & 0x04000000) != 0x04000000);	// wait for interrupt (not always working with this condition)
+							*((volatile int*) (XPAR_AXI_FIFO_«outputMap.get(output)»_BASEADDR)) = 0xFFFFFFFF;							// clear interrupts
+							for(idx_«output.name»=0; idx_«output.name»<size_«output.name»; idx_«output.name»++) {
+								*(data_«output.name»+idx_«output.name») = *((volatile int*) (XPAR_AXI_FIFO_«outputMap.get(output)»_AXI4_BASEADDR + 0x1000));	// read data
+							}
+							*((volatile int*) (XPAR_AXI_FIFO_«outputMap.get(output)»_BASEADDR)) = 0xFFFFFFFF;					// clear interrupts*/
+						«ELSE»
+							for(idx_«output.name»=0; idx_«output.name»<size_«output.name»; idx_«output.name»++) {
+								getfsl(*(data_«output.name»+idx_«output.name»), «outputMap.get(output)»);
+							}
+						«ENDIF»
 					«ENDIF»
 				«ENDFOR»
 			«ELSE»
@@ -235,7 +255,7 @@ class DriverPrinter {
 		
 		/***************************** Include Files *******************************/		
 		#include "xparameters.h"
-		«IF !isMemoryMapped && !enDma»#include "fsl.h"«ENDIF»
+		«IF !isMemoryMapped && !enDma && !isArm»#include "fsl.h"«ENDIF»
 		
 		/************************** Constant Definitions ***************************/
 		// #define XPAR_«coupling.toUpperCase»_ACCELERATOR_0_CFG_BASEADDR 0x44A00000
