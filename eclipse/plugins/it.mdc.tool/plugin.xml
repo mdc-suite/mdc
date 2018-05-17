@@ -345,5 +345,37 @@
          </checkBox>
       </option>
    </extension>
+   <extension
+         id="product1"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.ui.ide.workbench"
+            name="mdc">
+         <property
+               name="appName"
+               value="mdc">
+         </property>
+         <property
+               name="windowImages"
+               value="mdc-suite_256.png">
+         </property>
+      </product>
+   </extension>
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.ui.ide.workbench"
+            name="mdc">
+         <property
+               name="windowImages"
+               value="mdc-suite_256.png">
+         </property>
+         <property
+               name="appName"
+               value="mdc">
+         </property>
+      </product>
+   </extension>
 
 </plugin>
