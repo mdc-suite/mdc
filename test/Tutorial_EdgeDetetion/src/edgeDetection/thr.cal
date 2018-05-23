@@ -1,0 +1,7 @@
+package edgeDetection;
+
+actor thr()
+  int(size=14) in_g
+   ==>
+  uint(size=8) out_pel
+: end
