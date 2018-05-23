@@ -1,0 +1,7 @@
+package edgeDetection;
+
+actor delay()
+  uint(size=8) in_pel
+   ==>
+  uint(size=8) out_pel
+: end

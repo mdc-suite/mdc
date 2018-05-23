@@ -1,0 +1,7 @@
+package edgeDetection;
+
+actor abs_sum()
+  int(size=14) in_gx,int(size=14) in_gy
+   ==>
+  int(size=14) out_g
+: end

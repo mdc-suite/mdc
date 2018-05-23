@@ -1,0 +1,7 @@
+package edgeDetection;
+
+actor remove_2x2()
+  uint(size=6) in_size,uint(size=8) in_pel
+   ==>
+  uint(size=8) out_pel
+: end
