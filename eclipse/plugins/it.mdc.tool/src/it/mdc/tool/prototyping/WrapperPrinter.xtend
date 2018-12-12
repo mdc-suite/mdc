@@ -286,6 +286,14 @@ class WrapperPrinter {
 	def printTopSignals() {
 		
 		'''
+		// Parameters
+		«FOR port : portMap.keySet»// local memory «portMap.get(port)+1» («port.name»)
+		«IF coupling.equals("mm")»localparam SIZE_MEM_«portMap.get(port)+1» = 256;
+		localparam [15:0] BASE_ADDR_MEM_«portMap.get(port)+1» = «IF !(portMap.get(port) == 0)»SIZE_MEM_«portMap.get(port)» + BASE_ADDR_MEM_«portMap.get(port)»«ELSE»0«ENDIF»;
+		«ENDIF»
+		localparam SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
+		«ENDFOR»
+		
 		// Wire(s) and Reg(s)
 		wire [31 : 0] slv_reg0;
 		«IF coupling.equals("mm")»
@@ -314,13 +322,13 @@ class WrapperPrinter {
 			    wire en_«input.name»;
 			    wire done_«input.name»;
 			    wire last_«input.name»;
-			    wire [7:0] count_«input.name»;
+			    wire [SIZE_ADDR_«portMap.get(input)+1»-1:0] count_«input.name»;
 			    wire wren_mem_«portMap.get(input)+1»;
 			    wire rden_mem_«portMap.get(input)+1»;
-			    wire [7:0] address_mem_«portMap.get(input)+1»;
-			    wire [31:0] data_in_mem_«portMap.get(input)+1»;
-			    wire [31:0] data_out_mem_«portMap.get(input)+1»;
-			    wire [31:0] data_out_«portMap.get(input)+1»;
+			    wire [SIZE_ADDR_«portMap.get(input)+1»-1:0] address_mem_«portMap.get(input)+1»;
+			    wire [«getDataSize(input)»-1:0] data_in_mem_«portMap.get(input)+1»;
+			    wire [«getDataSize(input)»-1:0] data_out_mem_«portMap.get(input)+1»;
+			    wire [«getDataSize(input)»-1:0] data_out_«portMap.get(input)+1»;
 			    wire ce_«portMap.get(input)+1»;
 			«ENDFOR»
 		«ENDIF»
@@ -335,13 +343,13 @@ class WrapperPrinter {
 				wire en_«output.name»;
 				wire done_«output.name»;
 				wire last_«output.name»;
-				wire [7:0] count_«output.name»;
+				wire [SIZE_ADDR_«portMap.get(output)+1»-1:0] count_«output.name»;
 				wire rden_mem_«portMap.get(output)+1»;
 				wire wren_mem_«portMap.get(output)+1»;
-				wire [7:0] address_mem_«portMap.get(output)+1»;
-				wire [31:0] data_in_mem_«portMap.get(output)+1»;
-				wire [31:0] data_out_mem_«portMap.get(output)+1»;
-				wire [31:0] data_out_«portMap.get(output)+1»;
+				wire [SIZE_ADDR_«portMap.get(output)+1»-1:0] address_mem_«portMap.get(output)+1»;
+				wire [«getDataSize(output)»-1:0] data_in_mem_«portMap.get(output)+1»;
+				wire [«getDataSize(output)»-1:0] data_out_mem_«portMap.get(output)+1»;
+				wire [«getDataSize(output)»-1:0] data_out_«portMap.get(output)+1»;
 				wire ce_«portMap.get(output)+1»;
 			«ENDFOR»
 		«ELSE»
@@ -365,7 +373,7 @@ class WrapperPrinter {
 			// Parameters of Axi Slave Bus Interface S«portMap.get(port)+1»_AXI
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ID_WIDTH	= 1,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ADDR_WIDTH	= «(Math.ceil(10+Math.log10(portMap.size) / Math.log10(2)).intValue).intValue()»,	// memory size 4096
+			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ADDR_WIDTH	= 16,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_AWUSER_WIDTH	= 0,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_ARUSER_WIDTH	= 0,
 			parameter integer C_S«getLongId(portMap.get(port)+1)»_AXI_WUSER_WIDTH	= 0,
@@ -376,7 +384,7 @@ class WrapperPrinter {
 			// Parameters of Axi Slave Bus Interface S01_AXI
 			parameter integer C_S01_AXI_ID_WIDTH	= 1,
 			parameter integer C_S01_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S01_AXI_ADDR_WIDTH	= «(Math.ceil(10+Math.log10(portMap.size) / Math.log10(2))).intValue()»,	// memory size 4096
+			parameter integer C_S01_AXI_ADDR_WIDTH	= 16,
 			parameter integer C_S01_AXI_AWUSER_WIDTH	= 0,
 			parameter integer C_S01_AXI_ARUSER_WIDTH	= 0,
 			parameter integer C_S01_AXI_WUSER_WIDTH	= 0,
@@ -724,18 +732,21 @@ class WrapperPrinter {
 			.data_in(s01_axi_data_in),
 			.data_out(s01_axi_data_out)
 		);
-		«FOR port : portMap.keySet»// local memory «portMap.get(port)+1»
+		«FOR port : portMap.keySet»// local memory «portMap.get(port)+1» («port.name»)
 		local_memory # (
-			.SIZE_MEM(256),
-			.SIZE_ADDR(8)
+			.SIZE_WORD(«getDataSize(port)»),
+			.SIZE_MEM(SIZE_MEM_«portMap.get(port)+1»),
+			.SIZE_ADDR(SIZE_ADDR_«portMap.get(port)+1»)
 		) i_local_memory_«portMap.get(port)+1» (
-			.aclk(s01_axi_aclk),
+			.aclk_a(s01_axi_aclk),
 			.ce_a(ce_«portMap.get(port)+1»),
 			.rden_a(s01_axi_rden),
 			.wren_a(s01_axi_wren),
-			.address_a(s01_axi_address),
-			.data_in_a(s01_axi_data_in),
+			.address_a(s01_axi_address-BASE_ADDR_MEM_«portMap.get(port)+1»),
+			.data_in_a(s01_axi_data_in«IF getDataSize(port)<32»[«getDataSize(port)»-1:0]«ENDIF»),
 			.data_out_a(data_out_«portMap.get(port)+1»),
+			.aclk_b(s01_axi_aclk),
+			.ce_b(«IF inputMap.containsKey(port)»rd«ELSE»wr«ENDIF»en_mem_«portMap.get(port)+1»),
 			.rden_b(rden_mem_«portMap.get(port)+1»),
 			.wren_b(wren_mem_«portMap.get(port)+1»),
 			.address_b(address_mem_«portMap.get(port)+1»),
@@ -743,16 +754,19 @@ class WrapperPrinter {
 			.data_out_b(data_out_mem_«portMap.get(port)+1»)
 		);
 		
-		assign ce_«portMap.get(port)+1» = (s01_axi_rden || s01_axi_wren) && (s01_axi_address[«8+Math.ceil(Math.log10(portMap.size) / Math.log10(2)).intValue-1»:8] == «portMap.get(port)»);
+		assign ce_«portMap.get(port)+1» = (s01_axi_rden || s01_axi_wren)
+										 && (s01_axi_address >= BASE_ADDR_MEM_«portMap.get(port)+1»)
+		«IF (portMap.get(port)+1) < portMap.size»									 && (s01_axi_address < BASE_ADDR_MEM_«portMap.get(port)+2»)«ENDIF»
+		 ;
 		«ENDFOR»
 		
-		always@(s01_axi_address or «FOR port : portMap.keySet SEPARATOR " or "»data_out_«portMap.get(port)+1»«ENDFOR»)
-			case(s01_axi_address[«8+Math.ceil(Math.log10(portMap.size) / Math.log10(2)).intValue-1»:8])
-				«FOR port : portMap.keySet»
-					«portMap.get(port)»:	s01_axi_data_out = data_out_«portMap.get(port)+1»;
+		always@(«FOR port : portMap.keySet SEPARATOR " or "»ce_«portMap.get(port)+1» or data_out_«portMap.get(port)+1»«ENDFOR»)
+				«FOR port : portMap.keySet SEPARATOR " else "»
+				if (ce_«portMap.get(port)+1»)
+					s01_axi_data_out = {«IF getDataSize(port)<32»{«32-getDataSize(port)»{1'b0}},«ENDIF»data_out_«portMap.get(port)+1»};
 				«ENDFOR»
-				default:	s01_axi_data_out = 0;
-			endcase
+				else
+					s01_axi_data_out = 0;
 		«ENDIF»
 		// ----------------------------------------------------------------------------
 		
@@ -772,20 +786,20 @@ class WrapperPrinter {
 		);
 		
 		counter #(			
-			.SIZE(8) ) 
+			.SIZE(SIZE_ADDR_«portMap.get(input)+1») ) 
 		i_counter_«input.name» (
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.clr(slv_reg0[2]),
 			.en(en_«input.name»),
-			.max(slv_reg«portMap.get(input)+1»[7:0]),
+			.max(slv_reg«portMap.get(input)+1»[SIZE_ADDR_«portMap.get(input)+1»-1:0]),
 			.count(count_«input.name»),
 			.last(last_«input.name»)
 		);
 		
 		assign address_mem_«portMap.get(input)+1» = count_«input.name»;
 		assign wren_mem_«portMap.get(input)+1» = 1'b0;
-		assign data_in_mem_«portMap.get(input)+1» = 32'b0;
+		assign data_in_mem_«portMap.get(input)+1» = {«getDataSize(input)»{1'b0}};
 		«ENDFOR»
 				
 		assign done_input = «FOR input : inputMap.keySet() SEPARATOR " && "»done_«input.name»«ENDFOR»;
@@ -797,10 +811,10 @@ class WrapperPrinter {
 		«printTopDatapath()»
 		«IF coupling.equals("mm")»
 		«FOR input :inputMap.keySet»
-		assign «input.name»_data = data_out_mem_«portMap.get(input)+1»«IF input.type.sizeInBits<32»[«input.type.sizeInBits-1»:0]«ENDIF»;
+		assign «input.name»_data = data_out_mem_«portMap.get(input)+1»;
 		«ENDFOR»
 		«FOR output :outputMap.keySet»
-		assign data_in_mem_«portMap.get(output)+1» = «IF output.type.sizeInBits<32»{{«output.type.sizeInBits»{1'b0}},«output.name»_data}«ELSE»«output.name»_data«ENDIF»;
+		assign data_in_mem_«portMap.get(output)+1» = «output.name»_data;
 		«ENDFOR»
 		«ELSE»
 		«FOR input :inputMap.keySet»
@@ -838,13 +852,13 @@ class WrapperPrinter {
 		);
 		
 		counter #(			
-			.SIZE(8) ) 
+			.SIZE(SIZE_ADDR_«portMap.get(output)+1») ) 
 		i_counter_«output.name» (
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.clr(slv_reg0[2]),
 			.en(en_«output.name»),
-			.max(slv_reg«portMap.get(output)+1»[7:0]),
+			.max(slv_reg«portMap.get(output)+1»[SIZE_ADDR_«portMap.get(output)+1»-1:0]),
 			.count(count_«output.name»),
 			.last(last_«output.name»)
 		);
@@ -862,13 +876,13 @@ class WrapperPrinter {
 		// Output Counter(s)
 		// ----------------------------------------------------------------------------
 		counter #(			
-			.SIZE(8) ) 
+			.SIZE(SIZE_ADDR_«portMap.get(output)+1») ) 
 		i_counter_«output.name» (
 			.aclk(s00_axi_aclk),
 			.aresetn(s00_axi_aresetn),
 			.clr(slv_reg0[2]),
 			.en(«output.getName()»_push),
-			.max(slv_reg«outputMap.get(output)+1»[7:0]),
+			.max(slv_reg«outputMap.get(output)+1»[SIZE_ADDR_«portMap.get(output)+1»-1:0]),
 			.count(),
 			.last(m«getLongId(outputMap.get(output))»_axis_tlast)
 		);

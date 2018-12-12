@@ -20,57 +20,46 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module local_memory #(
+	parameter SIZE_WORD = 32,
 	parameter SIZE_MEM = 256,
 	parameter SIZE_ADDR = 8
 )(
-    input wire aclk,
+    input wire aclk_a,
     input wire ce_a,
 	input wire rden_a,
 	input wire wren_a,
 	input wire [SIZE_ADDR-1 : 0] address_a,
-	input wire [31 : 0] data_in_a,
-	output reg [31 : 0] data_out_a,
+	input wire [SIZE_WORD-1 : 0] data_in_a,
+	output reg [SIZE_WORD-1 : 0] data_out_a,
+    input wire aclk_b,
+    input wire ce_b,
 	input wire rden_b,
 	input wire wren_b,
 	input wire [SIZE_ADDR-1 : 0] address_b,
-	input wire [31 : 0] data_in_b,
-	output reg [31 : 0] data_out_b
+	input wire [SIZE_WORD-1 : 0] data_in_b,
+	output reg [SIZE_WORD-1 : 0] data_out_b
 );
 
-	reg  [31:0] ram [0 : SIZE_MEM-1];
-     
-    always @( posedge aclk )
+	reg  [SIZE_WORD-1:0] ram [SIZE_MEM-1:0];
+	
+	always @(posedge aclk_a)
     begin
-     if (ce_a)
-	     if (wren_a)
-	       begin
-	         ram[address_a] <= data_in_a;
-	       end   
-    end    
-	      
-    always @( posedge aclk )
-    begin
-     if (ce_a)
-	     if (rden_a)
-	       begin
-	         data_out_a <= ram[address_a];
-	       end   
+        if (ce_a)
+        begin
+            if (wren_a)
+                ram[address_a] <= data_in_a;
+            data_out_a <= ram[address_a];
+        end
     end
-   
-    always @( posedge aclk )
+    
+    always @(posedge aclk_b)
     begin
-     if (wren_b)
-       begin
-         ram[address_b] <= data_in_b;
-       end   
-    end    
-	      
-    always @( posedge aclk )
-    begin
-     if (rden_b)
-       begin
-         data_out_b <= ram[address_b];
-       end   
+        if (ce_b)
+        begin
+            if (wren_b)
+                ram[address_b] <= data_in_b;
+            data_out_b <= ram[address_b];
+        end
     end
 
 endmodule

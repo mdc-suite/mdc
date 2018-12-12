@@ -107,7 +107,7 @@ class DriverPrinter {
 			«IF isMemoryMapped»
 				// configure I/O
 				«FOR port : portMap.keySet»
-					*(config + «portMap.get(port)+1») = size_«port.name»;
+					*(config + «portMap.get(port)+1») = size_«port.name» - 1;
 				«ENDFOR»
 				
 				«FOR input : inputMap.keySet»
@@ -132,7 +132,7 @@ class DriverPrinter {
 				«ENDFOR»
 			«ENDIF»
 			
-			// start execution
+			// start execution (check matching ID
 			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
 			
 			«IF !isMemoryMapped»
@@ -258,12 +258,13 @@ class DriverPrinter {
 		«IF !isMemoryMapped && !enDma && !isArm»#include "fsl.h"«ENDIF»
 		
 		/************************** Constant Definitions ***************************/
-		// #define XPAR_«coupling.toUpperCase»_ACCELERATOR_0_CFG_BASEADDR 0x44A00000
 		«IF isMemoryMapped»
-		// #define XPAR_«coupling.toUpperCase»_ACCELERATOR_0_MEM_BASEADDR 0x76000000
+		#define MEM_0_SIZE 0
+		#define MM_ACCELERATOR_MEM_0_OFFSET 0
 		«FOR port : portMap.keySet»
 		// «port.name» local memory offset
-		#define «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)+1»_OFFSET 0x«Integer.toHexString(portMap.get(port)*4*256)»
+		#define MEM_«portMap.get(port)+1»_SIZE 0x400
+		#define «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)+1»_OFFSET «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)»_OFFSET + (MEM_«portMap.get(port)»_SIZE<<2)
 		«ENDFOR»
 		«ENDIF»
 		

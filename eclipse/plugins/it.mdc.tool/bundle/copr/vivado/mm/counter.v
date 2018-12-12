@@ -38,13 +38,13 @@ module counter#(
 				count <= 0;
 			else
 				if(en)
-					if(count < max-1)
+					if(count < max)
 						count <= count +1;
 					else
 						count <= 0;
 				else
 					count <= count;
 				
-	assign last = (!clr) && (count == max-1);
+	assign last = (!clr) && (count == max);
 
 endmodule
