@@ -259,15 +259,12 @@ class DriverPrinter {
 		
 		/************************** Constant Definitions ***************************/
 		«IF isMemoryMapped»
-		#define MEM_0_SIZE 0
-		#define MM_ACCELERATOR_MEM_0_OFFSET 0
 		«FOR port : portMap.keySet»
-		// «port.name» local memory offset
-		#define MEM_«portMap.get(port)+1»_SIZE 0x400
-		#define «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)+1»_OFFSET «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)»_OFFSET + (MEM_«portMap.get(port)»_SIZE<<2)
+		// «port.name» local memory offset (size in terms of number of words)
+		#define MEM_«portMap.get(port)+1»_SIZE 256
+		#define «coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)+1»_OFFSET «IF (portMap.get(port)+1)==1»0«ELSE»«coupling.toUpperCase»_ACCELERATOR_MEM_«portMap.get(port)»_OFFSET + (MEM_«portMap.get(port)»_SIZE<<2)«ENDIF»
 		«ENDFOR»
 		«ENDIF»
-		
 		/************************* Functions Definitions ***************************/
 		
 		
