@@ -7,16 +7,16 @@
 * Download Eclipse Neon (requires Java 8) - **Option II** is recommended 
     * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc - http://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon2
         * Requires new software installation (Help > Install New Software … > search Xtext, EMF, Graphiti on all available sites)
-    * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/eclipse-ide-java-and-dsl-developers/neon2)
+    * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/eclipse-ide-java-and-dsl-developers/neon2) **not tested recently**
         * Requires new software installation (Help > Install New Software … > search Graphiti on all available sites)
 * Clone the Orcc Git repository 
     * git clone git@github.com:orcc/orcc.git)
-* Build Orcc with maven 
+* Build Orcc with maven
     * cd orcc/eclipse/plugins
     * mvn install
 
 #### Setup the Orcc framework
-* Open Eclipse (a “design time” workspace has to be selected)
+* Open Eclipse (a “design time” workspace, that is the workspace fot the source code of the tool, has to be selected)
 * Import Orcc plugins (File > Import > General > Existing Projects into Workspace > root directory orcc/eclipse/plugins (check “Search for nested projects” and uncheck “net.sf.orcc”))
     * **If there are Maven errors**, such as: “maven project build maven lifecycle mapping problem”, right click on the project folders and select “Disable Maven Nature”
     * If there is an error as “Unsatisfied version constraint: 'org.eclipse.xtext: 2.12.0'    MANIFEST.MF    /net.sf.orcc.cal/META-INF” → replace 2.12.0 with 2.9.0
@@ -26,8 +26,7 @@
     * The “design time” workspace is the one containing the framework (Orcc and MDC) and it is the place where the framework itself could be modified
     * The “run time” workspace is a running instance of the framework where it can be tested and debugged
     * 
-#### Checkout mdcproject repository
-(This step will be “Checkout mdcproject repository” after porting MDC from svn to git) 
+#### Clone the MDC Git repository
 * git clone https://github.com/mdc-suite/mdc.git 
 
 #### Import MDC plugins
@@ -42,7 +41,7 @@ Import MDC  in the same “design time” workspace where Orcc has been previous
 #### Install Orcc and Eclipse IDE 
 (http://orcc.sourceforge.net/get-involved/contribution/)
 * Download Eclipse Neon (requires Java 8) - **Option II** is recommended
-    * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc (http://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon2) 
+    * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc (http://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon2) **not tested recently**
         * Requires new software installation (Help > Install New Software … > search Xtext, EMF, Graphiti on all available sites)
     * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/eclipse-ide-java-and-dsl-developers/neon2)
         * Requires new software installation (Help > Install New Software … > search Graphiti on all available sites)
@@ -71,9 +70,7 @@ Import MDC  in the same “design time” workspace where Orcc has been previous
     * The “run time” workspace is a running instance of the framework where it can be tested and debugged
 
 
-#### Checkout mdcproject repository 
-(This step will be “Checkout mdcproject repository” after porting MDC from svn to git) 
-* Download a software to manage SVN repositories, such as: Tortoise SVN: https://tortoisesvn.net/ 
+#### Clone the MDC Git repository 
 * git clone https://github.com/mdc-suite/mdc.git
 
 
@@ -81,6 +78,5 @@ Import MDC  in the same “design time” workspace where Orcc has been previous
 * Import MDC in the same “design time” workspace where Orcc has been previously imported
 * Import MDC plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/trunk/ (check “Search for nested projects”)
     * Right click on it.unica.diee.mdc → properties → Text file encoding → Other: UTF-8
-* Import HLS (Xronos) plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/hls/ (check “Search for nested projects”)
 
 
