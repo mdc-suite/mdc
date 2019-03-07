@@ -1,5 +1,5 @@
 # Multi-Dataflow Composer suite 
-## Installation Guide
+## Developer Installation Guide
 
 ### Linux OS:
 #### Install Orcc and Eclipse IDE 
