@@ -1,0 +1,16 @@
+package common;
+
+actor Delay()
+  uint(size=8) dataIn ==>
+  uint(size=8) dataOut :
+  
+  uint(size=8) dataReg := 0;
+  
+  action dataIn:[dataNew] ==> dataOut:[data]
+  var uint(size=8) data
+  do
+  	data := dataReg;
+  	dataReg := dataNew;
+  end
+
+end

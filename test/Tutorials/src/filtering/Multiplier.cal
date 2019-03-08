@@ -1,0 +1,13 @@
+package filtering;
+
+actor Multiplier()
+  uint(size=8) opA,
+  int(size=8) opB
+  ==>
+  int(size=16) prod :
+
+
+  action opA:[a], opB:[b] ==> prod:[a*b]
+  end
+
+end

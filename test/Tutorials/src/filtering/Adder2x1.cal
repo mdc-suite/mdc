@@ -1,0 +1,12 @@
+package filtering;
+
+actor Adder2x1()
+  int(size=16) opA,
+  int(size=16) opB
+  ==>
+  int(size=16) sum :
+                
+  action opA:[a], opB:[b] ==> sum:[a+b]
+  end
+
+end

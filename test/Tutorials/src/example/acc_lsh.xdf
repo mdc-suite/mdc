@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="acc_lsh">
+    <Port kind="Input" name="inStream0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="outStream0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="accumulator_act_6">
+        <Class name="example.accumulator"/>
+    </Instance>
+    <Instance id="lshifter_act_8">
+        <Class name="example.lshifter"/>
+    </Instance>
+    <Connection dst="accumulator_act_6" dst-port="in0" src="" src-port="inStream0"/>
+    <Connection dst="lshifter_act_8" dst-port="in0"
+        src="accumulator_act_6" src-port="out0"/>
+    <Connection dst="" dst-port="outStream0" src="lshifter_act_8" src-port="out0"/>
+</XDF>

@@ -1,0 +1,33 @@
+package edgeDetection;
+
+actor LineBuffer()
+  uint(size=16) SOI, uint(size=8) Y ==>
+  uint(size=8) Line :
+
+  uint(size=16) width;
+  uint(size=16) x := 0;
+  
+  uint(size=16) maxWidth = 1024;
+  
+  List(type:uint(size=8), size=maxWidth) lineBuffer;
+  
+  revcSOI: action SOI:[w,h] ==>
+  guard x=0
+  do
+  	width := w;
+  	x := 0;
+  end
+  
+  recvY: action Y:[inY] ==> Line:[outY]
+  var uint(size=8) outY
+  do
+  	outY := lineBuffer[x];
+  	lineBuffer[x]:= inY;
+  	x := x+1;
+  	if x=width+1 then
+  		x := 0;
+	end
+  end
+  
+end
+

@@ -1,0 +1,12 @@
+package edgeDetection;
+
+actor Multiplier10()
+  int(size=32) opA
+  ==>
+  int(size=32) prod :
+
+
+  action opA:[a] ==> prod:[a*10]
+  end
+
+end

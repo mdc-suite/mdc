@@ -1,0 +1,39 @@
+<protocol>
+	<sys_signals>
+		<signal id="0" net_port="clock" size="1" kind="input" is_clock=""></signal>
+		<signal id="1" net_port="reset" size="1" kind="input"></signal>
+	</sys_signals>
+	<actor>
+		<sys_signals>
+			<signal id="0" port="clock" size="1" net_port="clock"></signal>
+			<signal id="1" port="reset" size="1" net_port="reset"></signal>
+		</sys_signals>
+		<comm_signals>
+			<signal id="0" port="" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="1" port="" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="2" port="rd" channel="rd" size="1" kind="output" dir="reverse"></signal>
+			<signal id="3" port="wr" channel="wr" size="1" kind="output" dir="direct"></signal>
+			<signal id="4" port="empty" channel="empty" size="1" kind="input" dir="direct"></signal>
+			<signal id="5" port="full" channel="full" size="1" kind="input" dir="reverse"></signal>
+		</comm_signals>
+	</actor>
+	<predecessor>
+		<name>fifo_big</name>
+		<sys_signals>
+			<signal id="0" port="clk" size="1" net_port="clock"></signal>
+			<signal id="1" port="rst" size="1" net_port="reset"></signal>
+		</sys_signals>
+		<comm_parameters>
+			<parameter id="0" name="depth" value="bufferSize"></parameter>
+			<parameter id="1" name="size" value="variable"></parameter>
+		</comm_parameters>
+		<comm_signals>
+			<signal id="0" port="datain" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="1" port="dataout" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="2" port="enr" channel="rd" size="1" kind="input" dir="reverse"></signal>
+			<signal id="3" port="enw" channel="wr" size="1" kind="input" dir="direct"></signal>
+			<signal id="4" port="empty" channel="empty" size="1" kind="output" dir="direct"></signal>
+			<signal id="5" port="full" channel="full" size="1" kind="output" dir="reverse"></signal>
+		</comm_signals>
+	</predecessor>
+</protocol>

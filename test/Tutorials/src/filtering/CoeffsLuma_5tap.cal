@@ -1,0 +1,25 @@
+package filtering;
+
+actor CoeffsLuma_5tap(uint(size=2) MX=0)
+  
+  int(size=8) synch 
+  ==>
+  int(size=8) c0,
+  int(size=8) c1,
+  int(size=8) c2,
+  int(size=8) c3,
+  int(size=8) c4 :
+    
+  // -2 -1 +0 +1 +2
+  List(type:List(type:int(size=8), size=5), size=4) coeffs = [
+  	[ 0,  0, 64,  0,  0],
+  	[ 1, -6, 20, 54, -5],
+  	[ 2, -9, 40, 40, -9],
+  	[-5, 54, 20, -6,   1]
+  ];
+  
+ action synch:[pel] ==> c0:[coeffs[MX][0]],c1:[coeffs[MX][1]],c2:[coeffs[MX][2]],c3:[coeffs[MX][3]],
+  						c4:[coeffs[MX][4]]
+  end
+
+end

@@ -1,0 +1,12 @@
+Examples project for MDC verification:
+-- src (RVC-CAL source files)
+---- common (common actors between different application fields)
+---- edgeDetection (edge detection applications: Sobel, Sobel X gradient, Sobel Y gradient, Roberts, Prewitt, Scharr)
+---- filtering (HEVC motion compensation interpolation legacy (8 tap) and approximate (7, 5 and 3 tap) one-dimensional filters)
+---- std (standard actors for sourcing and sinking)
+------ stdio (source actor able to read single component binary inputs)
+------ video (display actor able to display a YUV picture to video)
+-- reference (reference I/O)
+---- edgeDetection (reference output for the edge detection applications)
+---- filtering (reference output for the filtering applications with MX=2 (parameter of coeff actor))
+---- input (reference input image in different formats)

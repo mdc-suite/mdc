@@ -1,0 +1,34 @@
+package filtering;
+
+actor Align(int DELAY=3)
+  uint(size=16) SOI,
+  uint(size=8) inY 
+  ==>
+  uint(size=8) outY :
+
+  uint(size=16) width := 0;
+  uint(size=16) x := 0;
+    
+  recvSOI: action SOI:[w,h] ==>
+  guard x=0
+  do
+  	width := w;
+  end  
+    
+  fwdY: action inY:[iny] ==> outY:[iny]
+  guard x>=DELAY
+  do
+  	if x < width+DELAY-1 then
+  		x := x+1;
+	else
+		x := 0;
+  	end
+  end  
+  
+  dropY: action inY:[iny] ==>
+  guard x<DELAY
+  do
+  	x := x+1;
+  end
+  
+end

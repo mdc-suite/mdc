@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Testbench">
+    <Instance id="src">
+        <Class name="common.SourceImage"/>
+    </Instance>
+    <Instance id="dst">
+        <Class name="common.ShowImage"/>
+    </Instance>
+    <Instance id="dut">
+        <Class name="edgeDetection.Roberts"/>
+    </Instance>
+    <Connection dst="dut" dst-port="y" src="src" src-port="Y"/>
+    <Connection dst="dst" dst-port="SizeOfImage" src="src" src-port="SizeOfImage"/>
+    <Connection dst="dut" dst-port="SOI" src="src" src-port="SizeOfImage"/>
+    <Connection dst="dst" dst-port="Y" src="dut" src-port="edgeY"/>
+</XDF>

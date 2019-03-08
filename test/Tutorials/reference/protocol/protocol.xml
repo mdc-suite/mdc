@@ -1,0 +1,39 @@
+<protocol>
+	<sys_signals>
+		<signal id="0" net_port="clk" size="1" kind="input" is_clock="true"></signal>
+		<signal id="1" net_port="rst" size="1" kind="input"></signal>
+	</sys_signals>
+	<actor>
+		<sys_signals>
+			<signal id="0" port="clk" size="1" net_port="clk" is_clock="true"></signal>
+			<signal id="1" port="rst" size="1" net_port="rst"></signal>
+		</sys_signals>
+		<comm_signals>
+			<signal id="0" port="data" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="1" port="data" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="2" port="rd_en" channel="rd_en" size="1" kind="output" dir="reverse"></signal>
+			<signal id="3" port="wr_en" channel="wr_en" size="1" kind="output" dir="direct"></signal>
+			<signal id="4" port="empty" channel="empty" size="1" kind="input" dir="direct"></signal>
+			<signal id="5" port="full" channel="full" size="1" kind="input" dir="reverse"></signal>
+		</comm_signals>
+	</actor>
+	<predecessor>
+		<name>fifo</name>
+		<sys_signals>
+			<signal id="0" port="clk" size="1" net_port="clk" is_clock="true"></signal>
+			<signal id="1" port="rst" size="1" net_port="rst"></signal>
+		</sys_signals>
+		<comm_parameters>
+			<parameter id="0" name="width" value="variable"></parameter>
+			<parameter id="1" name="buffer_size" value="bufferSize"></parameter>
+		</comm_parameters>
+		<comm_signals>
+			<signal id="0" port="data_in" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="1" port="data_out" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="2" port="rd_en" channel="rd_en" size="1" kind="input" dir="reverse"></signal>
+			<signal id="3" port="wr_en" channel="wr_en" size="1" kind="input" dir="direct"></signal>
+			<signal id="4" port="empty" channel="empty" size="1" kind="output" dir="direct"></signal>
+			<signal id="5" port="full" channel="full" size="1" kind="output" dir="reverse"></signal>
+		</comm_signals>
+	</predecessor>
+</protocol>
