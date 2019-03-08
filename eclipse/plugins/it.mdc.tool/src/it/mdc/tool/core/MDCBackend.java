@@ -1088,16 +1088,6 @@ public class MDCBackend extends AbstractBackend {
 		/// </ul>
 		/// Printing process completed. (<i> Back to compile()</i>)
 	}
-	
-	/**
-	 * Calculate the time elapsed between the given <em>t0</em> and the current
-	 * timestamp.
-	 * 
-	 * @return The number of seconds, as a float
-	 */
-	final private float getDuration(long t0) {
-		return (float) (System.currentTimeMillis() - t0) / 1000;
-	}
 
 	
 	/**
@@ -1302,7 +1292,7 @@ public class MDCBackend extends AbstractBackend {
 	 * OperationCanceledException if needed. This will simply stop the back-end
 	 * execution.
 	 */
-	private void stopIfRequested() {
+	protected void stopIfRequested() {
 		if (monitor != null) {
 			if (monitor.isCanceled()) {
 				throw new OperationCanceledException();
