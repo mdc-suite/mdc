@@ -1,0 +1,17 @@
+package common;
+
+actor LeftShifter()
+  uint(size=8) inY ==>
+  uint(size=32) outY :
+  
+  int index := 0;
+  
+  action inY:[iny] ==> outY:[iny<<1]
+  do
+  	if index<0 then
+  		println(iny + "<<1 = " + (iny<<1));
+  		index := index+1;
+  	end
+  end
+
+end

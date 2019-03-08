@@ -1,0 +1,41 @@
+package common;
+
+actor Sqrt()
+  uint(size=32) inY 
+  ==>
+  uint(size=8) sqrtY :
+    
+  int res;
+    
+  // software version of SQRT
+  procedure soft_sqrt(int num)
+  var
+    int op := num,
+    int one := (1 << 14), // The second-to-top bit is set: 1L<<30 for long
+    int lres := 0
+  begin
+    // "one" starts at the highest power of four <= the argument.
+    while (one > op) do
+       one := (one >> 2);
+    end
+    
+    while (one != 0) do
+      if (op >= lres + one) then
+        op := op - (lres + one);
+        lres := lres + (one << 1);
+      end
+      lres := (lres >> 1);
+      one := (one >> 2);
+    end
+    
+    res := lres;
+  end
+          
+  action inY:[y] ==> sqrtY:[sqrt]
+  var uint(size=8) sqrt
+  do
+  	soft_sqrt(y);
+  	sqrt := res;
+  end
+
+end

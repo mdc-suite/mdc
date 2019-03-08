@@ -22,7 +22,7 @@
         </Type>
     </Port>
     <Instance id="buffer_minus">
-        <Class name="edgeDetection.LineBuffer"/>
+        <Class name="common.LineBuffer"/>
     </Instance>
     <Instance id="del_minus_minus">
         <Class name="common.Delay"/>
@@ -31,28 +31,28 @@
         <Class name="common.Delay"/>
     </Instance>
     <Instance id="sub_x0">
-        <Class name="edgeDetection.Subtractor"/>
+        <Class name="common.Subtractor"/>
     </Instance>
     <Instance id="sub_y0">
-        <Class name="edgeDetection.Subtractor"/>
+        <Class name="common.Subtractor"/>
     </Instance>
     <Instance id="mul_x">
-        <Class name="edgeDetection.Multiplier"/>
+        <Class name="common.Multiplier"/>
     </Instance>
     <Instance id="mul_y">
-        <Class name="edgeDetection.Multiplier"/>
+        <Class name="common.Multiplier"/>
     </Instance>
     <Instance id="adder">
-        <Class name="edgeDetection.Adder2x1"/>
+        <Class name="common.Adder2x1"/>
     </Instance>
     <Instance id="sqrt">
-        <Class name="edgeDetection.Sqrt"/>
+        <Class name="common.Sqrt"/>
     </Instance>
     <Instance id="aln">
-        <Class name="edgeDetection.Align"/>
+        <Class name="common.Align"/>
     </Instance>
     <Instance id="fwd">
-        <Class name="edgeDetection.Forward"/>
+        <Class name="common.Forward"/>
     </Instance>
     <Connection dst="fwd" dst-port="inY" src="" src-port="y"/>
     <Connection dst="fwd" dst-port="SOI" src="" src-port="SOI"/>
