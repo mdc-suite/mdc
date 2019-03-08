@@ -1,4 +1,4 @@
-Examples project for MDC verification:
+Tutorials project for MDC verification:
 -- src (RVC-CAL source files)
 ---- common (common actors between different application fields)
 ---- edgeDetection (edge detection applications: Sobel, Sobel X gradient, Sobel Y gradient, Roberts, Prewitt, Scharr)
