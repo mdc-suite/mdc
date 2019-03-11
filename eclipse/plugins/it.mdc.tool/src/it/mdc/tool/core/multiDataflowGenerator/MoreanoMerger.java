@@ -40,6 +40,8 @@ import net.sf.orcc.util.OrccLogger;
  * implements all the merged dataflows.
  * The implemented merging algorithm is the Moreano's Heuristic.
  * 
+ * <i> Go back to it.mdc.tool.core.MDCBackend.doMergingProcess() </i>
+ * 
  * @author Carlo Sau
  *
  */
