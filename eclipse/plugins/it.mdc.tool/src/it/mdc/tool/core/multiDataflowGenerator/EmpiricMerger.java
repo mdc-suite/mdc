@@ -34,9 +34,14 @@ import net.sf.orcc.df.Connection;
 import java.util.LinkedList;
 
 /**
+ * Class able to merge a set of dataflow networks by sharing the
+ * common actors and placing switching modules (SBoxes) in order 
+ * to properly forward tokens such as the multiDataflowNetwork 
+ * implements all the merged dataflows.
+ * The implemented algorithm is an Empiric Algorithm 
+ * TODO describe the Empiric Algorithm
  * 
- * Combine a set of input dataflow network within the 
- * multi-dataflow network
+ * <i> Go back to it.mdc.tool.core.MDCBackend.doMergingProcess() </i>
  * 
  * @author Carlo Sau
  * 

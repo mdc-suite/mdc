@@ -75,14 +75,14 @@ import net.sf.orcc.graph.Vertex;
  * <b>MDC backend</b>
  * 
  * <ul>
- * <li>the start() is called to start the application.
+ * <li>the start() function is called to start the MDC application.
  * <ol> <li> It parses the command lines arguments and initializes the option map.
  * </ul>
  * 
  * <li> Then it runs the full compilation by launching: compile().
- * main steps are: 
+ * main steps of compile() method are: 
  * <ol> <li> parsing and validating input networks;
- * <li> setting configuration manager: it.unica.diee.mdc.ConfigManager.setNetworkList();
+ * <li> setting configuration manager: it.mdc.tool.core.ConfigManager.setNetworkList();
  * <li> merge, once per time, the input networks: doMergingProcess();
  * <li> compose the HDL platform: doHdlCodeGeneration();
  * </ol>
@@ -267,7 +267,7 @@ public class MDCBackend extends AbstractBackend {
 	
 
 	/**
-	 * Assign DONT_MERGE flag to the actors involved in 
+	 * This function assigns DONT_MERGE flag to the actors involved in 
 	 * networks that must not be merged
 	 * 
 	 * @param netMap
@@ -296,7 +296,7 @@ public class MDCBackend extends AbstractBackend {
 	/**
 	 * Compilation of the applications:
 	 * <ul> <li> parsing and validating input networks;
-	 * <li> setting configuration manager: it.unica.diee.mdc.ConfigManager.setNetworkList();
+	 * <li> setting configuration manager: ConfigManager.setNetworkList();
 	 * <li> merge, once per time, the input networks: doMergingProcess();
 	 * <li> compose the HDL platform: doHdlCodeGeneration();
 	 * </ul>
@@ -340,7 +340,7 @@ public class MDCBackend extends AbstractBackend {
 		/// <li> Declare input networks list 
 		List<Network> networks = new ArrayList<Network>();
 		
-		/// <li> Parse list of networks 
+		/// <li> Parse input list of networks 
 
 		for(IFile fileIN : inputFileList){
 			
@@ -350,17 +350,17 @@ public class MDCBackend extends AbstractBackend {
 			}
 			Network currNet= (Network) EcoreHelper.getEObject(set, fileIN);			
 			
-			/// <ol> <li> validate current network 
+			/// <ol> <li> validate current network (check if the input network is broken - e.g. missing source, missing connections...
 			new NetworkValidator().doSwitch(currNet);
 			
 			/// <li> add current network to the input network list </ol> 
 			networks.add(currNet);
 	    }	
 		
-		/// <li> Set configuration manager with the input networks list: it.unica.diee.mdc.ConfigManager.setNetworkList()
+		/// <li> Set configuration manager with the input networks list: ConfigManager.setNetworkList()
 		configManager.setNetworkList(networks);
 		
-		/// <li> Verify the input networks number
+		/// <li> Check the input networks number, to verify it matches with the specified value of networks to be merged
 		try{
 			if (numFiles!=networks.size()) {
 				throw new OrccException("");
@@ -373,7 +373,7 @@ public class MDCBackend extends AbstractBackend {
 		/// <li> Generate the list of maps of input networks
 		List<Map<Network,Integer>> netMapList = getNetMapList(networks);
 		
-		/// <li> Extract size map and progress (for profiling purposes)
+		// <li> Extract size map and progress (for profiling purposes)
 		int sizeMap = netMapList.size();
 		int progress=0;
 				
@@ -411,15 +411,13 @@ public class MDCBackend extends AbstractBackend {
 			try {
 				/// <ol> <li> Merge current map of input networks into the resulting network: doMergingProcess()
 				Network resultNetwork = doMergingProcess(copyMap(currMap), true);
-				//OrccLogger.traceln("v " + resultNetwork.getVertices());
-				//OrccLogger.traceln("c " + resultNetwork.getConnections());
-				//
+
+				
 				/// <li> Generate the resulting network report
-				// TODO  fix error on copr path
 				if(!profileEn)
 					printer.printReport(currMap,resultNetwork,outputPath,genCopr,coprType);
 				
-				///<li> generate the resulting network RVC-CAL specification.
+				///<li> generate the resulting dataflow specification.
 				/// Set result network name and launch beforeGeneration()
 				if(!profileEn && genCAL) {
 					resultNetwork.setName("multi_dataflow");
@@ -431,7 +429,6 @@ public class MDCBackend extends AbstractBackend {
 					doHdlCodeGeneration(resultNetwork);					
 				}
 				
-				// TODO  remove DPM OR PATH?
 				/// <li> If the coprocessor generation is enabled:
 				/// Generate configuration file: ConfigManager.generateConfigFile()
 				if(!profileEn) {
@@ -443,7 +440,7 @@ public class MDCBackend extends AbstractBackend {
 			}
 		}
 		/// <li> If profiling is enable
-		/// <ol> <li> Print the profiling resulting network and generate the related report: it.unica.diee.mdc.utility.Printer.printReport() </ol> 
+		/// <ol> <li> Print the profiling resulting network and generate the related report: it.mdc.tool.utility.Printer.printReport() </ol> 
 		if(profileEn){
 			OrccLogger.traceln("* Profiling effort: " + profilingEffort);
 			OrccLogger.traceln("* Best network " + bestNetwork.getSimpleName());
@@ -460,7 +457,7 @@ public class MDCBackend extends AbstractBackend {
 			profiler.compressProfilingFile(outputPath);
 		}
 		
-		// Generate the profiling resulting network RVC-CAL specification
+		// Generate the profiling of the resulting dataflow specification
 		if(profileEn && genCAL) {
 			beforeGeneration(bestNetwork);	
 		}	
@@ -474,7 +471,7 @@ public class MDCBackend extends AbstractBackend {
 		OrccLogger.traceln("*********************************************"
 				+ "************************************");
 		
-		///End compile() (<i> Back to start() </i>) </ul>
+		///End compile() (<i> Go back to start() or to it.mdc.tool.core.MDCBackend(). </i>) </ul>
 	}
 	
 	/**
@@ -505,7 +502,8 @@ public class MDCBackend extends AbstractBackend {
 
 
 	/**
-	 * Generate HDL top modules of the given network
+	 * This function executes the steps necessary to 
+	 * generate the HDL top modules of the given network multi-functional network.
 	 * 
 	 * @param network
 	 * 		the network whose top modules have to be
@@ -533,10 +531,10 @@ public class MDCBackend extends AbstractBackend {
 			hdlDir.mkdirs();
 		}
 		
-		/// <li> set network name
+		/// <li> set network name: multi_dataflow
 		network.setName("multi_dataflow"); 
 
-		/// <li> write HDL code
+		/// <li> write the HDL code
 		try {
 			/// <ol>
 			// get the platform composer for the selected language
@@ -613,7 +611,7 @@ public class MDCBackend extends AbstractBackend {
 
 				OrccLogger.traceln("*\t\tLogic regions computing...");
 				
-				///<ol><li> Logic Regions (LRs) identification: it.unica.diee.mdc.platformComposer.LogicRegionFinder.findRegions()
+				///<ol><li> Logic Regions (LRs) identification: it.mdc.tool.core.platformComposer.LogicRegionFinder.findRegions()
 				LogicRegionFinder lrFinder = new LogicRegionFinder();
 				lrFinder.findRegions(netInstancesToGen);
 				
@@ -624,7 +622,7 @@ public class MDCBackend extends AbstractBackend {
 				Map<String,Integer> powerSetsIndex  = new HashMap <String,Integer>();
 				Map<String,Boolean> logicRegionsSeqMap  = new HashMap <String,Boolean>();
 								
-				/// <li> Logic Regions (LRs) merging:  it.unica.diee.mdc.platformComposer.LogicRegionMerger.mergeRegions()
+				/// <li> Logic Regions (LRs) merging:  it.mdc.tool.core.platformComposer.LogicRegionMerger.mergeRegions()
 				if(lrCells < logicRegions.size() && !desFlow.equals("ASIC") ) {
 					LogicRegionMerger lrMerger = new LogicRegionMerger(logicRegions, lrCells);
 					
@@ -699,16 +697,12 @@ public class MDCBackend extends AbstractBackend {
 					
 					hdlWriter.generateClockGatingCell(desFlow);
 					
-					//System.out.println("logic regions " + logicRegions);
-					//System.out.println("logicRegionsNetsMap " + logicRegionsNetsMap);
-					//System.out.println("netRegions " + netRegions);
 				
 					printer.printLogicRegionsReport(outputPath, genCopr, coprType, logicRegions, netRegions, logicRegionsNetsMap);
 					///</ol>  
 			}
 
-			/// <li> If the Coprocessor generation is enabled
-			/// <li> generate coprocessor HDL code
+			/// <li> If the Coprocessor generation is enabled generate coprocessor HDL code
 			if(genCopr){
 				// TODO  uniformare nomi reti (include path ora) per config id
 				hdlWriter.generateCopr(luts,networkVertexMap,getOptions());
@@ -903,41 +897,32 @@ public class MDCBackend extends AbstractBackend {
 		if(!profileEn)
 			OrccLogger.traceln("*\tStart merging process...");
 		
-		//OrccLogger.traceln("map " + netMap);
-		
-		/// <ul><li> instantiate network merger
+		/// <ul><li> instantiate network merger. It can be used the
 		Merger merger = null;
-		//MergerMoreano merger = new MergerMoreano();
+		/// <ol><li> Moreano algorithm it.mdc.tool.core.multiDataflowGenerator.MoreanoMerger();
+		/// <li> Empiric algorithm it.mdc.tool.core.multiDataflowGenerator.EmpiricMerger()</ol>
 		if(mergingAlgorithm.equals("MOREANO")) {
 			merger = new MoreanoMerger();
 		} else if(mergingAlgorithm.equals("EMPIRIC")) {
 			merger = new EmpiricMerger();
 		}
+		
 		OrccLogger.traceln("*\tSelected merging algorithm: " + mergingAlgorithm);
 		/// <li> instantiate and flatten networks 
 		for(Network net : netMap.keySet()){
-			
-		//	for(Connection existingConnection : net.getConnections()){
-			//	OrccLogger.traceln("ECB " + existingConnection + " " + existingConnection.getAttributes());	
-		//	}
-				
-			//OrccLogger.traceln("Instantiating " + net + "...");
 			new Instantiator(false).doSwitch(net);
-			
-			//OrccLogger.traceln("Flattening " + net + "...");
 			new NetworkFlattener().doSwitch(net);
-			
 		}
 			
-		///<li> assign don't merge flag: assignFlag()
+		/// <li> assign don't merge flag: assignFlag()
 		assignFlag(netMap);	
 		
-		///<li> If profiler is enabled calculate critical path: profiler().calculateCriticalPath()
+		/// <li> If profiler is enabled calculate critical path: it.mdc.tool.profiling.Profiler.calculateCriticalPath()
 		if(profileEn) {
 			profiler.calculateCriticalPath(netMap.keySet());
 		}
 				
-		///<li> merging networks in the result network
+		/// <li> merging networks in the result network
 		Network resultNetwork = DfFactory.eINSTANCE.createNetwork();
 		try{
 			
@@ -955,13 +940,13 @@ public class MDCBackend extends AbstractBackend {
 					}
 			}
 			
-			///<li> merge networks
+			/// <li> merge networks
 			//System.out.println("pre merg");
 			resultNetwork = merger.merge(currentList,outputPath);
 			//printer.printNetwork(resultNetwork);
 			//System.out.println("post merg");
 			
-			///<li> set result network name with the don't merge trace
+			/// <li> set result network name with the don't merge trace
 			if(prifileCount<10)
 				resultNetwork.setName(0 + "" + prifileCount + "_" + id);
 			else
@@ -1009,30 +994,27 @@ public class MDCBackend extends AbstractBackend {
 				System.out.println("" + se);
 		}
 		
-		///<li> retrieve luts and instance sets infos (for HDL code generation)
+		/// <li> retrieve luts and instance sets infos (for HDL code generation)
 		luts = merger.getSboxLuts();
 		//TODO  gestire clk o no in base a power saving selezionato
 		//netInstances = merger.getNetworksClkInstances();
 		netInstances = merger.getNetworksInstances();
 		networkVertexMap = merger.getNetworksVertexMap();
-		
-		/*for(String net : netInstances.keySet()) {
-			System.out.println("NET " + net);
-			for(String inst : netInstances.get(net)) {
-			System.out.println("\t " + inst);
-			}
-		}*/
+
 		if(!profileEn)
 			OrccLogger.traceln("*\tEnd merging process...");
 		
 		netMap.clear();
 		return resultNetwork;
-		///</ul>
+		/// </ul>
 		/// End merging process (<i> Back to compile()</i> )
 	}
 	
 	/**
-	 * resultNetwork: network generated by the merging process ( doMergingProcess() ).
+	 * This function executes the steps needed before the Hardware Generation.
+	 * 
+	 * @param resultNetwork
+	 * network generated by the merging process ( doMergingProcess() ).
 	 */
 	@Override
 	protected void beforeGeneration(Network resultNewtork)  {
@@ -1040,7 +1022,7 @@ public class MDCBackend extends AbstractBackend {
 		OrccLogger.traceln("*\tStart multi-dataflow printing process...");
 		/// Start printing process completed. <ul>
 		
-		/// <li> copy result network
+		/// <li> create a copy of result multi-functional network
 		Copier copier =  new Copier();
 		Network network = (Network) copier.copy(resultNewtork);
 		copier.copyReferences();
@@ -1259,7 +1241,7 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.unica.diee.mdc.effort", line.getOptionValue('r'));
 			
 			try {
-				///<li> set options: setOptions()
+				///<li> set options
 				setOptions(optionMap);
 				///<li> launch compile()
 				compile(new NullProgressMonitor());
@@ -1285,6 +1267,8 @@ public class MDCBackend extends AbstractBackend {
 		}
 		return IApplication.EXIT_RELAUNCH;
 		/// </ul>
+		
+		///End start() (<i> Back to it.mdc.tool.core.MDCBackend() or go to compile(). </i>) </ul>
 	}
 	
 	/**
