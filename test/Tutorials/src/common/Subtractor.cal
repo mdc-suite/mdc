@@ -1,8 +1,8 @@
 package common;
 
 actor Subtractor()
-  uint(size=32) opA,
-  uint(size=32) opB 
+  uint(size=8) opA,
+  uint(size=8) opB 
   ==>
   int(size=32) sub :
     
