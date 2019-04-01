@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="TestbenchDummy">
+    <Instance id="src">
+        <Class name="common.SourceImageDummy"/>
+    </Instance>
+    <Instance id="dst">
+        <Class name="common.ShowImageDummy"/>
+    </Instance>
+    <Instance id="dut">
+        <Class name="baseline.Sobel"/>
+    </Instance>
+    <Connection dst="dut" dst-port="y" src="src" src-port="Y"/>
+    <Connection dst="dst" dst-port="SizeOfImage" src="src" src-port="SizeOfImage"/>
+    <Connection dst="dut" dst-port="SOI" src="src" src-port="SizeOfImage"/>
+    <Connection dst="dst" dst-port="Y" src="dut" src-port="edgeY"/>
+</XDF>

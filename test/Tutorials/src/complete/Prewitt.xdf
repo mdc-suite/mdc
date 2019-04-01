@@ -82,10 +82,10 @@
         <Class name="common.Sqrt"/>
     </Instance>
     <Instance id="aln">
-        <Class name="common.Align"/>
+        <Class name="common.Align3x3"/>
     </Instance>
     <Instance id="fwd">
-        <Class name="common.Forward"/>
+        <Class name="common.Forward3x3"/>
     </Instance>
     <Connection dst="fwd" dst-port="inY" src="" src-port="y"/>
     <Connection dst="fwd" dst-port="SOI" src="" src-port="SOI"/>

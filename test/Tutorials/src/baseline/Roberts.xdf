@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="Roberts">
+    <Port kind="Input" name="y">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="SOI">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="edgeY">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="32"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="line_x01">
+        <Class name="common.LineBuffer"/>
+    </Instance>
+    <Instance id="del_x00">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="sub_h0">
+        <Class name="common.Subtractor"/>
+    </Instance>
+    <Instance id="sub_v0">
+        <Class name="common.Subtractor"/>
+    </Instance>
+    <Instance id="del_x10">
+        <Class name="common.Delay"/>
+    </Instance>
+    <Instance id="mul_h">
+        <Class name="common.Multiplier"/>
+    </Instance>
+    <Instance id="mul_v">
+        <Class name="common.Multiplier"/>
+    </Instance>
+    <Instance id="adder">
+        <Class name="common.Adder2x1"/>
+    </Instance>
+    <Instance id="sqrt">
+        <Class name="common.Sqrt"/>
+    </Instance>
+    <Instance id="aln">
+        <Class name="common.Align2x2"/>
+    </Instance>
+    <Instance id="fwd_x11">
+        <Class name="common.Forward2x2"/>
+    </Instance>
+    <Connection dst="fwd_x11" dst-port="inY" src="" src-port="y"/>
+    <Connection dst="fwd_x11" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="line_x01" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="adder" dst-port="opA" src="mul_h" src-port="prod"/>
+    <Connection dst="adder" dst-port="opB" src="mul_v" src-port="prod"/>
+    <Connection dst="sqrt" dst-port="inY" src="adder" src-port="sum"/>
+    <Connection dst="aln" dst-port="inY" src="sqrt" src-port="sqrtY"/>
+    <Connection dst="aln" dst-port="SOI" src="" src-port="SOI"/>
+    <Connection dst="" dst-port="edgeY" src="aln" src-port="outY"/>
+    <Connection dst="sub_h0" dst-port="opB" src="line_x01" src-port="Line"/>
+    <Connection dst="sub_v0" dst-port="opA" src="del_x00" src-port="dataOut"/>
+    <Connection dst="line_x01" dst-port="Y" src="fwd_x11" src-port="outY"/>
+    <Connection dst="del_x10" dst-port="dataIn" src="fwd_x11" src-port="outY"/>
+    <Connection dst="del_x00" dst-port="dataIn" src="line_x01" src-port="Line"/>
+    <Connection dst="sub_h0" dst-port="opA" src="del_x10" src-port="dataOut"/>
+    <Connection dst="sub_v0" dst-port="opB" src="fwd_x11" src-port="outY"/>
+    <Connection dst="mul_v" dst-port="opA" src="sub_v0" src-port="sub"/>
+    <Connection dst="mul_v" dst-port="opB" src="sub_v0" src-port="sub"/>
+    <Connection dst="mul_h" dst-port="opA" src="sub_h0" src-port="sub"/>
+    <Connection dst="mul_h" dst-port="opB" src="sub_h0" src-port="sub"/>
+</XDF>
