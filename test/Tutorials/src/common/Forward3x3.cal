@@ -1,0 +1,48 @@
+package common;
+
+actor Forward3x3()
+  uint(size=16) SOI,
+  uint(size=8) inY 
+  ==>
+  uint(size=8) outY :
+
+  bool recvd := false;
+  uint(size=16) width := 0;
+  uint(size=16) height := 0;
+  uint(size=16) x := 0;
+  uint(size=16) y := 0;
+    
+  recvSOI: action SOI:[w,h] ==>
+  guard not recvd
+  do
+  	width := w;
+  	height := h;
+	recvd := true;
+  end  
+    
+  fwdY: action inY:[iny] ==> outY:[iny]
+  guard recvd and x>0 and y>0 and x<width+1 and y<height+1 	
+  do
+  	//println("fwd " + x+","+y+ " --> " + iny);
+  	x := x+1;
+  end
+
+  dummyY: action ==> outY:[0]
+  guard recvd and (x=0 or y=0 or x=width+1 or y=height+1)
+  do
+  
+  	//println("fwd dum " + x+","+y+ " --> " + 0);
+  	if x = width+1 then
+  		x := 0;
+		if y = height+1 then
+			y := 0;
+			recvd := false;
+		else
+			y := y+1;
+		end
+	else
+		x := x+1;
+  	end
+  end
+  
+end

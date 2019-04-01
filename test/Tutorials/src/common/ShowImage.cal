@@ -38,18 +38,10 @@ import std.video.Display.*;
 		fpsPrintInit();
 		open := true;
 	end
-	
-	//int i := 0;
-	
+		
 	recvY: action Y:[val] ==>
 	guard init and open
 	do
-		/*if i<364 then
-			if i>300 then
-				println(val);
-			end
-			i := i+1;
-		end*/
 		pictureBufferY[x+y*width] := val;
 		pictureBufferU[x+y*width] := 128;
 		pictureBufferV[x+y*width] := 128;
