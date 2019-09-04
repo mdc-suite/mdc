@@ -104,18 +104,15 @@ public class ProtocolManager {
 				while (reader.hasNext()) {
 					reader.next();
 					if (reader.getEventType() == XMLStreamReader.START_ELEMENT) {
-						System.out.println(reader.getLocalName());
 
 						if (reader.getLocalName().equals(SYS)) {
 							if(module == "") {
-								System.out.println("net assigned");
 								module = "net";
 							}
 						}
 						
 						if (reader.getLocalName().equals(WRAP)) {
 							if(module == "") {
-								System.out.println("wrap assigned");
 								module = "wrap";
 							}
 						}
@@ -123,7 +120,6 @@ public class ProtocolManager {
 						if (reader.getLocalName().equals(PRED) ||
 								reader.getLocalName().equals(ACTOR) ||
 								reader.getLocalName().equals(SUCC)) {
-							System.out.println("mod assigned");
 							module = reader.getLocalName();
 							moduleMap = new HashMap<String,Map<String,String>>();
 						}
@@ -200,7 +196,6 @@ public class ProtocolManager {
 						if(reader.getLocalName().equals(PRED) ||
 								reader.getLocalName().equals(ACTOR) ||
 								reader.getLocalName().equals(SUCC)) {
-							System.out.println("mod unassigned");
 							module = "";
 						}
 						
@@ -258,12 +253,6 @@ public class ProtocolManager {
 		
 		acquireProtocol(protocolFile);
 
-		System.out.println("netSysSignals " + netSysSignals);
-		System.out.println("modNames " + modNames);
-		System.out.println("modSysSignals " + modSysSignals);
-		System.out.println("modCommSignals " + modCommSignals);
-		System.out.println("modCommParms " + modCommParms);
-		System.out.println("wrapCommSignals " + wrapCommSignals);
 	}
 	
 	public Map<String,Map<String,String>> getNetSysSignals() {

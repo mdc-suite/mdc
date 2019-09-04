@@ -32,10 +32,12 @@ class WrapperPrinter {
 	
 	boolean dedicatedInterfaces = false
 	String coupling = ""
+	boolean enableMonitoring;
 	
 	Map<String,Map<String,String>> netSysSignals;
 	Map<String,Map<String,Map<String,String>>> modCommSignals;
 	Map<String,Map<String,String>> wrapCommSignals;
+	List<String> monList;
 	
 	def computeNetsPorts(Map<String,Map<String,String>> networkVertexMap) {
 		
@@ -62,7 +64,10 @@ class WrapperPrinter {
 	
 	def computeSizePointer() {
 		if(coupling.equals("mm")) {
-			return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))
+			if(enableMonitoring)
+				return Math.round((((Math.log10(portMap.size + monList.size() )/Math.log10(2))+0.5) as float))
+			else
+				return Math.round((((Math.log10(portMap.size)/Math.log10(2))+0.5) as float))
 		} else {
 			return Math.round((((Math.log10(outputMap.size)/Math.log10(2))+0.5) as float))
 		}
@@ -128,19 +133,18 @@ class WrapperPrinter {
 		return outputMap;
 	}
 		
-	def initWrapperPrinter(String coupling,
+	def initWrapperPrinter(String coupling, Boolean enableMonitoring,
+						List<String> monList,
 						Map<String,Map<String,String>> netSysSignals, 
 						Map<String,Map<String,Map<String,String>>> modCommSignals,
 						Map<String,Map<String,String>> wrapCommSignals
 	) {
-		System.out.print("WP intialization!!!");
 		this.coupling = coupling;
 		this.netSysSignals = netSysSignals;
 		this.modCommSignals = modCommSignals;
 		this.wrapCommSignals = wrapCommSignals;
-		System.out.println("netSysSignals " + this.netSysSignals);
-		System.out.println("modCommSignals " + this.modCommSignals);
-		System.out.println("wrapCommSignals " + this.wrapCommSignals);
+		this.enableMonitoring = enableMonitoring;
+		this.monList = monList;
 	}
 	
 	def hasParameter(String portValue) {
@@ -232,6 +236,21 @@ class WrapperPrinter {
 		// ----------------------------------------------------------------------------
 		«printTopSignals()»
 		
+		«IF enableMonitoring»
+		//monitoring
+		
+		«FOR String monitor: monList»
+			// Monitor «monList.indexOf(monitor)»: «monitor»
+			wire clear_monitor_«monList.indexOf(monitor)»;
+			reg [31 : 0]  «monitor»;
+		«ENDFOR»
+		
+		«IF monList.contains("count_clock_cycles")»
+			reg en_clock_count;
+			reg state, next_state;  
+		«ENDIF»
+		«ENDIF»		
+		
 		// ----------------------------------------------------------------------------
 		// Body
 		// ----------------------------------------------------------------------------
@@ -262,7 +281,6 @@ class WrapperPrinter {
 	}
 	
 	def getSizePrefix(String size) {
-		System.out.println("gsp " + size);
 		if(size.equals("1")) {
 			return ""
 		} else {
@@ -271,10 +289,8 @@ class WrapperPrinter {
 	}
 	
 	def getPortCommSigSize(Port port, String commSigId, Map<String,Map<String,String>> commSigIdMap) {
-		System.out.println("port " + port + " " + commSigId + " " + commSigIdMap);
-		if(commSigIdMap.containsKey(commSigId)){
+			if(commSigIdMap.containsKey(commSigId)){
 			if(commSigIdMap.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
-				System.out.println("var " + port.type + " " + port.type.sizeInBits + " " + port.type.sizeInBits.toString);
 				return port.type.sizeInBits.toString
 			} else {
 				return commSigIdMap.get(commSigId).get(ProtocolManager.SIZE)	
@@ -291,7 +307,7 @@ class WrapperPrinter {
 		«IF coupling.equals("mm")»localparam SIZE_MEM_«portMap.get(port)+1» = 256;
 		localparam [15:0] BASE_ADDR_MEM_«portMap.get(port)+1» = «IF !(portMap.get(port) == 0)»SIZE_MEM_«portMap.get(port)» + BASE_ADDR_MEM_«portMap.get(port)»«ELSE»0«ENDIF»;
 		«ENDIF»
-		localparam SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
+		parameter SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
 		«ENDFOR»
 		
 		// Wire(s) and Reg(s)
@@ -301,6 +317,12 @@ class WrapperPrinter {
 			«FOR port : portMap.keySet»
 				wire [31 : 0] slv_reg«portMap.get(port)+1»;
 			«ENDFOR»
+			«IF enableMonitoring»
+				// Monitors registers
+				«FOR String monitor: monList»
+				wire [31 : 0] slv_reg«portMap.keySet.size + 1 + monList.indexOf(monitor)»; // «monitor»
+				«ENDFOR»
+			«ENDIF»
 			«IF dedicatedInterfaces»
 			«ELSE»
 				wire s01_axi_rden;
@@ -587,12 +609,22 @@ class WrapperPrinter {
 			.S_AXI_RVALID(s00_axi_rvalid),
 			.S_AXI_RREADY(s00_axi_rready),
 			«IF coupling.equals("mm")».done(done),
-			.start(start),«FOR port : portMap.keySet»
+			.start(start),
+			«IF enableMonitoring»
+			«FOR String monitor: monList»
+			.clear_monitor_«monList.indexOf(monitor)»(clear_monitor_«monList.indexOf(monitor)»),
+			.«monitor»(«monitor»),
+			«ENDFOR»
+			«ENDIF»«FOR port : portMap.keySet»
 			.slv_reg«portMap.get(port)+1»(slv_reg«portMap.get(port)+1»),
-		    «ENDFOR»
+			«ENDFOR»
+			«IF enableMonitoring»
+			«FOR String monitor: monList»
+			.slv_reg«portMap.keySet.size + 1 + monList.indexOf(monitor)»(slv_reg«portMap.keySet.size + 1 + monList.indexOf(monitor)»),
+			«ENDFOR»
+		    «ENDIF»
 		    «ELSE»
-		    «FOR output : outputMap.keySet»
-		    .slv_reg«outputMap.get(output)+1»(slv_reg«outputMap.get(output)+1»),
+		    «FOR output : outputMap.keySet»		.slv_reg«outputMap.get(output)+1»(slv_reg«outputMap.get(output)+1»),
 		    «ENDFOR»
 		    «ENDIF»
 		    .slv_reg0(slv_reg0)
@@ -755,9 +787,9 @@ class WrapperPrinter {
 		);
 		
 		assign ce_«portMap.get(port)+1» = (s01_axi_rden || s01_axi_wren)
-										 && (s01_axi_address >= BASE_ADDR_MEM_«portMap.get(port)+1»)
-		«IF (portMap.get(port)+1) < portMap.size»									 && (s01_axi_address < BASE_ADDR_MEM_«portMap.get(port)+2»)«ENDIF»
-		 ;
+		&& (s01_axi_address >= BASE_ADDR_MEM_«portMap.get(port)+1»)
+		«IF (portMap.get(port)+1) < portMap.size»
+		&& (s01_axi_address < BASE_ADDR_MEM_«portMap.get(port)+2»)«ENDIF»;
 		«ENDFOR»
 		
 		always@(«FOR port : portMap.keySet SEPARATOR " or "»ce_«portMap.get(port)+1» or data_out_«portMap.get(port)+1»«ENDFOR»)
@@ -769,6 +801,114 @@ class WrapperPrinter {
 					s01_axi_data_out = 0;
 		«ENDIF»
 		// ----------------------------------------------------------------------------
+		
+		«IF enableMonitoring»
+		// ----------------------------------------------------------------------------
+		// Monitoring Logic
+		// ----------------------------------------------------------------------------
+		«FOR String monitor: monList»
+		«IF monitor.contains("count_full_")»
+		// TO FIX
+		// monitoring total full of  FIFO  «monitor.replace("count_full_", "")»_full
+			always@(posedge s00_axi_aclk or negedge s00_axi_aresetn)
+			    if(!s00_axi_aresetn)
+			        begin
+			        «monitor» <= 0;
+			        end 
+			    else
+			        begin
+			        if(clear_monitor_«monList.indexOf(monitor)»)
+			            «monitor» <= 0;
+			        else if(«monitor.replace("count_full_", "")»_full)
+			            «monitor» <= «monitor» + 1;
+			        else 
+			            «monitor» <= «monitor»;
+			        end
+			        
+		«ENDIF»
+		«IF monitor.equals("count_clock_cycles")»
+		// monitoring clock cycles
+			always@(posedge s00_axi_aclk or negedge s00_axi_aresetn)
+			    if(!s00_axi_aresetn)
+			        begin
+			        state <= 0;
+			        «monitor» <= 0;
+			        end 
+			    else
+			        begin
+			        state <= next_state;
+			        if(clear_monitor_«monList.indexOf(monitor)»)
+			            «monitor» <= 0;
+			        else if(en_clock_count)
+			            «monitor» <= «monitor» + 1;
+			        else 
+			            «monitor» <= «monitor»;
+			        end
+			        
+			 // state transitions (to enable monitoring only from start to done signals)
+			    always@(state or start or done)
+			        case(state)
+			        //wait 
+			        1'b0: if(start) 
+			            next_state = 1'b1;
+			        else
+			            next_state = 1'b0;
+			        // count
+			        1'b1: if(done)
+			            next_state = 1'b0;
+			        else
+			            next_state = 1'b1;
+			        default: next_state = 1'b0;
+			        endcase 
+			        
+			 // enabling monitoring
+			    always@(state)
+			        case(state)
+			        //wait (clock count disabled)
+			        1'b0: en_clock_count = 0;
+			        1'b1: en_clock_count = 1;
+			        default: en_clock_count = 0;
+			        endcase 
+			        
+		«ENDIF»
+		«IF monitor.contains("count_in_tokens_")»
+		// monitoring input tokens (of port «monitor.replace("count_in_tokens_", "")»)		
+		always@(posedge s00_axi_aclk or negedge s00_axi_aresetn)
+		    if(!s00_axi_aresetn)
+		        begin
+		        «monitor» <= 0;
+		        end 
+		    else
+		        begin
+		        if(clear_monitor_«monList.indexOf(monitor)»)
+		            «monitor» <= 0;
+		        else if(rden_mem_«getPortIdFromName(monitor.replace("count_in_tokens_", ""))+1»)
+		            «monitor» <= «monitor» + 1;
+		        else 
+		            «monitor» <= «monitor»;
+		        end
+		        
+		«ENDIF»
+		«IF monitor.contains("count_out_tokens_")»
+		// monitoring output tokens (of port «monitor.replace("count_out_tokens_", "")»)		
+		always@(posedge s00_axi_aclk or negedge s00_axi_aresetn)
+		    if(!s00_axi_aresetn)
+		        begin
+		        «monitor» <= 0;
+		        end 
+		    else
+		        begin
+		        if(clear_monitor_«monList.indexOf(monitor)»)
+		            «monitor» <= 0;
+		        else if(wren_mem_«getPortIdFromName(monitor.replace("count_out_tokens_", ""))+1»)
+		            «monitor» <= «monitor» + 1;
+		        else 
+		            «monitor» <= «monitor»;
+		        end
+		        
+		«ENDIF»
+		«ENDFOR»
+		«ENDIF»
 		
 		// Coprocessor Front-End(s)
 		// ----------------------------------------------------------------------------
@@ -892,6 +1032,15 @@ class WrapperPrinter {
 		'''
 	}
 	
+	def getPortIdFromName(String name){
+		for(Port port : portMap.keySet) {
+			if(port.getName.equals(name)) {
+				return portMap.get(port);
+			}
+		}
+		
+	}
+	
 	def getDataSize(Port port) {
 		for(commSigId : wrapCommSignals.keySet) {
 			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("data")) {
@@ -928,7 +1077,7 @@ class WrapperPrinter {
 			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»s00_axi_aresetn),
 			«ENDFOR»
 			// Multi-Dataflow Kernel ID
-			.ID(slv_reg0[31:24])	
+			.ID(slv_reg0[31:24])
 		);
 		'''
 	}
@@ -1221,8 +1370,23 @@ class WrapperPrinter {
 	(
 		«IF coupling.equals("mm")»
 		input done,
-		«FOR port : portMap.keySet»output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.get(port)+1»,
+		«IF enableMonitoring»
+		«FOR String monitor: monList»
+		// Monitor «monList.indexOf(monitor)»: «monitor»
+		input [C_S_AXI_DATA_WIDTH - 1 : 0] «monitor»,
+		output clear_monitor_«monList.indexOf(monitor)»,
 		«ENDFOR»
+		«ENDIF»
+		// Config Regs
+		«FOR port : portMap.keySet»
+		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.get(port)+1»,
+		«ENDFOR»
+		«IF enableMonitoring»
+		// Monitoring Config Registers
+		«FOR String monitor: monList»	
+		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.size+1+monList.indexOf(monitor)»,
+		«ENDFOR»
+		«ENDIF»
 		output start,
 		«ELSE»
 		«FOR output : outputMap.keySet»output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«outputMap.get(output)+1»,
@@ -1311,6 +1475,7 @@ class WrapperPrinter {
 		// ADDR_LSB = 3 for 64 bits (n downto 3)
 		localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1;
 		localparam integer OPT_MEM_ADDR_BITS = «log2_regnumb»;
+
 		//----------------------------------------------
 		//-- Signals for user logic register space example
 		//------------------------------------------------
@@ -1404,81 +1569,110 @@ class WrapperPrinter {
 		    end 
 		end
 		
-		// Implement memory mapped register select and write logic generation
-		// The write data is accepted and written to memory mapped registers when
-		// axi_awready, S_AXI_WVALID, axi_wready and S_AXI_WVALID are asserted. Write strobes are used to
-		// select byte enables of slave registers while writing.
-		// These registers are cleared when reset (active low) is applied.
-		// Slave register write enable is asserted when valid address and data are available
-		// and the slave is ready to accept the write address and write data.
-		assign slv_reg_wren = axi_wready && S_AXI_WVALID && axi_awready && S_AXI_AWVALID;
-		always @( posedge S_AXI_ACLK )
+	// Implement memory mapped register select and write logic generation
+	// The write data is accepted and written to memory mapped registers when
+	// axi_awready, S_AXI_WVALID, axi_wready and S_AXI_WVALID are asserted. Write strobes are used to
+	// select byte enables of slave registers while writing.
+	// These registers are cleared when reset (active low) is applied.
+	// Slave register write enable is asserted when valid address and data are available
+	// and the slave is ready to accept the write address and write data.
+	assign slv_reg_wren = axi_wready && S_AXI_WVALID && axi_awready && S_AXI_AWVALID;
+	always @( posedge S_AXI_ACLK )
+	begin
+	  if ( S_AXI_ARESETN == 1'b0 )
+	    begin
+      slv_reg0 <=  32'd4; //inizialize the accelerator as ready
+      «IF coupling.equals("mm")»
+      «FOR port : portMap.keySet»
+      slv_reg«portMap.get(port)+1» <= 0;
+      «ENDFOR» 
+      «IF enableMonitoring»
+  	  «FOR String monitor: monList»	
+  	  slv_reg«portMap.size+1+monList.indexOf(monitor)» <= 0;
+  	  «ENDFOR»
+      «ENDIF»
+      «ELSE»
+      «FOR output : outputMap.keySet»
+      slv_reg«outputMap.get(output)+1» <= 0;
+      «ENDFOR»
+      «ENDIF»
+		end 
+		else begin
+		«IF coupling.equals("mm")»
+		if (done)
+			slv_reg0 <= {slv_reg0[31:3],1'b1,slv_reg0[1:0]};
+		else
+		«ENDIF»
+		if (slv_reg_wren)
 		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      slv_reg0 <=  32'd4; //inizialize the accelerator as ready
-		      «IF coupling.equals("mm")»
-		      «FOR port : portMap.keySet»
-		      slv_reg«portMap.get(port)+1» <= 0;
-		      «ENDFOR»
-		      «ELSE»
-  		      «FOR output : outputMap.keySet»
-  		      slv_reg«outputMap.get(output)+1» <= 0;
-  		      «ENDFOR»
-		      «ENDIF»
-		    end 
-		  else begin
-		  	«IF coupling.equals("mm")»
-		  	if (done)
-		  		slv_reg0 <= {slv_reg0[31:3],1'b1,slv_reg0[1:0]};
-  			else
-		    «ENDIF»
-			    if (slv_reg_wren)
-			      begin
-			        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-			          «log2_regnumb»'h0:
-			            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-			              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-			                // Respective byte enables are asserted as per write strobes 
-			                // Slave register 0
-			                slv_reg0[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-			              end
-			          «IF coupling.equals("mm")»
-		          	  «FOR port : portMap.keySet»«log2_regnumb»'h«portMap.get(port)+1»:
-		          	  	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-		          	  		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-		          	  			// Respective byte enables are asserted as per write strobes
-		          	  			// Slave register «portMap.get(port)+1»
-		          	  			slv_reg«portMap.get(port)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-		          	  			end
-		              «ENDFOR»
-		              «ELSE»
-  		          	  «FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»:
-  		          	  	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-  		          	  		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-  		          	  			// Respective byte enables are asserted as per write strobes
-  		          	  			// Slave register «outputMap.get(output)+1»
-  		          	  			slv_reg«outputMap.get(output)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-  		          	  			end
-  		              «ENDFOR»
-		              «ENDIF»
-			          default : begin
-			                      slv_reg0 <= slv_reg0;
-			                      «IF coupling.equals("mm")»
-			                      «FOR port : portMap.keySet»slv_reg«portMap.get(port)+1» <= slv_reg«portMap.get(port)+1»;
-								  «ENDFOR»
-								  «ELSE»
-  			                      «FOR output : outputMap.keySet»slv_reg«outputMap.get(output)+1» <= slv_reg«outputMap.get(output)+1»;
-  								  «ENDFOR»
-								  «ENDIF»
-			                    end
-			        endcase
-			      end
-		  end
+		case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
+		«log2_regnumb»'h0:
+		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+		// Respective byte enables are asserted as per write strobes 
+		// Slave register 0
+		slv_reg0[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 		end
+		«IF coupling.equals("mm")»
+	    «FOR port : portMap.keySet»		«log2_regnumb»'h«portMap.get(port)+1»:
+	    	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+	    	if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+	        	// Respective byte enables are asserted as per write strobes
+	        	// Slave register «portMap.get(port)+1»
+	        	slv_reg«portMap.get(port)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	        	end
+	    «ENDFOR»
+	    «IF enableMonitoring»
+      	«FOR String monitor: monList»    	«log2_regnumb»'h«portMap.size+1+monList.indexOf(monitor)»:	
+      		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+    		// Respective byte enables are asserted as per write strobes
+    		// Slave register «portMap.size+1+monList.indexOf(monitor)»
+    		slv_reg«portMap.size+1+monList.indexOf(monitor)»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+    	end
+      	«ENDFOR»
+		«ENDIF»
+	    «ELSE»
+	    «FOR output : outputMap.keySet»		«log2_regnumb»'h«outputMap.get(output)+4»:
+	    		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+	    			if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+	        		// Respective byte enables are asserted as per write strobes
+	        		// Slave register «outputMap.get(output)+4»
+	        		slv_reg«outputMap.get(output)+4»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	        		end
+	        	
+	    «ENDFOR»
+	    «ENDIF»
+		default : begin
+		slv_reg0 <= slv_reg0;
+		«IF coupling.equals("mm")»
+		«FOR port : portMap.keySet»
+		slv_reg«portMap.get(port)+1» <= slv_reg«portMap.get(port)+1»;
+		«ENDFOR»
+		«FOR String monitor: monList»
+		slv_reg«portMap.size+1+monList.indexOf(monitor)» <= slv_reg«portMap.size+1+monList.indexOf(monitor)»;
+		«ENDFOR»
+		«ELSE»
+	  	«FOR output : outputMap.keySet»
+	  	slv_reg«outputMap.get(output)+1» <= slv_reg«outputMap.get(output)+1»;
+	  	«ENDFOR»
+		«ENDIF»
+		end
+		endcase
+		end
+	  end
+	end
 		
 		assign start = (slv_reg_wren) && (axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB]==0) &&
 						(S_AXI_WSTRB[0]==1) && (S_AXI_WDATA[0]==1'b1);
+						
+		«IF enableMonitoring»
+		«FOR String monitor: monList»
+		// clear of monitor «monitor»
+		assign clear_monitor_«monList.indexOf(monitor)» = (slv_reg_wren) && (axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB]==«portMap.size+1+monList.indexOf(monitor)») && 
+								(S_AXI_WSTRB[0]==1) && (S_AXI_WDATA[31]==1'b1);
+		«ENDFOR»
+		«ENDIF»	
 		
 		// Implement write response logic generation
 		// The write response and response valid signals are asserted by the slave 
@@ -1578,15 +1772,21 @@ class WrapperPrinter {
 		assign slv_reg_rden = axi_arready & S_AXI_ARVALID & ~axi_rvalid;
 		always @(*)
 		begin
-		      // Address decoding for reading registers
-		      case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-		        «log2_regnumb»'h0   : reg_data_out <= slv_reg0;
-	            «IF coupling.equals("mm")»«FOR port : portMap.keySet»«log2_regnumb»'h«portMap.get(port)+1»   : reg_data_out <= slv_reg«portMap.get(port)+1»;
-				«ENDFOR»
-				«ELSE»«FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»   : reg_data_out <= slv_reg«outputMap.get(output)+1»;
-				«ENDFOR»«ENDIF»
-		        default : reg_data_out <= 0;
-		      endcase
+			// Address decoding for reading registers
+			case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
+			«log2_regnumb»'h0   : reg_data_out <= slv_reg0;
+			«IF coupling.equals("mm")»«FOR port : portMap.keySet»
+			«log2_regnumb»'h«portMap.get(port)+1»   : reg_data_out <= slv_reg«portMap.get(port)+1»;
+			«ENDFOR»
+			«IF enableMonitoring»
+			«FOR String monitor: monList»
+			«log2_regnumb»'h«portMap.size+1+monList.indexOf(monitor)»   : reg_data_out <= «monitor»;
+			«ENDFOR»
+			«ENDIF»
+			«ELSE»«FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»   : reg_data_out <= slv_reg«outputMap.get(output)+1»;
+			«ENDFOR»«ENDIF»
+			default : reg_data_out <= 0;
+			endcase
 		end
 		
 		// Output register or memory read data
@@ -1609,6 +1809,38 @@ class WrapperPrinter {
 		end
 
 	endmodule
+	'''
+	}
+	
+	def printXML(){
+		
+	'''
+	<?xml version="1.0" encoding="UTF-8"?>
+	<mdcInfo>
+	  <baseAddress>0x43C00000</baseAddress>
+	  <nbEvents>«monList.size»</nbEvents>
+	  «FOR String monitor: monList»
+	  <event> 
+	    <index>«portMap.size+1+monList.indexOf(monitor)»</index>
+	    «IF monitor.contains("count_full_")»
+	    <name>MDC_«monitor.replace("count_", "").toUpperCase()»</name>
+	    <desc>Total number of FIFO full of input «monitor.replace("count_full_", "")» during the execution of the accelerator</desc>
+	    «ENDIF»
+	    «IF monitor.contains("count_clock_cycles")»
+	    <name>MDC_«monitor.replace("count_", "").toUpperCase()»</name>
+	    <desc>Number of clock cycles from start to done signals.</desc>
+	    «ENDIF»
+	    «IF monitor.contains("count_in_tokens_")»
+	    <name>MDC_«monitor.replace("count_in_", "").toUpperCase()»</name>
+	    <desc>Number of input tokens to the accelerator at port «monitor.replace("count_in_tokens_", "")»</desc>
+	    «ENDIF»
+	    «IF monitor.contains("count_out_tokens_")»
+	    <name>MDC_«monitor.replace("count_out_", "").toUpperCase()»</name>
+	    <desc>Number of output tokens from the accelerator at port «monitor.replace("count_out_tokens_", "")»</desc>
+	    «ENDIF»
+	  </event>
+	  «ENDFOR»
+	</mdcInfo>
 	'''
 	}
 

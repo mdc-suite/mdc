@@ -223,6 +223,27 @@ public abstract class PlatformComposer {
 		Boolean enDma = (Boolean) options.get("it.mdc.tool.ipEnDma");
 		String boardpart = (String) options.get("it.mdc.tool.ipTgtBpart");
 		String partname = (String) options.get("it.mdc.tool.ipTgtPart");
+		//	Enable Monitoring
+		Boolean enableMonitoring = (Boolean) options.get("it.unica.diee.mdc.monitoring");
+		List<String> monList = new ArrayList<String>();
+		
+		// Initialize List of monitors
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monFifo"))
+			for(Port port: network.getInputs())
+				monList.add("count_full_" + port.getName());
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monCC"))
+			monList.add("count_clock_cycles");
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monInTokens"))
+			for(Port port: network.getInputs())
+				monList.add("count_in_tokens_" + port.getName());
+		
+		if((Boolean) options.get("it.unica.diee.mdc.outTokens"))
+			for(Port port: network.getOutputs())
+				monList.add("count_out_tokens_" + port.getName());
+				
 		
 		/// <ul>
 		String file;
@@ -242,7 +263,7 @@ public abstract class PlatformComposer {
 		}
 		/// <li> Initialize TIL printer
 		wrapperPrinter = new WrapperPrinter();
-		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,
+		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,enableMonitoring,monList,
 				protocolManager.getNetSysSignals(),
 				protocolManager.getModCommSignals(),
 				protocolManager.getWrapCommSignals());
@@ -291,6 +312,20 @@ public abstract class PlatformComposer {
 		} catch (FileNotFoundException e) {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
+		
+		/// <li> Generate test bench module
+		if(enableMonitoring){
+			file = hdlDir.getPath().replaceFirst("hdl", "") + File.separator +  "mdc-papi_info.xml";
+			sequence = wrapperPrinter.printXML();
+			try {
+				PrintStream ps = new PrintStream(new FileOutputStream(file));
+				ps.print(sequence.toString());
+				ps.close();
+			} catch (FileNotFoundException e) {
+				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+			}
+		}
+				
 		/// </ol>
 		/////////////////////////
 		

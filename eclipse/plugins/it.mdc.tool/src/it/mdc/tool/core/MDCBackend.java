@@ -158,6 +158,11 @@ public class MDCBackend extends AbstractBackend {
 	//  Profiling attributes
 	////////////////////////////////////////////////////////
 	/**
+	 * Enable monitoring flag
+	 */
+	private boolean enMon;
+	
+	/**
 	 * Enable profiling flag
 	 */
 	private boolean profileEn;
@@ -803,6 +808,8 @@ public class MDCBackend extends AbstractBackend {
 			}
 		}
 		
+		enMon = getOption("it.unica.diee.mdc.monitoring", false);
+		
 		profileEn = getOption("it.unica.diee.mdc.profile", false);
 		if(profileEn) {
 			profiler = new Profiler();
@@ -941,10 +948,8 @@ public class MDCBackend extends AbstractBackend {
 			}
 			
 			/// <li> merge networks
-			//System.out.println("pre merg");
 			resultNetwork = merger.merge(currentList,outputPath);
 			//printer.printNetwork(resultNetwork);
-			//System.out.println("post merg");
 			
 			/// <li> set result network name with the don't merge trace
 			if(prifileCount<10)
@@ -953,12 +958,10 @@ public class MDCBackend extends AbstractBackend {
 				resultNetwork.setName(prifileCount + "_" + id);
 			prifileCount++;
 
-			//System.out.println("pre calc");
 			
 			/// <li> If profiler is enables update best network
 			if(profileEn && profileThisCase) {
 				List<Float> currValues = profiler.writeFile(resultNetwork);
-				//System.out.println("post calc");
 				if(bestNetwork == null) {
 					updateBestSolution(resultNetwork,merger,netMap,currValues);
 				}

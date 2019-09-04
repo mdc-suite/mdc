@@ -122,19 +122,16 @@ public class NetworkPrinter extends PlatformComposer {
 					while (reader.hasNext()) {
 						reader.next();
 						if (reader.getEventType() == XMLStreamReader.START_ELEMENT) {
-							System.out.println(reader.getLocalName());
-
+				
 							if (reader.getLocalName().equals(SYS)) {
 								if(module == "") {
-									System.out.println("net assigned");
-									module = "net";
+										module = "net";
 								}
 							}
 							
 							if (reader.getLocalName().equals(PRED) ||
 									reader.getLocalName().equals(ACTOR) ||
 									reader.getLocalName().equals(SUCC)) {
-								System.out.println("mod assigned");
 								module = reader.getLocalName();
 								moduleMap = new HashMap<String,Map<String,String>>();
 							}
@@ -200,7 +197,6 @@ public class NetworkPrinter extends PlatformComposer {
 							if(reader.getLocalName().equals(PRED) ||
 									reader.getLocalName().equals(ACTOR) ||
 									reader.getLocalName().equals(SUCC)) {
-								System.out.println("mod unassigned");
 								module = "";
 							}
 							
@@ -256,13 +252,6 @@ public class NetworkPrinter extends PlatformComposer {
 		modSysSignals = protocolManager.getModSysSignals();
 		modCommSignals = protocolManager.getModCommSignals();
 		modCommParms = protocolManager.getModCommParms();
-		
-		
-		System.out.println("netSysSignals " + netSysSignals);
-		System.out.println("modNames " + modNames);
-		System.out.println("modSysSignals " + modSysSignals);
-		System.out.println("modCommSignals " + modCommSignals);
-		System.out.println("modCommParms " + modCommParms);
 	}
 	
 	/**
@@ -297,8 +286,10 @@ public class NetworkPrinter extends PlatformComposer {
 		boolean enablePowerGating = ((Boolean) options.get("it.unica.diee.mdc.computeLogicRegions"))
 				&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("POWER_GATING")
 					|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
+		
 
-		File dir= new File(hdlPath);
+		
+					File dir= new File(hdlPath);
 		// If directory doesn't exist, create it
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -335,7 +326,6 @@ public class NetworkPrinter extends PlatformComposer {
 			CpfPrinter printCPF = new CpfPrinter();
 			CharSequence sequenceCPF = printCPF.printCPF(network, luts, logicRegions, 
 					netRegions, logicRegionID, configManager, powerSets, logicRegionsSeqMap,modCommSignals,modNames);
-			//System.out.println("sequenceCPF  " + sequenceCPF);
 			
 			try {
 				PrintStream psCPF = new PrintStream(new FileOutputStream(CPFfile));
@@ -351,8 +341,7 @@ public class NetworkPrinter extends PlatformComposer {
 			PowerController printPowerController = new PowerController();
 			CharSequence sequencePowerController = printPowerController.printPowerController(network, luts, 
 					logicRegions, netRegions, logicRegionID, configManager, powerSets, logicRegionsSeqMap);
-			//System.out.println("sequencePowerController  " + sequencePowerController);
-			
+				
 			try {
 				PrintStream psPowerController = new PrintStream(new FileOutputStream(PowerControllerFile));
 				psPowerController.print(sequencePowerController.toString());
