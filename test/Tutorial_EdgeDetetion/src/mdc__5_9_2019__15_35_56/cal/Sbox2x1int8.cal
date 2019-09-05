@@ -1,0 +1,17 @@
+// ----------------------------------------------------------------------------
+//
+// Multi-Dataflow Composer tool - XDF Generation
+// 2-inpus 1-output Switching Box (2x1 SBox) - int
+// Date: 2019/09/05 15:35:57
+//
+// ----------------------------------------------------------------------------
+package mdc__5_9_2019__15_35_56.cal;
+
+actor Sbox2x1int8 (int SIZE=8) 
+	int(size=SIZE) in1,
+	int(size=SIZE) in2
+		==>
+	int(size=SIZE) out1
+:
+
+end

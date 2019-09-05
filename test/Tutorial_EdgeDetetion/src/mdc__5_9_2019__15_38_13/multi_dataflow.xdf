@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><XDF name="multi_dataflow">
+    <Port kind="Input" name="in_size">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="6"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="in_pel">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="out_pel">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="8"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="line_buffer_0">
+        <Class name="edgeDetection.line_buffer"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_0">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_1">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="roberts_x_0">
+        <Class name="edgeDetection.roberts_x"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+    </Instance>
+    <Instance id="roberts_y_0">
+        <Class name="edgeDetection.roberts_y"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+    </Instance>
+    <Instance id="abs_sum_0">
+        <Class name="edgeDetection.abs_sum"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="remove_2x2_0">
+        <Class name="edgeDetection.remove_2x2"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+    </Instance>
+    <Instance id="thr_0">
+        <Class name="edgeDetection.thr"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.roberts"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="line_buffer_1">
+        <Class name="edgeDetection.line_buffer"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_2">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_3">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_4">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="delay_5">
+        <Class name="edgeDetection.delay"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="sobel_x_0">
+        <Class name="edgeDetection.sobel_x"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="sobel_y_0">
+        <Class name="edgeDetection.sobel_y"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="remove_3x3_0">
+        <Class name="edgeDetection.remove_3x3"/>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="Flag" name="edgeDetection.sobel"/>
+    </Instance>
+    <Instance id="sbox_0">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int6"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="6"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_1">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int6"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="6"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_2">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int6"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="6"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_3">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_4">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_5">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_6">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_7">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_8">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_9">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox1x2int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_10">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_11">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int8"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="8"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_12">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int14"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="14"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Instance id="sbox_13">
+        <Class name="mdc__5_9_2019__15_38_13.cal.Sbox2x1int14"/>
+        <Parameter name="SIZE">
+            <Expr kind="Literal" literal-kind="Integer" value="14"/>
+        </Parameter>
+        <Attribute kind="Flag" name="count"/>
+        <Attribute kind="String" name="sbox" value=""/>
+    </Instance>
+    <Connection dst="sbox_1" dst-port="in1" src="sbox_0" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sbox_2" dst-port="in1" src="sbox_0" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sbox_4" dst-port="in1" src="sbox_3" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="remove_2x2_0" dst-port="in_size" src="sbox_0" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="remove_2x2_0" dst-port="in_pel" src="sbox_6" src-port="out1"/>
+    <Connection dst="sbox_7" dst-port="in1" src="sbox_3" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="roberts_x_0" dst-port="pel00" src="sbox_8" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="roberts_x_0" dst-port="pel01" src="sbox_5" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="roberts_x_0" dst-port="pel10" src="sbox_9" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="roberts_x_0" dst-port="pel11" src="sbox_3" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="roberts_y_0" dst-port="pel00" src="sbox_8" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="roberts_y_0" dst-port="pel01" src="sbox_5" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="roberts_y_0" dst-port="pel10" src="sbox_9" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="roberts_y_0" dst-port="pel11" src="sbox_3" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="sbox_10" dst-port="in1" src="sbox_5" src-port="out1">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.roberts"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sbox_11" dst-port="in1" src="remove_2x2_0" src-port="out_pel"/>
+    <Connection dst="sbox_12" dst-port="in1" src="roberts_x_0" src-port="out_pel"/>
+    <Connection dst="sbox_13" dst-port="in1" src="roberts_y_0" src-port="out_pel"/>
+    <Connection dst="thr_0" dst-port="in_g" src="abs_sum_0" src-port="out_g"/>
+    <Connection dst="sbox_0" dst-port="in1" src="" src-port="in_size"/>
+    <Connection dst="line_buffer_0" dst-port="real_size" src="sbox_1" src-port="out1"/>
+    <Connection dst="sbox_1" dst-port="in2" src="sbox_0" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="5"/>
+    </Connection>
+    <Connection dst="line_buffer_0" dst-port="ext_size" src="sbox_2" src-port="out1"/>
+    <Connection dst="sbox_2" dst-port="in2" src="sbox_0" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="5"/>
+    </Connection>
+    <Connection dst="sbox_3" dst-port="in1" src="" src-port="in_pel"/>
+    <Connection dst="line_buffer_0" dst-port="in_pel" src="sbox_4" src-port="out1"/>
+    <Connection dst="sbox_4" dst-port="in2" src="sbox_3" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="line_buffer_1" dst-port="real_size" src="sbox_0" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="5"/>
+    </Connection>
+    <Connection dst="line_buffer_1" dst-port="ext_size" src="sbox_0" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="5"/>
+    </Connection>
+    <Connection dst="sbox_5" dst-port="in1" src="line_buffer_0" src-port="out_pel"/>
+    <Connection dst="line_buffer_1" dst-port="in_pel" src="sbox_5" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="remove_3x3_0" dst-port="in_size" src="sbox_0" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="5"/>
+    </Connection>
+    <Connection dst="sbox_6" dst-port="in1" src="thr_0" src-port="out_pel"/>
+    <Connection dst="remove_3x3_0" dst-port="in_pel" src="sbox_6" src-port="out2"/>
+    <Connection dst="delay_0" dst-port="in_pel" src="sbox_7" src-port="out1"/>
+    <Connection dst="sbox_7" dst-port="in2" src="sbox_3" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel00" src="delay_5" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel01" src="delay_2" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel02" src="line_buffer_1" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel10" src="delay_4" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sbox_8" dst-port="in1" src="delay_1" src-port="out_pel"/>
+    <Connection dst="sobel_x_0" dst-port="pel11" src="sbox_8" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel12" src="sbox_5" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel20" src="delay_3" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sbox_9" dst-port="in1" src="delay_0" src-port="out_pel"/>
+    <Connection dst="sobel_x_0" dst-port="pel21" src="sbox_9" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_x_0" dst-port="pel22" src="sbox_3" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel00" src="delay_5" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel01" src="delay_2" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel02" src="line_buffer_1" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel10" src="delay_4" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel11" src="sbox_8" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel12" src="sbox_5" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel20" src="delay_3" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="2"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel21" src="sbox_9" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="sobel_y_0" dst-port="pel22" src="sbox_3" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="delay_1" dst-port="in_pel" src="sbox_10" src-port="out1"/>
+    <Connection dst="sbox_10" dst-port="in2" src="sbox_5" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="4"/>
+    </Connection>
+    <Connection dst="delay_2" dst-port="in_pel" src="line_buffer_1" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="" dst-port="out_pel" src="sbox_11" src-port="out1"/>
+    <Connection dst="sbox_11" dst-port="in2" src="remove_3x3_0" src-port="out_pel"/>
+    <Connection dst="delay_3" dst-port="in_pel" src="sbox_9" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="abs_sum_0" dst-port="in_gx" src="sbox_12" src-port="out1"/>
+    <Connection dst="sbox_12" dst-port="in2" src="sobel_x_0" src-port="out_pel"/>
+    <Connection dst="abs_sum_0" dst-port="in_gy" src="sbox_13" src-port="out1"/>
+    <Connection dst="sbox_13" dst-port="in2" src="sobel_y_0" src-port="out_pel"/>
+    <Connection dst="delay_4" dst-port="in_pel" src="sbox_8" src-port="out2">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+    <Connection dst="delay_5" dst-port="in_pel" src="delay_2" src-port="out_pel">
+        <Attribute kind="String" name="broadcast" value="edgeDetection.sobel"/>
+        <Attribute kind="String" name="broadcastSize" value="3"/>
+    </Connection>
+</XDF>
