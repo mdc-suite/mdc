@@ -31,6 +31,20 @@ public class FileCopier {
 	    copy(sourceFile,targetFile);
 	}
 	
+	public void copyOnlyFiles(String sourceLocation, String targetLocation) throws IOException {
+	    File sourceFile = new File(sourceLocation);
+	    File[] subFolders = sourceFile.listFiles();
+	    
+	    for (File subFolder : subFolders) {	    	
+            if (!subFolder.getName().replace(sourceLocation, "").equals("lib") && !subFolder.getName().replace(sourceLocation, "").equals("tb")){
+            	File destination = new File(targetLocation + File.separator + subFolder.getName().replace(sourceLocation, ""));
+            	copy(subFolder,destination);
+            } 
+	    }
+	}
+	
+	
+	
 	public void copy(File sourceLocation, File targetLocation) throws IOException {
 	    if (sourceLocation.isDirectory()) {
 	        copyDirectory(sourceLocation, targetLocation);

@@ -163,6 +163,12 @@ public class MDCBackend extends AbstractBackend {
 	private boolean enMon;
 	
 	/**
+	 * Enable ARTICo3 Kernel Generation
+	 */
+	
+	private boolean enArtico;
+	
+	/**
 	 * Enable profiling flag
 	 */
 	private boolean profileEn;
@@ -522,19 +528,24 @@ public class MDCBackend extends AbstractBackend {
 		
 		///  <ul> <li> set hdl directory
 		File hdlDir= new File("");
-		if(!genCopr) {
-			hdlDir = new File(outputPath + File.separator + "hdl");
-		} else {
+		if(genCopr) {
 			if(coprType.equals("MEMORY-MAPPED")) {
 				hdlDir = new File(outputPath + File.separator + "mm_accelerator" + File.separator  + "hdl");
 			} else {
 				hdlDir = new File(outputPath + File.separator + "s_accelerator" + File.separator  + "hdl");
-			}	
+			}
+		} else if(enArtico && !genCopr) {
+			   hdlDir = new File(outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog");
 		}
+		else{
+			hdlDir = new File(outputPath + File.separator + "hdl");
+		}
+				
 		// if directory doesn't exist, create it
 		if (!hdlDir.exists()) {
 			hdlDir.mkdirs();
 		}
+		
 		
 		/// <li> set network name: multi_dataflow
 		network.setName("multi_dataflow"); 
@@ -709,8 +720,12 @@ public class MDCBackend extends AbstractBackend {
 
 			/// <li> If the Coprocessor generation is enabled generate coprocessor HDL code
 			if(genCopr){
-				// TODO  uniformare nomi reti (include path ora) per config id
+				// TODO  to uniform the networks name for the config id (currently they include the path)
 				hdlWriter.generateCopr(luts,networkVertexMap,getOptions());
+			}
+			
+			if(!genCopr && enArtico){
+				hdlWriter.generateArticoKernel(luts,networkVertexMap,getOptions());
 			}
 			
 		}catch(Exception e) {
@@ -721,22 +736,31 @@ public class MDCBackend extends AbstractBackend {
 		
 		// HDL component library import
 		// TODO fix folder
-		String subfolder = "";
+		String subfolder = "hdl";
 		if(genCopr) {
 			if(coprType.equals("MEMORY-MAPPED")) {
-				subfolder = "mm_accelerator" + File.separator;
+				subfolder = "mm_accelerator" + File.separator + "hdl";
 			} else if(coprType.equals("STREAM")) {	
-				subfolder = "s_accelerator" + File.separator;
+				subfolder = "s_accelerator" + File.separator + "hdl";
 			} else {
 				//TODO hybrid
 			}
+		} else  if(enArtico && !genCopr){
+			subfolder = "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog";
 		}
 		try {
-			copier.copy(hdlCompLib, outputPath + File.separator + subfolder + "hdl");
+			if(enArtico && !genCopr){
+				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
+			}
+			else{
+				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+
 		// -----------------------------------------------------
 		// Libraries files export
 		// -----------------------------------------------------
@@ -754,6 +778,14 @@ public class MDCBackend extends AbstractBackend {
 				
 			
 			if(genCopr | exportPowerGatingLibraries)
+			{	
+				final Result result = doLibrariesExtraction();
+				if(!result.isEmpty()) {
+					OrccLogger.traceln("*\tLibrary export done in " + getDuration(t0) + "s");
+				}
+			}
+			
+			if(enArtico && !genCopr)
 			{	
 				final Result result = doLibrariesExtraction();
 				if(!result.isEmpty()) {
@@ -806,9 +838,11 @@ public class MDCBackend extends AbstractBackend {
 			if(genCopr) {
 				coprType = getOption("it.unica.diee.mdc.tilType","<unknown>");
 			}
+			enMon = getOption("it.unica.diee.mdc.monitoring", false);			
+			enArtico = getOption("it.unica.diee.mdc.artico", false);
 		}
 		
-		enMon = getOption("it.unica.diee.mdc.monitoring", false);
+
 		
 		profileEn = getOption("it.unica.diee.mdc.profile", false);
 		if(profileEn) {
@@ -883,6 +917,14 @@ public class MDCBackend extends AbstractBackend {
 				}
 			}
 		}
+		
+		
+		/// If the generation of a  ARTICo³ compliant kernel is enabled, extract libraries depending on the memory-mapped processor-coprocessor communication
+		if(enArtico && !genCopr) {
+			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/front_end.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
+			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/back_end.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
+			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
+		} 
 				
 		
 		return result;

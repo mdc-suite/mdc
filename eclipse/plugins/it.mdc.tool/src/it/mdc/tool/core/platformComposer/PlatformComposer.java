@@ -22,6 +22,7 @@ import it.mdc.tool.core.platformComposer.ConfigPrinter;
 import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.WrapperPrinter;
+import it.mdc.tool.prototyping.ArticoPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
 import net.sf.orcc.df.Connection;
@@ -207,6 +208,95 @@ public abstract class PlatformComposer {
 		}
 		
 	}
+	
+	/**
+	 * Wrap the multi-dataflow network with the logic necessary to
+	 * generate a ARTICo3 Compliant Kernel
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	public void generateArticoKernel(List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, Map<String,Object> options) throws IOException {			
+		
+		//	Enable Monitoring
+		Boolean enableMonitoring = (Boolean) options.get("it.unica.diee.mdc.monitoring");
+		List<String> monList = new ArrayList<String>();
+		
+		// Initialize List of monitors
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monFifo"))
+			for(Port port: network.getInputs())
+				monList.add("count_full_" + port.getName());
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monCC"))
+			monList.add("count_clock_cycles");
+		
+		if((Boolean) options.get("it.unica.diee.mdc.monInTokens"))
+			for(Port port: network.getInputs())
+				monList.add("count_in_tokens_" + port.getName());
+		
+		if((Boolean) options.get("it.unica.diee.mdc.outTokens"))
+			for(Port port: network.getOutputs())
+				monList.add("count_out_tokens_" + port.getName());
+				
+		
+		/// <ul>
+		String file;
+		CharSequence sequence;
+
+		ArticoPrinter articoPrinter;
+		
+
+		/// <li> Initialize TIL printer
+		articoPrinter = new ArticoPrinter();
+		((ArticoPrinter) articoPrinter).initArticoPrinter(enableMonitoring,monList,
+				protocolManager.getNetSysSignals(),
+				protocolManager.getModCommSignals(),
+				protocolManager.getWrapCommSignals());
+
+		
+		////////////////////////
+		/// <li> HDL sources 
+		
+		File hdlDir = new File(hdlPath);
+		// If directory doesn't exist, create it
+		if (!hdlDir.exists()) {
+			hdlDir.mkdirs();
+		}
+		
+		// TODO fix stream with tlast signal generation (slv_reg and counter!)
+		
+		/// <ol> <li> Generate top module
+		file = hdlDir.getPath() + File.separator +  "cgr_accelerator.v";
+		sequence = articoPrinter.printTop(network);
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+
+		
+		/// <li> Generate XML configuration file for the MDC-PAPI component
+		if(enableMonitoring){
+			file = hdlDir.getPath().replaceFirst("src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog", "") + File.separator +  "mdc-papi_info.xml";
+			sequence = articoPrinter.printXML();
+			try {
+				PrintStream ps = new PrintStream(new FileOutputStream(file));
+				ps.print(sequence.toString());
+				ps.close();
+			} catch (FileNotFoundException e) {
+				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+			}
+		}
+				
+
+		
+		/// </ol> </ul>
+		/////////////////////////
+	}
 
 	/**
 	 * Generate a co-processing layer around the multi-dataflow
@@ -313,7 +403,7 @@ public abstract class PlatformComposer {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		
-		/// <li> Generate test bench module
+		/// <li> Generate XML configuration file for the MDC-PAPI component
 		if(enableMonitoring){
 			file = hdlDir.getPath().replaceFirst("hdl", "") + File.separator +  "mdc-papi_info.xml";
 			sequence = wrapperPrinter.printXML();
