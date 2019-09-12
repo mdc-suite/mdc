@@ -299,6 +299,9 @@ class ArticoPrinter extends WrapperPrinter {
 	// ----------------------------------------------------------------------------
 	// Monitoring Logic
 	// ----------------------------------------------------------------------------
+	
+	assign valid = 1'b1;
+	
 		«FOR String monitor: monList»
 		«IF monitor.contains("count_full_")»
 		// TO FIX
