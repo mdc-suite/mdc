@@ -29,9 +29,9 @@
          point="net.sf.orcc.core.options">
     
     <option
-        description="Whether Orcc should compile the given hierarchical list of XDF networks."
-        id="net.sf.orcc.plugins.compileXDFlist"
-        name="List of Networks to be Compiled and Merged">
+          description="Whether Orcc should compile the given hierarchical list of XDF networks."
+          id="net.sf.orcc.plugins.compileXDFlist"
+          name="List of Networks to be Compiled and Merged">
         <checkBox>
             <optionRef
                 id="it.unica.diee.mdc.xdfNum">
@@ -239,7 +239,7 @@
     </option>
 
     <option
-        defaultValue="NONE"
+        defaultValue="false"
         description="Kind of power saving technique implemented on the computed logic regions"
         id="it.unica.diee.mdc.lrPowerSaving"
         name="Logic Regions Power Saving Techique">
