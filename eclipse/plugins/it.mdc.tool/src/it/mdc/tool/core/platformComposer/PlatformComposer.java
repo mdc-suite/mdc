@@ -318,22 +318,22 @@ public abstract class PlatformComposer {
 		List<String> monList = new ArrayList<String>();
 		
 		// Initialize List of monitors
-		
-		if((Boolean) options.get("it.unica.diee.mdc.monFifo"))
-			for(Port port: network.getInputs())
-				monList.add("count_full_" + port.getName());
-		
-		if((Boolean) options.get("it.unica.diee.mdc.monCC"))
-			monList.add("count_clock_cycles");
-		
-		if((Boolean) options.get("it.unica.diee.mdc.monInTokens"))
-			for(Port port: network.getInputs())
-				monList.add("count_in_tokens_" + port.getName());
-		
-		if((Boolean) options.get("it.unica.diee.mdc.outTokens"))
-			for(Port port: network.getOutputs())
-				monList.add("count_out_tokens_" + port.getName());
-				
+		if(enableMonitoring) {
+			if((Boolean) options.get("it.unica.diee.mdc.monFifo"))
+				for(Port port: network.getInputs())
+					monList.add("count_full_" + port.getName());
+			
+			if((Boolean) options.get("it.unica.diee.mdc.monCC"))
+				monList.add("count_clock_cycles");
+			
+			if((Boolean) options.get("it.unica.diee.mdc.monInTokens"))
+				for(Port port: network.getInputs())
+					monList.add("count_in_tokens_" + port.getName());
+			
+			if((Boolean) options.get("it.unica.diee.mdc.outTokens"))
+				for(Port port: network.getOutputs())
+					monList.add("count_out_tokens_" + port.getName());
+		}	
 		
 		/// <ul>
 		String file;
