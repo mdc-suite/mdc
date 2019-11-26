@@ -63,6 +63,8 @@ class ScriptPrinter {
 	def printTopScript(Network network) {
 		mapInOut(network);
 		'''
+		# Script compliant with Vivado 2017.1
+		
 		###########################
 		# IP Settings
 		###########################
@@ -293,6 +295,8 @@ class ScriptPrinter {
 		
 	def printIpScript() {
 		'''
+		# Script compliant with Vivado 2017.1
+		
 		###########################
 		# IP Settings
 		###########################
