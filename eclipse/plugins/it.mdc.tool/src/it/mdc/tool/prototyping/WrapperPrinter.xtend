@@ -309,7 +309,7 @@ class WrapperPrinter {
 		«IF coupling.equals("mm")»localparam SIZE_MEM_«portMap.get(port)+1» = 256;
 		localparam [15:0] BASE_ADDR_MEM_«portMap.get(port)+1» = «IF !(portMap.get(port) == 0)»SIZE_MEM_«portMap.get(port)» + BASE_ADDR_MEM_«portMap.get(port)»«ELSE»0«ENDIF»;
 		«ENDIF»
-		parameter SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
+		localparam SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
 		«ENDFOR»
 		
 		// Wire(s) and Reg(s)
@@ -1056,6 +1056,7 @@ class WrapperPrinter {
 		return 1
 	}
 	
+	// TODO check if more than one network has been merged, if not remove ID
 	def printTopDatapath() {
 		'''
 		// to adapt profiling
