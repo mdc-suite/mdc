@@ -346,6 +346,10 @@ class ScriptPrinter {
 			set_property library «lib» [get_files  $ipdir/$ip_name.srcs/sources_1/imports/hdl/lib/«lib»/$f]
 		        }
 		 «ENDFOR»
+		 		 
+		 foreach file [glob -dir $hdl_files_path *.tcl] {
+		     source $file
+		 }
 		
 		set_property top $ip_name [current_fileset]
 		
