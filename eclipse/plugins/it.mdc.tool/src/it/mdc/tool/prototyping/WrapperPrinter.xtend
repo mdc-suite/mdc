@@ -13,6 +13,7 @@ import java.util.HashMap
 import net.sf.orcc.df.Port
 import java.util.List
 import it.mdc.tool.core.platformComposer.ProtocolManager
+import it.mdc.tool.core.sboxManagement.SboxLut
 
 /**
  * Vivado AXI IP Wrapper Printer 
@@ -26,6 +27,7 @@ class WrapperPrinter {
 	Map <Port,Integer> outputMap;
 	Map <Port,Integer> portMap;
 	List <Integer> signals;
+	List <SboxLut> luts;
 	int portSize;
 	int dataSize = 32;
 	Map<String,List<Port>> netPorts;
@@ -135,16 +137,18 @@ class WrapperPrinter {
 		
 	def initWrapperPrinter(String coupling, Boolean enableMonitoring,
 						List<String> monList,
+						List<SboxLut> luts,
 						Map<String,Map<String,String>> netSysSignals, 
 						Map<String,Map<String,Map<String,String>>> modCommSignals,
 						Map<String,Map<String,String>> wrapCommSignals
 	) {
 		this.coupling = coupling;
+		this.enableMonitoring = enableMonitoring;
+		this.monList = monList;
+		this.luts = luts;
 		this.netSysSignals = netSysSignals;
 		this.modCommSignals = modCommSignals;
 		this.wrapCommSignals = wrapCommSignals;
-		this.enableMonitoring = enableMonitoring;
-		this.monList = monList;
 	}
 	
 	def hasParameter(String portValue) {
@@ -1074,13 +1078,13 @@ class WrapperPrinter {
 			«ENDFOR»
 			«ENDFOR»
 			«FOR clockSignal : getClockSysSignals()»
-			.«clockSignal»(s00_axi_aclk),
+			.«clockSignal»(s00_axi_aclk)«IF !(getResetSysSignals().empty && this.luts.empty)»,«ENDIF»
 			«ENDFOR»
 			«FOR resetSignal : getResetSysSignals().keySet»
-			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»s00_axi_aresetn),
+			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»s00_axi_aresetn)«IF !(this.luts.empty)»,«ENDIF»
 			«ENDFOR»
-			// Multi-Dataflow Kernel ID
-			.ID(slv_reg0[31:24])
+			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
+			.ID(slv_reg0[31:24])«ENDIF»
 		);
 		'''
 	}

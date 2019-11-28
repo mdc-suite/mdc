@@ -353,7 +353,7 @@ public abstract class PlatformComposer {
 		}
 		/// <li> Initialize TIL printer
 		wrapperPrinter = new WrapperPrinter();
-		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,enableMonitoring,monList,
+		((WrapperPrinter) wrapperPrinter).initWrapperPrinter(prefix,enableMonitoring,monList,luts,
 				protocolManager.getNetSysSignals(),
 				protocolManager.getModCommSignals(),
 				protocolManager.getWrapCommSignals());
