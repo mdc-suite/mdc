@@ -22,6 +22,7 @@ module back_end(
     input wire aclk,
     input wire aresetn,
     input wire start,
+    input wire zero,
     input wire last,
     input wire wr,
     output reg en,
@@ -42,12 +43,15 @@ module back_end(
         else
             state <= state_nxt;
             
-    always@(state or start or last or wr)
+    always@(state or start or zero or last or wr)
         case(state)
-            IDLE:   if(start)
-                        state_nxt = WORK;
-                    else
-                        state_nxt = IDLE;
+            IDLE:   if(zero)
+						state_nxt = DONE;
+					else
+						if(start)
+							state_nxt = WORK;
+						else
+							state_nxt = IDLE;
             WORK:   if(last && wr)
                         state_nxt = DONE;
                     else

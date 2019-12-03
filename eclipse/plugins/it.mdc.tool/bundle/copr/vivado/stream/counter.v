@@ -45,6 +45,6 @@ module counter#(
 				else
 					count <= count;
 				
-	assign last = (!clr) && (count == max-1);
+	assign last = (!clr) && (count == max-1) && ( !(max=={SIZE{1'b1}}) );
 
 endmodule

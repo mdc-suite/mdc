@@ -413,6 +413,7 @@ class ArticoPrinter extends WrapperPrinter {
 			.aclk(clk),
 			.aresetn(reset),
 			.start(start),
+			.zero(slv_reg«portMap.get(input)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}})
 			.last(last_«input.name»),
 			.full(«input.name»_full),
 			.en(en_«input.name»),
@@ -485,6 +486,7 @@ class ArticoPrinter extends WrapperPrinter {
 			.aclk(clk),
 			.aresetn(reset),
 			.start(start),
+			.zero(slv_reg«portMap.get(output)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}}),
 			.last(last_«output.name»),
 			.wr(«output.name»_push),
 			.wren(wren_mem_«portMap.get(output)+1»),

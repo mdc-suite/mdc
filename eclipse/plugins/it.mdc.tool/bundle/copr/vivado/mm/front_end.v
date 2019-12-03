@@ -22,6 +22,7 @@ module front_end(
     input wire aclk,
     input wire aresetn,
     input wire start,
+    input wire zero,
     input wire last,
     input wire full,
     output reg en,
@@ -44,12 +45,15 @@ module front_end(
         else
             state <= state_nxt;
             
-    always@(state or start or full or last)
+    always@(state or start or zero or full or last)
         case(state)
-            IDLE:   if(start)
-                        state_nxt = FIRST;
-                    else
-                        state_nxt = IDLE;
+            IDLE:   if(zero)
+						state_nxt = DONE;
+					else
+						if(start)
+							state_nxt = FIRST;
+						else
+							state_nxt = IDLE;
 			FIRST:  if(!full)
             			if(!last)
                 			state_nxt = WORK;

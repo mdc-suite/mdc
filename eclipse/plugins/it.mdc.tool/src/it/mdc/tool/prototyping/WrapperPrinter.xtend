@@ -585,6 +585,7 @@ class WrapperPrinter {
 	}
 			
 	def printTopBody() {
+		//TODO check zero and last for size=0 with stream accelerator
 		'''
 		// Configuration Registers
 		// ----------------------------------------------------------------------------
@@ -923,6 +924,7 @@ class WrapperPrinter {
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(input)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.start(start),
+			.zero(slv_reg«portMap.get(input)+1»[SIZE_ADDR_«portMap.get(input)+1»-1:0]=={SIZE_ADDR_«portMap.get(input)+1»{1'b1}}),
 			.last(last_«input.name»),
 			.full(«input.name»_full),
 			.en(en_«input.name»),
@@ -989,6 +991,7 @@ class WrapperPrinter {
 			.aclk(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aclk),
 			.aresetn(s«IF dedicatedInterfaces»«getLongId(portMap.get(output)+1)»«ELSE»01«ENDIF»_axi_aresetn),
 			.start(start),
+			.zero(slv_reg«portMap.get(output)+1»[SIZE_ADDR_«portMap.get(output)+1»-1:0]=={SIZE_ADDR_«portMap.get(output)+1»{1'b1}}),
 			.last(last_«output.name»),
 			.wr(«output.name»_push),
 			.wren(wren_mem_«portMap.get(output)+1»),
@@ -1060,7 +1063,6 @@ class WrapperPrinter {
 		return 1
 	}
 	
-	// TODO check if more than one network has been merged, if not remove ID
 	def printTopDatapath() {
 		'''
 		// to adapt profiling
