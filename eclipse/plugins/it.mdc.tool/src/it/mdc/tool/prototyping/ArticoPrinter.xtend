@@ -18,6 +18,10 @@ import java.util.ArrayList
  * Printer for ARTICo3 Compliant Kernel
  * 
  * @author Tiziana Fanni
+ * 
+ * TODO 
+ * make reset parametric depending on polarity
+ * .«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("LOW")»!«ENDIF»reset),
  */
  
 class ArticoPrinter extends WrapperPrinter {
@@ -413,7 +417,7 @@ class ArticoPrinter extends WrapperPrinter {
 			.aclk(clk),
 			.aresetn(reset),
 			.start(start),
-			.zero(slv_reg«portMap.get(input)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}})
+			.zero(slv_reg«portMap.get(input)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}}),
 			.last(last_«input.name»),
 			.full(«IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.name»_full),
 			.en(en_«input.name»),
@@ -469,7 +473,6 @@ class ArticoPrinter extends WrapperPrinter {
 			// Multi-Dataflow Kernel ID
 			.ID(slv_reg0[31:24])
 		);
-					
 
 		«FOR input :inputMap.keySet»
 		assign «input.name»_data = data_out_mem_«portMap.get(input)+1»;
