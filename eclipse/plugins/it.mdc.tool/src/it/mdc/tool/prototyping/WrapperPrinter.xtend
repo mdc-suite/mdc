@@ -926,7 +926,7 @@ class WrapperPrinter {
 			.start(start),
 			.zero(slv_reg«portMap.get(input)+1»[SIZE_ADDR_«portMap.get(input)+1»-1:0]=={SIZE_ADDR_«portMap.get(input)+1»{1'b1}}),
 			.last(last_«input.name»),
-			.full(«input.name»_full),
+			.full(«IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.name»_full),
 			.en(en_«input.name»),
 			.rden(rden_mem_«portMap.get(input)+1»),
 			.wr(«input.name»_push),
@@ -966,7 +966,7 @@ class WrapperPrinter {
 		«ENDFOR»
 		«ELSE»
 		«FOR input :inputMap.keySet»
-		assign s«getLongId(inputMap.get(input))»_axis_tready = !«input.getName()»_full;
+		assign s«getLongId(inputMap.get(input))»_axis_tready = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.getName()»_full;
 		assign «input.getName()»_data = s«getLongId(inputMap.get(input))»_axis_tdata«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
 		//assign = s«getLongId(inputMap.get(input))»_axis_tstrb;
 		//assign = s«getLongId(inputMap.get(input))»_axis_tlast;
@@ -1041,6 +1041,14 @@ class WrapperPrinter {
 		'''
 	}
 	
+	def getFullChannelWrapCommSignalID() {
+		for(commSigId : wrapCommSignals.keySet) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("full")) {
+				return wrapCommSignals.get(commSigId).get(ProtocolManager.CH);
+			}		
+		}
+	}
+	
 	def getPortIdFromName(String name){
 		for(Port port : portMap.keySet) {
 			if(port.getName.equals(name)) {
@@ -1076,7 +1084,7 @@ class WrapperPrinter {
 			// Multi-Dataflow Output(s)
 			«FOR output : outputMap.keySet()»
 			«FOR commSigId : getOutLastModCommSignals().keySet»
-			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 			«ENDFOR»
 			«ENDFOR»
 			«FOR clockSignal : getClockSysSignals()»
@@ -1107,6 +1115,17 @@ class WrapperPrinter {
 			if(wrapCommSignals.get(commSigId).containsKey(ProtocolManager.CH)) {
 				if(channel.equals(wrapCommSignals.get(commSigId).get(ProtocolManager.CH))) {
 					return wrapCommSignals.get(commSigId).get(ProtocolManager.MAP)
+				}
+			}
+		}
+		return null
+	}
+	
+	def isNegMatchingWrapMapping(String channel){
+		for(commSigId : wrapCommSignals.keySet) {
+			if(wrapCommSignals.get(commSigId).containsKey(ProtocolManager.CH)) {
+				if(channel.equals(wrapCommSignals.get(commSigId).get(ProtocolManager.CH))) {
+					return wrapCommSignals.get(commSigId).containsKey(ProtocolManager.INV)
 				}
 			}
 		}
@@ -1651,7 +1670,7 @@ class WrapperPrinter {
 	    			if ( S_AXI_WSTRB[byte_index] == 1 ) begin
 	        		// Respective byte enables are asserted as per write strobes
 	        		// Slave register «outputMap.get(output)+4»
-	        		slv_reg«outputMap.get(output)+4»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	        		slv_reg«outputMap.get(output)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	        		end
 	        	
 	    «ENDFOR»

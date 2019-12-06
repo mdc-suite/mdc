@@ -11,6 +11,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import net.sf.orcc.util.OrccLogger;
+
 /**
  * 
  * 
@@ -46,6 +48,7 @@ public class ProtocolManager {
 	public static final String VAL = "value";
 	public static final String FILTER = "filter";
 	public static final String MAP = "mapping";
+	public static final String INV = "invert";
 	
 	/**
 	 * Protocol signals
@@ -167,6 +170,9 @@ public class ProtocolManager {
 							}
 							if (reader.getAttributeValue("",FILTER) != null) {
 								elemMap.put(FILTER,reader.getAttributeValue("",FILTER));
+							}
+							if (reader.getAttributeValue("",INV) != null) {
+								elemMap.put(INV,reader.getAttributeValue("",INV));
 							}
 							
 							if(module.equals("net")) {

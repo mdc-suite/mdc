@@ -415,7 +415,7 @@ class ArticoPrinter extends WrapperPrinter {
 			.start(start),
 			.zero(slv_reg«portMap.get(input)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}})
 			.last(last_«input.name»),
-			.full(«input.name»_full),
+			.full(«IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.name»_full),
 			.en(en_«input.name»),
 			.rden(rden_mem_«portMap.get(input)+1»),
 			.wr(«input.name»_push),
@@ -457,7 +457,7 @@ class ArticoPrinter extends WrapperPrinter {
 			// Multi-Dataflow Output(s)
 			«FOR output : outputMap.keySet()»
 			«FOR commSigId : getOutLastModCommSignals().keySet»
-			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 			«ENDFOR»
 			«ENDFOR»
 			«FOR clockSignal : getClockSysSignals()»
