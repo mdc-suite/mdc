@@ -63,9 +63,13 @@ Import MDC  in the same “design time” workspace where Orcc has been previous
 
 * Open Eclipse (a “design time” workspace has to be selected)
 * Import Orcc plugins (File > Import > General > Existing Projects into Workspace > root directory orcc/eclipse/plugins (check “Search for nested projects” and uncheck “net.sf.orcc”))
+
         * **If there are Maven errors**, such as: “maven project build maven lifecycle mapping problem”, right click on the project folders and select “Disable Maven Nature”
+        
         * If there is an error as “**Unsatisfied version constraint**: 'org.eclipse.xtext: 2.12.0'    MANIFEST.MF    /net.sf.orcc.cal/META-INF” → replace 2.12.0 with 2.9.0
+        
         * If there are **xtent encoding errors**: Right click on the projects with errors → properties → Text file encoding → Other: UTF-8
+        
         * If you have an error such as: **Description    Resource Path Location Type: The feature 'editDirectory' of 'org.eclipse.emf.codegen.ecore.genmodel.impl.GenModelImpl@b235e66{platform:/resource/net.sf.orcc.cal/model/generated/Cal.genmodel#/}' contains a bad value    Cal.genmodel    /net.sf.orcc.cal/model/generated    line: 1 /net.sf.orcc.cal/model/generated/Cal.genmodel    Xtext Check (fast)** --> Open on /net.sf.orcc.cal/model/generated/Cal.genmodel, and in properties tab replace src with /net.sf.orcc.cal/scr
  
         
