@@ -1,14 +1,18 @@
 # Multi-Dataflow Composer suite 
 ## Developer Installation Guide
 
-### Linux OS:
-#### Install Orcc and Eclipse IDE 
-(http://orcc.sourceforge.net/get-involved/contribution/)
-* Download Eclipse Neon (requires Java 8) - **Option II** is recommended 
-    * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc - http://www.eclipse.org/downloads/packages/eclipse-rcp-and-rap-developers/neon2
+#### Install Eclipse IDE 
+* Download Eclipse Neon (requires Java 8) - **Option II** is recommended
+    * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc (http://www.eclipse.org/downloads/packages/) **not tested recently**
         * Requires new software installation (Help > Install New Software … > search Xtext, EMF, Graphiti on all available sites)
-    * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/eclipse-ide-java-and-dsl-developers/neon2) **not tested recently**
+    * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/)
         * Requires new software installation (Help > Install New Software … > search Graphiti on all available sites)
+        
+ **Recently tested with Eclipse 2019-12!**
+
+
+### Linux OS:
+#### Install Orcc
 * Clone the Orcc Git repository 
     * git clone git@github.com:orcc/orcc.git)
 * Build Orcc with maven
@@ -30,20 +34,12 @@
 * git clone https://github.com/mdc-suite/mdc.git 
 
 #### Import MDC plugins
-Import MDC  in the same “design time” workspace where Orcc has been previously imported
-
+* Import MDC in the same “design time” workspace where Orcc has been previously imported
 * Import MDC plugins (File > Import > General > Existing Projects into Workspace > root directory mdcproject/trunk/ (check “Search for nested projects”)
-    * Right click on it.unica.diee.mdc → properties → Text file encoding → Other: UTF-8
-* Import HLS (Xronos) plugins (File > Import > General > Existing Projects into Workspace > **root directory mdcproject/hls/** (check “Search for nested projects”)
+    * Right click on it.mdc.tool → properties → Text file encoding → Other: UTF-8
+
 
 ### Windows OS:
-
-#### Install Eclipse IDE 
-* Download Eclipse Neon (requires Java 8) - **Option II** is recommended
-    * **Option I** - Eclipse for RCP and RAP Developers, recommended by Orcc (http://www.eclipse.org/downloads/packages/) **not tested recently**
-        * Requires new software installation (Help > Install New Software … > search Xtext, EMF, Graphiti on all available sites)
-    * **Option II** - Eclipse IDE for Java and DSL Developers (http://www.eclipse.org/downloads/packages/)
-        * Requires new software installation (Help > Install New Software … > search Graphiti on all available sites)
 
 #### Install Orcc 
 * Clone the Orcc Git repository
