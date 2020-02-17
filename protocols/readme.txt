@@ -1,4 +1,3 @@
-Supported HLS engines
-- Vivado HLS
-- CAPH
-- Cadence Stratus
+#Supported HLS engines
+## Vivado HLS
+## CAPH
