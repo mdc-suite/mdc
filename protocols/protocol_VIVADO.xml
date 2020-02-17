@@ -1,0 +1,47 @@
+<protocol>
+	<sys_signals>
+		<signal id="0" net_port="ap_clk" size="1" kind="input" is_clock=""></signal>
+		<signal id="1" net_port="ap_rst" size="1" kind="input" is_reset=""></signal>
+	</sys_signals>
+	<actor>
+		<sys_signals>
+			<signal id="0" port="ap_clk" size="1" net_port="ap_clk"></signal>
+			<signal id="1" port="ap_rst" size="1" net_port="ap_rst"></signal>
+		</sys_signals>
+		<comm_signals>
+			<signal id="0" port="dout" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="1" port="empty_n" channel="empty_n" size="1" kind="input" dir="direct"></signal>
+			<signal id="2" port="read" channel="read" size="1" kind="output" dir="reverse"></signal>	
+			<signal id="3" port="din" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="4" port="full_n" channel="full_n" size="1" kind="input" dir="reverse"></signal>
+			<signal id="5" port="write" channel="write" size="1" kind="output" dir="direct"></signal>
+		</comm_signals>
+	</actor>
+	<predecessor>
+		<name>fifo_gen</name>
+		<sys_signals>
+			<signal id="0" port="clk" size="1" net_port="ap_clk"></signal>
+			<signal id="1" port="rst" size="1" net_port="ap_rst"></signal>
+		</sys_signals>
+		<comm_parameters>
+			<parameter id="1" name="width" value="variable"></parameter>
+		</comm_parameters>
+		<comm_signals>
+			<signal id="0" port="din" channel="data" size="variable" kind="input" dir="direct"></signal>
+			<signal id="5" port="write" channel="write" size="1" kind="input" dir="direct"></signal>
+			<signal id="4" port="full_n" channel="full_n" size="1" kind="output" dir="reverse"></signal>
+			<signal id="3" port="dout" channel="data" size="variable" kind="output" dir="direct"></signal>
+			<signal id="2" port="read" channel="read" size="1" kind="input" dir="reverse"></signal>
+			<signal id="1" port="empty_n" channel="empty_n" size="1" kind="output" dir="direct"></signal>
+		</comm_signals>
+	</predecessor>
+	<wrapper>
+		<comm_signals>
+			<signal id="0" channel="data" size="variable" mapping="data"></signal>
+			<signal id="1" channel="read" size="1" mapping="pop"></signal>
+			<signal id="2" channel="write" size="1" mapping="push"></signal>
+			<signal id="3" channel="empty_n" size="1" mapping="empty" invert=""></signal>
+			<signal id="4" channel="full_n" size="1" mapping="full" invert=""></signal>
+		</comm_signals>
+	</wrapper>
+</protocol>
