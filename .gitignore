@@ -12,3 +12,6 @@ src-gen
 plugin.xml_gen
 #.antlr-generator-*.jar
 /eclipse/it.diee.mdc/model/generated
+
+
+/eclipse/plugins/it.mdc.tool/mdc-doxygen.Doxyfile
