@@ -1173,16 +1173,23 @@ class NetworkPrinterGeneric {
 		assign «getTargetSignal(connection,pred,commSigId)» = «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))»;
 		«ELSE»
 		«IF connection.hasAttribute("broadcast")»
-		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» =
 		«IF connection.source instanceof Actor»
+		«IF !connection.sourcePort.hasAttribute("printed")»
+		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» =
 		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " ||"»
 		«getTargetSignal(broadConn,pred,commSigId)» 
-		«ENDFOR»
+		«ENDFOR»;
+		«connection.sourcePort.setAttribute("printed","")»
+		«ENDIF»
 		«ELSE»
+		«IF !connection.source.hasAttribute("printed")»
+		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» =		
 		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " ||"»
 		«getTargetSignal(broadConn as Connection,pred,commSigId)» 
-		«ENDFOR»
-		«ENDIF»;
+		«ENDFOR»;
+		«connection.source.setAttribute("printed","")»
+		«ENDIF»
+		«ENDIF»
 		«ELSE»
 		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» = «getTargetSignal(connection,pred,commSigId)»;
 		«ENDIF»

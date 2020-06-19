@@ -277,19 +277,24 @@ public class NetworkPrinter extends PlatformComposer {
 		network.computeTemplateMaps();
 		/////////////////////////////////////////////////////////////
 		
-		//if enableClockGating is high, Clock Gating methodology is enabled
-		boolean enableClockGating = ((Boolean) options.get("it.unica.diee.mdc.computeLogicRegions"))
-				&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("CLOCK_GATING")
-					|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
+		boolean enPowerOptimization = ((Boolean) options.get("it.mdc.tool.powOpt"));
+		boolean enableClockGating = false;
+		boolean enablePowerGating = false;
 		
-		//if enablePowerGating is high, Power Shut Off methodology is enabled
-		boolean enablePowerGating = ((Boolean) options.get("it.unica.diee.mdc.computeLogicRegions"))
-				&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("POWER_GATING")
-					|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
-		
+		if(enPowerOptimization) {
+			//if enableClockGating is high, Clock Gating methodology is enabled
+			enableClockGating = ((Boolean) options.get("it.unica.diee.mdc.computeLogicRegions"))
+					&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("CLOCK_GATING")
+						|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
+			
+			//if enablePowerGating is high, Power Shut Off methodology is enabled
+			enablePowerGating = ((Boolean) options.get("it.unica.diee.mdc.computeLogicRegions"))
+					&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("POWER_GATING")
+						|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
+		}
 
 		
-					File dir= new File(hdlPath);
+		File dir= new File(hdlPath);
 		// If directory doesn't exist, create it
 		if (!dir.exists()) {
 			dir.mkdirs();
