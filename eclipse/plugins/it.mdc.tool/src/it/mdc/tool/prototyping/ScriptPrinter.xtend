@@ -347,13 +347,16 @@ class ScriptPrinter {
 		        }
 		 «ENDFOR»
 		
-		foreach dat_file [glob -dir $hdl_files_path *.dat] {
-			import_file $dat_file
+		if {[llength [glob -dir $hdl_files_path *.dat]] != 0} {
+			foreach dat_file [glob -dir $hdl_files_path *.dat] {
+				import_file $dat_file
+			}
 		}
-		 		 
-		 foreach tcl_file [glob -dir $hdl_files_path *.tcl] {
-		     source $tcl_file
-		 }
+		
+		if {[llength [glob -dir $hdl_files_path *.tcl]] != 0} {
+			 foreach tcl_file [glob -dir $hdl_files_path *.tcl] {
+			     source $tcl_file
+			}
 		
 		set_property top $ip_name [current_fileset]
 		
