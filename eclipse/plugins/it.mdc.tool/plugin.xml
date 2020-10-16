@@ -322,6 +322,9 @@
            <optionRef
                  id="it.unica.diee.mdc.monitoring">
            </optionRef>
+           <optionRef
+                 id="it.unica.diee.mdc.pulp">
+           </optionRef>
         </checkBox>
      </option>
 
@@ -451,6 +454,13 @@
             folder="false"
             workspace="false">
         </browseFile>
+    </option>
+    <option
+          defaultValue="false"
+          description="Generate HDL Wrapper compatible with Pulp HWPE Architecture"
+          id="it.unica.diee.mdc.pulp"
+          name="Pulp Backend">
+       <checkBox></checkBox>
     </option>
    	</extension>
 

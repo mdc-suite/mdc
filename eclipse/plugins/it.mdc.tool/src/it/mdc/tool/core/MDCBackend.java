@@ -169,6 +169,12 @@ public class MDCBackend extends AbstractBackend {
 	private boolean enArtico;
 	
 	/**
+	 * Enable Pulp Wrapper Generation
+	 */
+	
+	private boolean enPulp;
+	
+	/**
 	 * Enable profiling flag
 	 */
 	private boolean profileEn;
@@ -728,6 +734,10 @@ public class MDCBackend extends AbstractBackend {
 				hdlWriter.generateArticoKernel(luts,networkVertexMap,getOptions());
 			}
 			
+			if(!genCopr && enPulp){
+				hdlWriter.generatePulpWrapper(luts,networkVertexMap,getOptions());
+			}
+			
 		}catch(Exception e) {
 			System.out.println("Exception catched on HDLwriter operations!\n\t" + e);
 			for(StackTraceElement se : e.getStackTrace())
@@ -839,7 +849,8 @@ public class MDCBackend extends AbstractBackend {
 				coprType = getOption("it.unica.diee.mdc.tilType","<unknown>");
 			}
 			enMon = getOption("it.unica.diee.mdc.monitoring", false);			
-			enArtico = getOption("it.unica.diee.mdc.artico", false);
+			enArtico = getOption("it.unica.diee.mdc.artico", false);			
+			enPulp = getOption("it.unica.diee.mdc.pulp", false);
 		}
 		
 

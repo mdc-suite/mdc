@@ -23,6 +23,7 @@ import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.WrapperPrinter;
 import it.mdc.tool.prototyping.ArticoPrinter;
+import it.mdc.tool.prototyping.PulpPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
 import net.sf.orcc.df.Connection;
@@ -293,6 +294,58 @@ public abstract class PlatformComposer {
 		}
 				
 
+		
+		/// </ol> </ul>
+		/////////////////////////
+	}
+	
+	
+	/**
+	 * Wrap the multi-dataflow network with the logic necessary to
+	 * generate a Pulp Compliant HWPE Wrapper
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	public void generatePulpWrapper(List<SboxLut> luts, Map<String,Map<String,String>> networkVertexMap, Map<String,Object> options) throws IOException {			
+		
+		/// <ul>
+		String file;
+		CharSequence sequence;
+
+		PulpPrinter pulpPrinter;
+		
+
+		/// <li> Initialize TIL printer
+		pulpPrinter = new PulpPrinter();
+		((PulpPrinter) pulpPrinter).initPulpPrinter(
+				luts,
+				protocolManager.getNetSysSignals(),
+				protocolManager.getModCommSignals(),
+				protocolManager.getWrapCommSignals());
+
+		
+		////////////////////////
+		/// <li> HDL sources 
+		
+		File hdlDir = new File(hdlPath);
+		// If directory doesn't exist, create it
+		if (!hdlDir.exists()) {
+			hdlDir.mkdirs();
+		}
+		
+		// TODO fix stream with tlast signal generation (slv_reg and counter!)
+		
+		/// <ol> <li> Generate top module
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_top.sv";
+		sequence = pulpPrinter.printTop(network);
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
 		
 		/// </ol> </ul>
 		/////////////////////////
