@@ -349,6 +349,76 @@ public abstract class PlatformComposer {
 		
 		/// </ol> </ul>
 		/////////////////////////
+
+		/// <ol> <li> Generate streamer
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_streamer.sv";
+		sequence = pulpPrinter.printStreamer();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate ctrl
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_ctrl.sv";
+		sequence = pulpPrinter.printCtrl();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate FSM
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_FSM.sv";
+		sequence = pulpPrinter.printFSM();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate package
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_package.sv";
+		sequence = pulpPrinter.printPackage();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate Bender
+		file = hdlDir.getPath() + File.separator +  "src_files.yml";
+		sequence = pulpPrinter.printBender();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
 	}
 
 	/**

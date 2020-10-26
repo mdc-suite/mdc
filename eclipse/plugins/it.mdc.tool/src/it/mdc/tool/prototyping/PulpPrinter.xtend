@@ -625,6 +625,696 @@ class PulpPrinter {
 		return result
 	}
 	
+	def printCtrl(){
+		'''
+		/*
+		 * Module: multi_dataflow_ctrl.sv
+		 */
+		 
+		import multi_dataflow_package::*;
+		import hwpe_ctrl_package::*;
+		module multi_dataflow_ctrl
+		#(
+		  parameter int unsigned N_CORES         = 2,
+		  parameter int unsigned N_CONTEXT       = 2,
+		  parameter int unsigned N_IO_REGS       = 16,
+		  parameter int unsigned ID              = 10,
+		  parameter int unsigned UCODE_HARDWIRED = 0
+		)
+		(  // Global signals
+		  input  logic                                  clk_i,
+		  input  logic                                  rst_ni,
+		  input  logic                                  test_mode_i,
+		  output logic                                  clear_o,
+		  // events
+		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+		  // ctrl & flags
+		  output ctrl_streamer_t                        ctrl_streamer_o,
+		  input  flags_streamer_t                       flags_streamer_i,
+		  output ctrl_engine_t                          ctrl_engine_o,
+		  input  flags_engine_t                         flags_engine_i,
+		  // periph slave port
+		  hwpe_ctrl_intf_periph.slave                   periph
+		);
+		  // Ctrl/flags signals
+		  ctrl_slave_t   slave_ctrl;
+		  flags_slave_t  slave_flags;
+		  ctrl_regfile_t reg_file;
+		  // Uloop signals
+		  logic [223:0]  ucode_flat;
+		  uloop_code_t   ucode;
+		  ctrl_uloop_t   ucode_ctrl;
+		  flags_uloop_t  ucode_flags;
+		  logic [11:0][31:0] ucode_registers_read;
+		  // Standard registers
+		  logic unsigned [31:0] static_reg_nb_iter;
+		  logic unsigned [31:0] static_reg_len_iter;
+		  logic unsigned [31:0] static_reg_vectstride;
+		  logic unsigned [31:0] static_reg_onestride;
+		  logic unsigned [15:0] static_reg_shift;
+		  logic static_reg_simplemul;
+		  // Custom register files
+  		  logic unsigned [(32-1):0] static_reg_0;
+		  «FOR port : portMap.keySet»
+		  logic unsigned [(32-1):0] static_reg_«portMap.get(port)+1»;
+		  «ENDFOR»
+		  ctrl_fsm_t fsm_ctrl;
+		  
+		  /* Peripheral slave & register file */
+		  hwpe_ctrl_slave #(
+		    .N_CORES        ( N_CORES               ),
+		    .N_CONTEXT      ( N_CONTEXT             ),
+		    .N_IO_REGS      ( N_IO_REGS             ),
+		    .N_GENERIC_REGS ( (1-UCODE_HARDWIRED)*8 ),
+		    .ID_WIDTH       ( ID                    )
+		  ) i_slave (
+		    .clk_i    ( clk_i       ),
+		    .rst_ni   ( rst_ni      ),
+		    .clear_o  ( clear_o     ),
+		    .cfg      ( periph      ),
+		    .ctrl_i   ( slave_ctrl  ),
+		    .flags_o  ( slave_flags ),
+		    .reg_file ( reg_file    )
+		  );
+		  assign evt_o = slave_flags.evt;
+		  
+		  /* Direct register file mappings */
+		  // Standard registers
+		  assign static_reg_nb_iter    = reg_file.hwpe_params[REG_NB_ITER]  + 1;
+		  assign static_reg_len_iter   = reg_file.hwpe_params[REG_LEN_ITER] + 1;
+		  assign static_reg_shift      = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][31:16];
+		  assign static_reg_simplemul  = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][0];
+		  assign static_reg_vectstride = reg_file.hwpe_params[REG_SHIFT_VECTSTRIDE];
+		  assign static_reg_onestride  = 4;
+		  
+		  // Custom registers
+		  assign static_reg_0 = reg_file.hwpe_params[CONFIG];
+  		«FOR port : portMap.keySet»
+  		  assign static_reg_«portMap.get(port)» = reg_file.hwpe_params[PORT_«port.name»];
+		«ENDFOR»
+		  
+		  /* Microcode processor */
+		  generate
+		    if(UCODE_HARDWIRED != 0) begin
+		      // equivalent to the microcode in ucode/code.yml
+		      assign ucode_flat = 224'h0000000000040000000000000000000000000000000008cd11a12c05;
+		    end
+		    else begin
+		      // the microcode is stored in registers independent of context (job)
+		      assign ucode_flat = reg_file.generic_params[6:0];
+		    end
+		  endgenerate
+		  assign ucode = {
+		    // loops & bytecode
+		    ucode_flat,
+		    // ranges
+		    12'b0,
+		    12'b0,
+		    12'b0,
+		    12'b0,
+		    12'b0,
+		    static_reg_nb_iter[11:0]
+		  };
+		  
+		  assign ucode_registers_read[UCODE_MNEM_NBITER]     = static_reg_nb_iter;
+		  assign ucode_registers_read[UCODE_MNEM_ITERSTRIDE] = static_reg_vectstride;
+		  assign ucode_registers_read[UCODE_MNEM_ONESTRIDE]  = static_reg_onestride;
+		  assign ucode_registers_read[11:3] = '0;
+		  
+		  hwpe_ctrl_uloop #(
+		    .NB_LOOPS       ( 1  ),
+		    .NB_REG         ( 4  ),
+		    .NB_RO_REG      ( 12 ),
+		    .DEBUG_DISPLAY  ( 0  )
+		  ) i_uloop (
+		    .clk_i            ( clk_i                ),
+		    .rst_ni           ( rst_ni               ),
+		    .test_mode_i      ( test_mode_i          ),
+		    .clear_i          ( clear_o              ),
+		    .ctrl_i           ( ucode_ctrl           ),
+		    .flags_o          ( ucode_flags          ),
+		    .uloop_code_i     ( ucode                ),
+		    .registers_read_i ( ucode_registers_read )
+		  );
+		  
+		  /* Main FSM */
+		  multi_dataflow_fsm i_fsm (
+		    .clk_i            ( clk_i              ),
+		    .rst_ni           ( rst_ni             ),
+		    .test_mode_i      ( test_mode_i        ),
+		    .clear_i          ( clear_o            ),
+		    .ctrl_streamer_o  ( ctrl_streamer_o    ),
+		    .flags_streamer_i ( flags_streamer_i   ),
+		    .ctrl_engine_o    ( ctrl_engine_o      ),
+		    .flags_engine_i   ( flags_engine_i     ),
+		    .ctrl_ucode_o     ( ucode_ctrl         ),
+		    .flags_ucode_i    ( ucode_flags        ),
+		    .ctrl_slave_o     ( slave_ctrl         ),
+		    .flags_slave_i    ( slave_flags        ),
+		    .reg_file_i       ( reg_file           ),
+		    .ctrl_i           ( fsm_ctrl           )
+		  );
+		  
+		  always_comb
+		  begin
+		    fsm_ctrl.simple_mul = static_reg_simplemul;
+		    fsm_ctrl.shift      = static_reg_shift[$clog2(32)-1:0];
+		    fsm_ctrl.len        = static_reg_len_iter[$clog2(CNT_LEN):0];
+		    // Custom register file mappings to fsm
+		    fsm_ctrl.config    = static_reg_0;
+		    «FOR port : portMap.keySet»
+		    fsm_ctrl.port_«port.name»    = static_reg_«portMap.get(port)»;
+		    «ENDFOR»
+		  end
+		  
+		endmodule
+		'''
+	}
+	
+	def printFSM(){
+		'''
+		
+		/*
+		 * Module: multi_dataflow_fsm.sv
+		 */
+		import multi_dataflow_package::*;
+		import hwpe_ctrl_package::*;
+		
+		module multi_dataflow_fsm (
+		  // Global signals
+		  input  logic                                  clk_i,
+		  input  logic                                  rst_ni,
+		  input  logic                                  test_mode_i,
+		  output logic                                  clear_i,
+		  // ctrl & flags
+		  output ctrl_streamer_t                        ctrl_streamer_o,
+		  input  flags_streamer_t                       flags_streamer_i,
+		  output ctrl_engine_t                          ctrl_engine_o,
+		  input  flags_engine_t                         flags_engine_i,
+		  output ctrl_uloop_t                           ctrl_ucode_o,
+		  input  flags_uloop_t                          flags_ucode_i,
+		  output ctrl_slave_t                           ctrl_slave_o,
+		  input  flags_slave_t                          flags_slave_i,
+		  input  ctrl_regfile_t                         reg_file_i,
+		  input  ctrl_fsm_t                             ctrl_i
+		);
+		  // State signals
+		  state_fsm_t curr_state, next_state;
+		  // State computation
+		  always_ff @(posedge clk_i or negedge rst_ni)
+		  begin : main_fsm_seq
+		    if(~rst_ni) begin
+		      curr_state <= FSM_IDLE;
+		    end
+		    else if(clear_i) begin
+		      curr_state <= FSM_IDLE;
+		    end
+		    else begin
+		      curr_state <= next_state;
+		    end
+		  end
+		  // State declaration
+		  always_comb
+		  begin : main_fsm_comb
+		    // direct mappings - these have to be here due to blocking/non-blocking assignment
+		    // combination with the same ctrl_engine_o/ctrl_streamer_o variable
+		    // shift-by-3 due to conversion from bits to bytes
+		    //
+		    // INITIALIZATION
+		    //
+		    
+		    /* INPUT FLOW */
+		    «FOR input : inputMap.keySet»
+		    // «input.name» stream
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.trans_size  = ctrl_i.len;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_stride = '0;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_length = ctrl_i.len;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_stride = '0;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_length = 1;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[PORT_«input.name»_ADDR] + (flags_ucode_i.offs[PORT_«input.name»_UCODE_OFFS]);
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_roll   = '0;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.loop_outer  = '0;
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = '0;
+		    
+		    «ENDFOR»
+		    
+		    /* OUTPUT FLOW */
+		    «FOR output : outputMap.keySet»
+		    // «output.name» stream
+		    // ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  =  ctrl_i.len;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_stride = '0;
+		    // ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length =  ctrl_i.len;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_stride = '0;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_length = 1;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[PORT_«output.name»_ADDR] + (flags_ucode_i.offs[PORT_«output.name»_UCODE_OFFS]);
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_roll   = '0;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.loop_outer  = '0;
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = '0;
+		    //
+		    
+		    «ENDFOR»
+		    
+		    // ucode
+		    // ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
+		                                     // ucode to an accelerator-specific module
+		    // engine
+		    ctrl_engine_o.clear      = '1;
+		    ctrl_engine_o.enable     = '1;
+		    ctrl_engine_o.start      = '0;
+		    ctrl_engine_o.simple_mul = ctrl_i.simple_mul;
+		    ctrl_engine_o.shift      = ctrl_i.shift;
+		    ctrl_engine_o.len        = ctrl_i.len;
+		    ctrl_engine_o.config    = ctrl_i.config;
+		    «FOR port : portMap.keySet»
+		    ctrl_engine_o.port_«port.name»    = ctrl_i.port_«port.name»;
+		    «ENDFOR»
+		
+		    // slave
+		    ctrl_slave_o.done = '0;
+		    ctrl_slave_o.evt  = '0;
+		    
+		    // real finite-state machine
+		    next_state   = curr_state;
+        	«FOR input : inputMap.keySet»
+          	ctrl_streamer_o.«input.name»_source_ctrl.req_start    = '0;
+          	«ENDFOR»
+	        «FOR output : outputMap.keySet SEPARATOR " & "»
+    		ctrl_streamer_o.«output.name»_sink_ctrl.req_start      = '0;
+    		«ENDFOR»
+		    ctrl_ucode_o.enable                        = '0;
+		    ctrl_ucode_o.clear                         = '0;
+		    
+		    //
+		    // STATES
+		    //
+		    case(curr_state)
+		      FSM_IDLE: begin
+		        // wait for a start signal
+		        ctrl_ucode_o.clear = '1;
+		        if(flags_slave_i.start) begin
+		          next_state = FSM_START;
+		        end
+		      end
+		      FSM_START: begin
+		        // update the indeces, then load the first feature
+		        if(
+		          	«FOR input : inputMap.keySet»
+		          	flags_streamer_i.«input.name»_source_flags.ready_start &
+		          	«ENDFOR»
+    		        «FOR output : outputMap.keySet SEPARATOR " & "»
+	        		flags_streamer_i.«output.name»_sink_flags.ready_start
+	        		«ENDFOR»)  begin
+		          next_state  = FSM_COMPUTE;
+		          ctrl_engine_o.start  = 1'b1;
+		          ctrl_engine_o.clear  = 1'b0;
+		          ctrl_engine_o.enable = 1'b1;
+		          «FOR input : inputMap.keySet»
+		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+		          «ENDFOR»
+		          «FOR output : outputMap.keySet»
+		          ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+		          «ENDFOR»
+		        end
+		        else begin
+		          next_state = FSM_WAIT;
+		        end
+		      end
+		      FSM_COMPUTE: begin
+		        ctrl_engine_o.clear  = 1'b0;
+		        //if((flags_engine_i.cnt == ctrl_i.len) & flags_engine_i.acc_valid)
+		          //next_state = FSM_UPDATEIDX;
+		        if (flags_engine_i.cnt == ctrl_i.len)
+		          next_state = FSM_TERMINATE;
+		        if(flags_engine_i.ready) begin
+		          ctrl_engine_o.start  = 1'b1;
+		          ctrl_engine_o.clear  = 1'b0;
+		          ctrl_engine_o.enable = 1'b1;
+		        end
+		      end
+		      FSM_UPDATEIDX: begin
+		        // update the indeces, then go back to load or idle
+		        if(flags_ucode_i.valid == 1'b0) begin
+		          ctrl_ucode_o.enable = 1'b1;
+		        end
+		        else if(flags_ucode_i.done) begin
+		        // else if(flags_engine_i.cnt == ctrl_i.len) begin // interface with Vivado HLS --> finished filtering input data?
+		        // if(flags_engine_i.cnt == ctrl_i.len) begin
+		          next_state = FSM_TERMINATE;
+		        end
+		        else if(
+    		          	«FOR input : inputMap.keySet»
+    		          	flags_streamer_i.«input.name»_source_flags.ready_start &
+    		          	«ENDFOR»
+        		        «FOR output : outputMap.keySet SEPARATOR " & "»
+		        		flags_streamer_i.«output.name»_sink_flags.ready_start
+		        		«ENDFOR»)  begin
+		          next_state = FSM_COMPUTE;
+		          ctrl_engine_o.start  = 1'b1;
+		          ctrl_engine_o.clear  = 1'b0;
+		          ctrl_engine_o.enable = 1'b1;
+		          «FOR input : inputMap.keySet»
+		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+				  «ENDFOR»
+				  «FOR output : outputMap.keySet SEPARATOR " & "»
+				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+				  «ENDFOR»
+		        end
+		        else begin
+		          next_state = FSM_WAIT;
+		        end
+		      end
+		      FSM_WAIT: begin
+		        // wait for the flags to be ok then go back to load
+		        ctrl_engine_o.clear  = 1'b0;
+		        ctrl_engine_o.enable = 1'b0;
+		        ctrl_ucode_o.enable  = 1'b0;
+		        if(
+		        	«FOR input : inputMap.keySet»
+		          	flags_streamer_i.«input.name»_source_flags.ready_start &
+		          	«ENDFOR»
+    		        «FOR output : outputMap.keySet SEPARATOR " & "»
+	        		flags_streamer_i.«output.name»_sink_flags.ready_start
+	        		«ENDFOR»)  begin
+		          next_state = FSM_COMPUTE;
+		          ctrl_engine_o.start = 1'b1;
+		          ctrl_engine_o.enable = 1'b1;
+  		          «FOR input : inputMap.keySet»
+  		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+  				  «ENDFOR»
+  				  «FOR output : outputMap.keySet SEPARATOR " & "»
+  				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+  				  «ENDFOR»
+		        end
+		      end
+		      FSM_TERMINATE: begin
+		        // wait for the flags to be ok then go back to idle
+		        ctrl_engine_o.clear  = 1'b0;
+		        ctrl_engine_o.enable = 1'b0;
+		        if(
+		        	«FOR input : inputMap.keySet»
+		          	flags_streamer_i.«input.name»_source_flags.ready_start &
+		          	«ENDFOR»
+    		        «FOR output : outputMap.keySet SEPARATOR " & "»
+	        		flags_streamer_i.«output.name»_sink_flags.ready_start
+	        		«ENDFOR»)  begin
+		          next_state = FSM_IDLE;
+		          ctrl_slave_o.done = 1'b1;
+		        end
+		      end
+		    endcase // curr_state
+		  end
+		endmodule // multi_dataflow_fsm
+		'''
+	}
+	
+	def printBender(){
+		'''
+		hw-mac-engine:
+		  incdirs : [
+		    rtl
+		  ]
+		  files : [
+		    rtl/multi_dataflow_package.sv,
+		    rtl/multi_dataflow_fsm.sv,
+		    rtl/multi_dataflow_ctrl.sv,
+		    rtl/multi_dataflow_streamer.sv,
+		    rtl/multi_dataflow_engine.sv,
+		    rtl/multi_dataflow_top.sv,
+		    wrap/multi_dataflow_top_wrap.sv
+		  ]
+		  vlog_opts : [
+		    "-L hwpe_ctrl_lib",
+		    "-L hwpe_stream_lib"
+		  ]
+		'''
+	}
+	
+	def printPackage(){
+		'''
+		
+		/*
+		 * Module: multi_dataflow_package.sv
+		 */
+		 
+		import hwpe_stream_package::*;
+		
+		package multi_dataflow_package;
+		  parameter int unsigned CNT_LEN = 1024; // maximum length of the vectors for a scalar product
+		  /* Registers */
+		  // TCDM addresses
+		  «FOR port : portMap.keySet»
+		  parameter int unsigned PORT_«port.name»_ADDR              = «portMap.get(port)»;
+		  «ENDFOR»
+		  
+		  // Standard registers
+		  parameter int unsigned REG_NB_ITER              = «portMap.size»;
+		  parameter int unsigned REG_LEN_ITER             = «portMap.size+1»;
+		  parameter int unsigned REG_SHIFT_SIMPLEMUL      = «portMap.size+2»;
+		  parameter int unsigned REG_SHIFT_VECTSTRIDE     = «portMap.size+3»;
+		  parameter int unsigned REG_SHIFT_VECTSTRIDE2    = «portMap.size+4»; // Added to be aligned with sw (not used in hw)
+		  
+		  // Custom register files
+		  parameter int unsigned CONFIG             = «portMap.size+5»;
+		  «FOR port : portMap.keySet»
+		  parameter int unsigned PORT_«port.name»             = «portMap.get(port)+6»;
+		  «ENDFOR»
+		  
+		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
+		  «FOR port : portMap.keySet»
+		  parameter int unsigned PORT_«port.name»_UCODE_OFFS              = «portMap.get(port)»;
+		  «ENDFOR»
+		  
+		  // microcode mnemonics -- this should be aligned to the microcode compiler of course!
+		  parameter int unsigned UCODE_MNEM_NBITER     = 4 - 4;
+		  parameter int unsigned UCODE_MNEM_ITERSTRIDE = 5 - 4;
+		  parameter int unsigned UCODE_MNEM_ONESTRIDE  = 6 - 4;
+		  
+		  typedef struct packed {
+		    logic clear;
+		    logic enable;
+		    logic simple_mul;
+		    logic start;
+		    logic unsigned [$clog2(32)-1       :0] shift;
+		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
+		    // Custom register files
+		    logic unsigned [(32-1):0] config;
+		    «FOR port : portMap.keySet»
+		    logic unsigned [(32-1):0] port_«port.name»;
+		    «ENDFOR»
+		  } ctrl_engine_t;
+		  
+		  typedef struct packed {
+		    logic unsigned [$clog2(CNT_LEN):0] cnt; // 1 bit more as cnt starts from 1, not 0
+		    logic done;
+		    logic idle;
+		    logic ready;
+		  } flags_engine_t;
+		  
+		  typedef struct packed {
+		  	«FOR input : inputMap.keySet»
+		  	hwpe_stream_package::ctrl_sourcesink_t «input.name»_source_ctrl;
+		    «ENDFOR»
+		    «FOR output : outputMap.keySet»
+		    hwpe_stream_package::ctrl_sourcesink_t «output.name»_sink_ctrl;
+		    «ENDFOR»
+		  } ctrl_streamer_t;
+		  
+		  typedef struct packed {
+		  	«FOR input : inputMap.keySet»
+		  	hwpe_stream_package::flags_sourcesink_t «input.name»_source_flags;
+		    «ENDFOR»
+		    «FOR output : outputMap.keySet»
+		    hwpe_stream_package::flags_sourcesink_t «output.name»_sink_flags;
+		    «ENDFOR»
+		  } flags_streamer_t;
+		  
+		  typedef struct packed {
+		    logic simple_mul;
+		    logic unsigned [$clog2(32)-1       :0] shift;
+		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
+		    // Custom register files
+		    logic unsigned [(32-1):0] config;
+		    «FOR port : portMap.keySet»
+		    logic unsigned [(32-1):0] port_«port.name»;
+		    «ENDFOR»
+		  } ctrl_fsm_t;
+		  
+		  typedef enum {
+		    FSM_IDLE,
+		    FSM_START,
+		    FSM_COMPUTE,
+		    FSM_WAIT,
+		    FSM_UPDATEIDX,
+		    FSM_TERMINATE
+		  } state_fsm_t;
+		
+		endpackage
+		'''
+	}
+	
+	def printStreamer(){
+		'''
+		/*
+		 * multi_dataflow_streamer.sv
+		 */
+		
+		import mac_package::*;
+		import hwpe_stream_package::*;
+		
+		module multi_dataflow_streamer
+		#(
+		  parameter int unsigned MP = «portMap.size», // number of master ports
+		  parameter int unsigned FD = 2  // FIFO depth
+		)
+		(
+		  // global signals
+		  input  logic                   clk_i,
+		  input  logic                   rst_ni,
+		  input  logic                   test_mode_i,
+		  // local enable & clear
+		  input  logic                   enable_i,
+		  input  logic                   clear_i,
+		
+	    «FOR input : inputMap.keySet»
+	      // input «input.name» stream + handshake
+	      hwpe_stream_intf_stream.source stream_if_«input.name»,
+	    «ENDFOR»
+	    «FOR output : outputMap.keySet»
+	      // output «output.name» stream + handshake
+	      hwpe_stream_intf_stream.sink stream_if_«output.name».sink,
+	    «ENDFOR»
+		
+		  // TCDM ports
+		  hwpe_stream_intf_tcdm.master tcdm [MP-1:0],
+		
+		  // control channel
+		  input  ctrl_streamer_t  ctrl_i,
+		  output flags_streamer_t flags_o
+		);
+		
+		logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;		
+		
+		«FOR port : portMap.keySet»
+		  hwpe_stream_intf_stream #(
+		    .DATA_WIDTH ( 32 )
+		  ) stream_if_«port.name»_prefifo (
+		    .clk ( clk_i )
+		  );
+	    «ENDFOR»
+		
+		  hwpe_stream_intf_tcdm tcdm_fifo [MP-1:0] (
+		    .clk ( clk_i )
+		  );
+		
+  		«FOR port : portMap.keySet»
+  		  hwpe_stream_intf_tcdm tcdm_fifo_«portMap.get(port)» [0:0] (
+		    .clk ( clk_i )
+		  );
+		«ENDFOR»
+		
+		  // source and sink modules
+		  «FOR input : inputMap.keySet»
+		  hwpe_stream_source #(
+		    .DATA_WIDTH ( 32 ),
+		    .DECOUPLED  ( 1  )
+		  ) i_«input.name»_source (
+		    .clk_i              ( clk_i                  ),
+		    .rst_ni             ( rst_ni                 ),
+		    .test_mode_i        ( test_mode_i            ),
+		    .clear_i            ( clear_i                ),
+		    .tcdm               ( tcdm_fifo_«portMap.get(input)»), // this syntax is necessary for Verilator as hwpe_stream_source expects an array of interfaces
+		    .stream             ( «input.name»_prefifo.source),
+		    .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
+		    .flags_o            ( flags_o.«input.name»_source_flags ),
+		    .tcdm_fifo_ready_o  ( «input.name»_tcdm_fifo_ready      )
+		  );
+		  
+		  «ENDFOR»
+		  «FOR output : outputMap.keySet»
+		  hwpe_stream_sink #(
+		    .DATA_WIDTH ( 32 )
+		  ) i_d_sink (
+		    .clk_i       ( clk_i                ),
+		    .rst_ni      ( rst_ni               ),
+		    .test_mode_i ( test_mode_i          ),
+		    .clear_i     ( clear_i              ),
+		    .tcdm        ( tcdm_fifo_«portMap.get(output)»), // this syntax is necessary for Verilator as hwpe_stream_source expects an array of interfaces
+		    .stream      ( «output.name»_postfifo.sink      ),
+		    .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
+		    .flags_o     ( flags_o.«output.name»_sink_flags )
+		  );
+		  
+		  «ENDFOR»
+		
+		
+		  // TCDM-side FIFOs
+		«FOR input : inputMap.keySet»
+		  hwpe_stream_tcdm_fifo_load #(
+		    .FIFO_DEPTH ( 4 )
+		  ) i_«input.name»_tcdm_fifo_load (
+		    .clk_i       ( clk_i             ),
+		    .rst_ni      ( rst_ni            ),
+		    .clear_i     ( clear_i           ),
+		    .flags_o     (                   ),
+		    .ready_i     ( «input.name»_tcdm_fifo_ready ),
+		    .tcdm_slave  ( tcdm_fifo_«portMap.get(input)»[0]    ),
+		    .tcdm_master ( tcdm      [«portMap.get(input)»]     )
+		  );
+		  
+		«ENDFOR»
+		
+		«FOR output : outputMap.keySet»
+		  hwpe_stream_tcdm_fifo_store #(
+		    .FIFO_DEPTH ( 4 )
+		  ) i_«output.name»_tcdm_fifo_store (
+		    .clk_i       ( clk_i          ),
+		    .rst_ni      ( rst_ni         ),
+		    .clear_i     ( clear_i        ),
+		    .flags_o     (                ),
+		    .tcdm_slave  ( tcdm_fifo_«portMap.get(output)»[0] ),
+		    .tcdm_master ( tcdm       [«portMap.get(output)»] )
+		  );
+		«ENDFOR»
+		
+		  // datapath-side FIFOs
+		«FOR input : inputMap.keySet»
+		  hwpe_stream_fifo #(
+		    .DATA_WIDTH( 32 ),
+		    .FIFO_DEPTH( 2  ),
+		    .LATCH_FIFO( 0  )
+		  ) i_«input.name»_fifo (
+		    .clk_i   ( clk_i          ),
+		    .rst_ni  ( rst_ni         ),
+		    .clear_i ( clear_i        ),
+		    .push_i  ( «input.name»_prefifo.sink ),
+		    .pop_o   ( stream_if_«input.name»            ),
+		    .flags_o (                )
+		  );
+		  
+		«ENDFOR»
+		
+		«FOR output : outputMap.keySet»
+		  hwpe_stream_fifo #(
+		    .DATA_WIDTH( 32 ),
+		    .FIFO_DEPTH( 2  ),
+		    .LATCH_FIFO( 0  )
+		  ) i_«output»_fifo (
+		    .clk_i   ( clk_i             ),
+		    .rst_ni  ( rst_ni            ),
+		    .clear_i ( clear_i           ),
+		    .push_i  ( «output.name»_i               ),
+		    .pop_o   ( stream_if_«output.name»_postfifo.source ),
+		    .flags_o (                   )
+		  );
+		  
+		«ENDFOR»
+		
+		endmodule // multi_dataflow_streamer
+		'''
+	}
+	
 	def printTestBench() {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
