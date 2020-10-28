@@ -542,6 +542,8 @@ public class MDCBackend extends AbstractBackend {
 			}
 		} else if(enArtico && !genCopr) {
 			   hdlDir = new File(outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog");
+		} else if(enPulp && !genCopr) {
+			   hdlDir = new File(outputPath + File.separator + "rtl");
 		}
 		else{
 			hdlDir = new File(outputPath + File.separator + "hdl");
@@ -757,12 +759,15 @@ public class MDCBackend extends AbstractBackend {
 			}
 		} else  if(enArtico && !genCopr){
 			subfolder = "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog";
+		} else  if(enPulp && !genCopr){
+			subfolder = "rtl";
 		}
 		try {
 			if(enArtico && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
-			}
-			else{
+			} else if(enPulp && !genCopr){
+				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
+			} else {
 				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
 			}
 		} catch (IOException e) {
@@ -796,6 +801,14 @@ public class MDCBackend extends AbstractBackend {
 			}
 			
 			if(enArtico && !genCopr)
+			{	
+				final Result result = doLibrariesExtraction();
+				if(!result.isEmpty()) {
+					OrccLogger.traceln("*\tLibrary export done in " + getDuration(t0) + "s");
+				}
+			}
+			
+			if(enPulp && !genCopr)
 			{	
 				final Result result = doLibrariesExtraction();
 				if(!result.isEmpty()) {
@@ -935,6 +948,10 @@ public class MDCBackend extends AbstractBackend {
 			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/front_end.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
 			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/back_end.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
 			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
+		} 
+		
+		if(enPulp && !genCopr) {
+			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "rtl")));
 		} 
 				
 		

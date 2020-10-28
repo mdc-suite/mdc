@@ -379,7 +379,7 @@ public abstract class PlatformComposer {
 		/////////////////////////
 
 		/// <ol> <li> Generate FSM
-		file = hdlDir.getPath() + File.separator +  "multi_dataflow_FSM.sv";
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_fsm.sv";
 		sequence = pulpPrinter.printFSM();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -406,8 +406,27 @@ public abstract class PlatformComposer {
 		/// </ol> </ul>
 		/////////////////////////
 
+		/// <ol> <li> Generate Wrap
+		File wrapDir = new File(hdlPath.replaceFirst("rtl","wrap"));
+		// If directory doesn't exist, create it
+		if (!wrapDir.exists()) {
+			wrapDir.mkdirs();
+		}
+		file = wrapDir.getPath() + File.separator + "multi_dataflow_top_wrap.sv";
+		sequence = pulpPrinter.printWrap();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
 		/// <ol> <li> Generate Bender
-		file = hdlDir.getPath() + File.separator +  "src_files.yml";
+		file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "src_files.yml";
 		sequence = pulpPrinter.printBender();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));

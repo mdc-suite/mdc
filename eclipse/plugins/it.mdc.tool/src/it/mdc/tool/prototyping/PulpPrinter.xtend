@@ -210,17 +210,6 @@ class PulpPrinter {
 		return direction;
 	}
 	
-	def printHdlSource(Network network, String module){
-		
-		if(module.equals("TOP")) {
-			printTop(network);
-		} else if(module.equals("CFG_REGS")) {
-			printRegs();
-		} else if(module.equals("TBENCH")) {
-			printTestBench();
-		}
-	}
-	
 	def printTop(Network network) {
 		
 		mapInOut(network);
@@ -228,6 +217,7 @@ class PulpPrinter {
 		
 		'''	
 		«printTopHeaderComments()»
+		import multi_dataflow_package::*;
 		import hwpe_ctrl_package::*;
 		
 		// ----------------------------------------------------------------------------
@@ -400,7 +390,7 @@ class PulpPrinter {
 		// ----------------------------------------------------------------------------
 		«printTopDatapath()»
 		«FOR input :inputMap.keySet»
-		assign stream_if_«input.name»_ready = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.getName()»_full;
+		assign stream_if_«input.name»_ready = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.getName()»_full;
 		assign «input.getName()»_data = stream_if_«input.name»_data«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
 		assign «input.getName()»_push = stream_if_«input.name»_valid;
 		«ENDFOR»
@@ -408,7 +398,7 @@ class PulpPrinter {
 		assign stream_if_«output.name»_valid = «output.getName()»_push;
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
 		assign stream_if_«output.name»_strb = 4'b111;
-		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»stream_if_«output.name»_ready;
+		assign «output.getName()»_full = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
 		// ----------------------------------------------------------------------------	
 		
@@ -662,9 +652,9 @@ class PulpPrinter {
 		  ctrl_regfile_t reg_file;
 		  // Uloop signals
 		  logic [223:0]  ucode_flat;
-		  uloop_code_t   ucode;
-		  ctrl_uloop_t   ucode_ctrl;
-		  flags_uloop_t  ucode_flags;
+		  ucode_t   ucode;
+		  ctrl_ucode_t   ucode_ctrl;
+		  flags_ucode_t  ucode_flags;
 		  logic [11:0][31:0] ucode_registers_read;
 		  // Standard registers
 		  logic unsigned [31:0] static_reg_nb_iter;
@@ -710,7 +700,7 @@ class PulpPrinter {
 		  // Custom registers
 		  assign static_reg_0 = reg_file.hwpe_params[CONFIG];
   		«FOR port : portMap.keySet»
-  		  assign static_reg_«portMap.get(port)» = reg_file.hwpe_params[PORT_«port.name»];
+  		  assign static_reg_«portMap.get(port)+1» = reg_file.hwpe_params[PORT_«port.name»];
 		«ENDFOR»
 		  
 		  /* Microcode processor */
@@ -741,19 +731,18 @@ class PulpPrinter {
 		  assign ucode_registers_read[UCODE_MNEM_ONESTRIDE]  = static_reg_onestride;
 		  assign ucode_registers_read[11:3] = '0;
 		  
-		  hwpe_ctrl_uloop #(
+		  hwpe_ctrl_ucode #(
 		    .NB_LOOPS       ( 1  ),
 		    .NB_REG         ( 4  ),
-		    .NB_RO_REG      ( 12 ),
-		    .DEBUG_DISPLAY  ( 0  )
-		  ) i_uloop (
+		    .NB_RO_REG      ( 12 )		  
+	     ) i_uloop (
 		    .clk_i            ( clk_i                ),
 		    .rst_ni           ( rst_ni               ),
 		    .test_mode_i      ( test_mode_i          ),
 		    .clear_i          ( clear_o              ),
 		    .ctrl_i           ( ucode_ctrl           ),
 		    .flags_o          ( ucode_flags          ),
-		    .uloop_code_i     ( ucode                ),
+		    .ucode_i          ( ucode                ),
 		    .registers_read_i ( ucode_registers_read )
 		  );
 		  
@@ -781,9 +770,9 @@ class PulpPrinter {
 		    fsm_ctrl.shift      = static_reg_shift[$clog2(32)-1:0];
 		    fsm_ctrl.len        = static_reg_len_iter[$clog2(CNT_LEN):0];
 		    // Custom register file mappings to fsm
-		    fsm_ctrl.config    = static_reg_0;
+		    fsm_ctrl.configuration    = static_reg_0;
 		    «FOR port : portMap.keySet»
-		    fsm_ctrl.port_«port.name»    = static_reg_«portMap.get(port)»;
+		    fsm_ctrl.port_«port.name»    = static_reg_«portMap.get(port)+1»;
 		    «ENDFOR»
 		  end
 		  
@@ -811,8 +800,8 @@ class PulpPrinter {
 		  input  flags_streamer_t                       flags_streamer_i,
 		  output ctrl_engine_t                          ctrl_engine_o,
 		  input  flags_engine_t                         flags_engine_i,
-		  output ctrl_uloop_t                           ctrl_ucode_o,
-		  input  flags_uloop_t                          flags_ucode_i,
+		  output ctrl_ucode_t                           ctrl_ucode_o,
+		  input  flags_ucode_t                          flags_ucode_i,
 		  output ctrl_slave_t                           ctrl_slave_o,
 		  input  flags_slave_t                          flags_slave_i,
 		  input  ctrl_regfile_t                         reg_file_i,
@@ -886,7 +875,7 @@ class PulpPrinter {
 		    ctrl_engine_o.simple_mul = ctrl_i.simple_mul;
 		    ctrl_engine_o.shift      = ctrl_i.shift;
 		    ctrl_engine_o.len        = ctrl_i.len;
-		    ctrl_engine_o.config    = ctrl_i.config;
+		    ctrl_engine_o.configuration    = ctrl_i.configuration;
 		    «FOR port : portMap.keySet»
 		    ctrl_engine_o.port_«port.name»    = ctrl_i.port_«port.name»;
 		    «ENDFOR»
@@ -1099,7 +1088,7 @@ class PulpPrinter {
 		    logic unsigned [$clog2(32)-1       :0] shift;
 		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
 		    // Custom register files
-		    logic unsigned [(32-1):0] config;
+		    logic unsigned [(32-1):0] configuration;
 		    «FOR port : portMap.keySet»
 		    logic unsigned [(32-1):0] port_«port.name»;
 		    «ENDFOR»
@@ -1135,7 +1124,7 @@ class PulpPrinter {
 		    logic unsigned [$clog2(32)-1       :0] shift;
 		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
 		    // Custom register files
-		    logic unsigned [(32-1):0] config;
+		    logic unsigned [(32-1):0] configuration;
 		    «FOR port : portMap.keySet»
 		    logic unsigned [(32-1):0] port_«port.name»;
 		    «ENDFOR»
@@ -1160,7 +1149,7 @@ class PulpPrinter {
 		 * multi_dataflow_streamer.sv
 		 */
 		
-		import mac_package::*;
+		import multi_dataflow_package::*;
 		import hwpe_stream_package::*;
 		
 		module multi_dataflow_streamer
@@ -1183,7 +1172,7 @@ class PulpPrinter {
 	    «ENDFOR»
 	    «FOR output : outputMap.keySet»
 	      // output «output.name» stream + handshake
-	      hwpe_stream_intf_stream.sink stream_if_«output.name».sink,
+	      hwpe_stream_intf_stream.sink stream_if_«output.name»,
 	    «ENDFOR»
 		
 		  // TCDM ports
@@ -1196,10 +1185,18 @@ class PulpPrinter {
 		
 		logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;		
 		
-		«FOR port : portMap.keySet»
+		«FOR input : portMap.keySet»
 		  hwpe_stream_intf_stream #(
 		    .DATA_WIDTH ( 32 )
-		  ) stream_if_«port.name»_prefifo (
+		  ) «input.name»_prefifo (
+		    .clk ( clk_i )
+		  );
+	    «ENDFOR»
+		
+		«FOR output : portMap.keySet»
+		  hwpe_stream_intf_stream #(
+		    .DATA_WIDTH ( 32 )
+		  ) «output.name»_postfifo (
 		    .clk ( clk_i )
 		  );
 	    «ENDFOR»
@@ -1300,12 +1297,12 @@ class PulpPrinter {
 		    .DATA_WIDTH( 32 ),
 		    .FIFO_DEPTH( 2  ),
 		    .LATCH_FIFO( 0  )
-		  ) i_«output»_fifo (
+		  ) i_«output.name»_fifo (
 		    .clk_i   ( clk_i             ),
 		    .rst_ni  ( rst_ni            ),
 		    .clear_i ( clear_i           ),
-		    .push_i  ( «output.name»_i               ),
-		    .pop_o   ( stream_if_«output.name»_postfifo.source ),
+		    .push_i  ( stream_if_«output.name»               ),
+		    .pop_o   ( «output.name»_postfifo.source ),
 		    .flags_o (                   )
 		  );
 		  
@@ -1315,684 +1312,99 @@ class PulpPrinter {
 		'''
 	}
 	
-	def printTestBench() {
-		
-		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		var date = new Date();
-		
+	def printWrap() {
 		'''
-		`timescale 1ns / 1ps
-		// ----------------------------------------------------------------------------
-		//
-		// This file has been automatically generated by:
-		// Multi-Dataflow Composer tool - Platform Composer
-		// TIL Test Bench module
-		// on «dateFormat.format(date)»
-		// More info available at http://sites.unica.it/rpct/		
-		//
-		// ----------------------------------------------------------------------------	
 		
-		// ----------------------------------------------------------------------------
-		// Module Interface
-		// ----------------------------------------------------------------------------
-		module tb_copr;
-		// ----------------------------------------------------------------------------
+		import multi_dataflow_package::*;
+		import hwpe_ctrl_package::*;
 		
-		// ----------------------------------------------------------------------------
-		// Module Parameters
-		// ----------------------------------------------------------------------------
-		parameter SIZEID = 8;				// size of Kernel ID signal
-		parameter SIZEADDRESS = 12;			// size of the local memory address signal
-		parameter SIZECOUNT = 12;			// size of the size counters
-		parameter SIZEPORT = «portSize»;	// bits needed to codify the number of ports
-		parameter SIZEDATA = «dataSize»;	// size of the data signal
-		parameter SIZEBURST = 8;			// size of the burst counter
-		parameter SIZESIGNAL = 1; 			// size of the control signals
-		parameter FIFO_DEPTH = 4; 				//	FIFO depth
-		parameter f_ptr_width = 5; 			//	because depth =16 + OVERFLOW
-		parameter f_half_full_value = 8;	//
-		parameter f_almost_full_value = 14;	//
-		parameter f_almost_empty_value = 2;	//
-		// ----------------------------------------------------------------------------
-		
-		// ----------------------------------------------------------------------------
-		// Module Signals
-		// ----------------------------------------------------------------------------
-		// Input Reg(s)
-		reg clk;
-		reg rst;
-		reg [SIZEDATA-1 : 0] 		datain;		// local memory - data in
-		reg [SIZEADDRESS-1 : 0] 	addressrd;	// local memory - read address
-		reg [SIZEADDRESS-1 : 0] 	addresswr; 	// local memory - write address
-		reg 						enablerd;	// local memory - enable read port
-		reg							enablewr;   // local memory - enable write port
-		reg 						write;      // local memory - write enable
-		reg [SIZEID-1 : 0] 			kernelIDin; // kernel ID
-		reg 						kernelIDen;
-		«FOR port : portMap.keySet()»
-		reg [SIZEDATA-1 : 0] 		confin_«portMap.get(port)»;
-		reg 						en_«portMap.get(port)»;
-		«ENDFOR»
-		// Output Wire(s)
-		wire [SIZEDATA-1 : 0] 		dataout;
-		wire [SIZEID-1 : 0] 		kernelIDout;
-		//wire 						finish;
-		
-		integer i;
-		// ----------------------------------------------------------------------------
-		
-		// ----------------------------------------------------------------------------
-		// Unit Under Test Instantiation
-		// ----------------------------------------------------------------------------
-		coprocessor #(
-			.SIZEID(SIZEID),
-			.SIZEADDRESS(SIZEADDRESS),
-			.SIZECOUNT(SIZECOUNT),
-			.SIZEPORT(SIZEPORT),
-			.SIZEDATA(SIZEDATA),
-			.SIZEBURST(SIZEBURST),
-			.SIZESIGNAL(SIZESIGNAL),
-			.FIFO_DEPTH(FIFO_DEPTH)//,
-			//.f_ptr_width(f_ptr_width)//,
-			//.f_half_full_value(f_ptr_width), 
-			//.f_almost_full_value(f_almost_full_value),
-			//.f_almost_empty_value(f_almost_empty_value) 
-			)
-		uut (
-			.clk(clk),
-			.rst(rst),
-			.datain(datain),
-			.addressrd(addressrd),
-			.addresswr(addresswr),
-			.enablerd(enablerd),
-			.enablewr(enablewr),
-			.write(write),
-			.kernelIDin(kernelIDin),
-			.kernelIDen(kernelIDen),
-			.kernelIDout(kernelIDout),
-			«FOR port : portMap.keySet()»
-			.confin_«portMap.get(port)»(confin_«portMap.get(port)»),
-			.en_«portMap.get(port)»(en_«portMap.get(port)»),
-			«ENDFOR»
-			.dataout(dataout)
-			//.finish(finish)
+		module multi_dataflow_top_wrap
+		#(
+		  parameter N_CORES = 2,
+		  parameter MP  = «portMap.size»,
+		  parameter ID  = 10
+		)
+		(
+		  // global signals
+		  input  logic                                  clk_i,
+		  input  logic                                  rst_ni,
+		  input  logic                                  test_mode_i,
+		  // evnets
+		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+		  // tcdm master ports
+		  output logic [MP-1:0]                         tcdm_req,
+		  input  logic [MP-1:0]                         tcdm_gnt,
+		  output logic [MP-1:0][31:0]                   tcdm_add,
+		  output logic [MP-1:0]                         tcdm_wen,
+		  output logic [MP-1:0][3:0]                    tcdm_be,
+		  output logic [MP-1:0][31:0]                   tcdm_data,
+		  input  logic [MP-1:0][31:0]                   tcdm_r_data,
+		  input  logic [MP-1:0]                         tcdm_r_valid,
+		  // periph slave port
+		  input  logic                                  periph_req,
+		  output logic                                  periph_gnt,
+		  input  logic         [31:0]                   periph_add,
+		  input  logic                                  periph_wen,
+		  input  logic         [3:0]                    periph_be,
+		  input  logic         [31:0]                   periph_data,
+		  input  logic       [ID-1:0]                   periph_id,
+		  output logic         [31:0]                   periph_r_data,
+		  output logic                                  periph_r_valid,
+		  output logic       [ID-1:0]                   periph_r_id
 		);
-		// ----------------------------------------------------------------------------
 		
-		// ----------------------------------------------------------------------------
-		// Body
-		// ----------------------------------------------------------------------------
+		  hwpe_stream_intf_tcdm tcdm[MP-1:0] (
+		    .clk ( clk_i )
+		  );
 		
-		// Clock Always
-		always 
-			#5 clk = ~clk;
+		  hwpe_ctrl_intf_periph #(
+		    .ID_WIDTH ( ID )
+		  ) periph (
+		    .clk ( clk_i )
+		  );
 		
-		// Input(s) Setting
-		initial begin
+		  // bindings
+		  generate
+		    for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
+		      assign tcdm_req  [ii] = tcdm[ii].req;
+		      assign tcdm_add  [ii] = tcdm[ii].add;
+		      assign tcdm_wen  [ii] = tcdm[ii].wen;
+		      assign tcdm_be   [ii] = tcdm[ii].be;
+		      assign tcdm_data [ii] = tcdm[ii].data;
+		      assign tcdm[ii].gnt     = tcdm_gnt     [ii];
+		      assign tcdm[ii].r_data  = tcdm_r_data  [ii];
+		      assign tcdm[ii].r_valid = tcdm_r_valid [ii];
+		    end
+		  endgenerate
+		  always_comb
+		  begin
+		    periph.req  = periph_req;
+		    periph.add  = periph_add;
+		    periph.wen  = periph_wen;
+		    periph.be   = periph_be;
+		    periph.data = periph_data;
+		    periph.id   = periph_id;
+		    periph_gnt     = periph.gnt;
+		    periph_r_data  = periph.r_data;
+		    periph_r_valid = periph.r_valid;
+		    periph_r_id    = periph.r_id;
+		  end
 		
-			// Initialize Input(s)
-			clk = 0;
-			rst = 0;
-			datain = 0;
-			addressrd = 0;
-			addresswr = 0;
-			enablerd = 0;
-			enablewr = 0;
-			write = 0;
-			kernelIDin = 0;
-			kernelIDen = 0;
-			«FOR port : portMap.keySet()»
-			confin_«portMap.get(port)» = 0;
-			en_«portMap.get(port)» = 0;
-			«ENDFOR»
-			// Reset System
-			#12	rst = 1;
-			#10	rst = 0;
-			
-			// Write Data into Memory
-			#10	enablewr = 1;	// enable writing port
-				write = 1;		// enable write
-				«FOR input : inputMap.keySet()»
-				for(i=0;i<4;i=i+1)
-				begin
-				datain = «inputMap.get(input)*10»+i;		// written data «inputMap.get(input)*10»
-				addresswr = «inputMap.get(input)*10»+i;	// write address «inputMap.get(input)-1»
-				#10;
-				end
-				«ENDFOR»
-				enablewr = 0; 	// disable writing port
-				write = 0;		// disable write
+		  multi_dataflow_top #(
+		    .N_CORES ( N_CORES ),
+		    .MP      ( MP      ),
+		    .ID      ( ID      )
+		  ) i_multi_dataflow_top (
+		    .clk_i       ( clk_i       ),
+		    .rst_ni      ( rst_ni      ),
+		    .test_mode_i ( test_mode_i ),
+		    .evt_o       ( evt_o       ),
+		    .tcdm        ( tcdm        ),
+		    .periph      ( periph      )
+		  );
 		
-			// Setting Configuration Registers
-			#10
-				«FOR port : portMap.keySet()»
-				confin_«portMap.get(port)» = (1<<(SIZEADDRESS+SIZECOUNT))	// burst port «portMap.get(port)»
-												| (4<<SIZEADDRESS)			// size port «portMap.get(port)»
-												| «portMap.get(port)» *10;	// baseaddr port «portMap.get(port)»
-				en_«portMap.get(port)» = 1;
-				«ENDFOR»
-			#10
-				«FOR port : portMap.keySet()»
-				en_«portMap.get(port)» = 0;
-				«ENDFOR»
-			
-			// Setting Kernel ID (Start Computation)
-			#10	kernelIDin = 1;	// kernel ID 1
-				kernelIDen = 1;
-			#10 kernelIDen = 0;
-		
-			#200 $stop;
-		end
-		// ----------------------------------------------------------------------------
-		
-		endmodule		
-		// ----------------------------------------------------------------------------
-		// ----------------------------------------------------------------------------
-		// ----------------------------------------------------------------------------
+		endmodule // multi_dataflow_top_wrap
 		'''
 	}
-		
-	def printRegs(){
-		
-		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		var date = new Date();
-		var log2_regnumb = computeSizePointer();
-		
-		'''
-	// ----------------------------------------------------------------------------
-	//
-	// This file has been automatically generated by:
-	// Multi-Dataflow Composer tool - Platform Composer
-	// Configuration Registers module
-	// on «dateFormat.format(date)»
-	// More info available at http://sites.unica.it/rpct// 
-	//
-	// ----------------------------------------------------------------------------	
 	
-	// ----------------------------------------------------------------------------
-	// Module Interface
-	// ----------------------------------------------------------------------------
-	module config_registers #(
-		// Width of S_AXI data bus
-		parameter integer C_S_AXI_DATA_WIDTH	= 32,
-		// Width of S_AXI address bus
-		parameter integer C_S_AXI_ADDR_WIDTH	= «log2_regnumb+2»
-	)
-	(
-		«IF coupling.equals("mm")»
-		input done,
-		«IF enableMonitoring»
-		«FOR String monitor: monList»
-		// Monitor «monList.indexOf(monitor)»: «monitor»
-		input [C_S_AXI_DATA_WIDTH - 1 : 0] «monitor»,
-		output clear_monitor_«monList.indexOf(monitor)»,
-		«ENDFOR»
-		«ENDIF»
-		// Config Regs
-		«FOR port : portMap.keySet»
-		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.get(port)+1»,
-		«ENDFOR»
-		«IF enableMonitoring»
-		// Monitoring Config Registers
-		«FOR String monitor: monList»	
-		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«portMap.size+1+monList.indexOf(monitor)»,
-		«ENDFOR»
-		«ENDIF»
-		output start,
-		«ELSE»
-		«FOR output : outputMap.keySet»output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg«outputMap.get(output)+1»,
-		«ENDFOR»
-		«ENDIF»
-		output reg [C_S_AXI_DATA_WIDTH-1:0]    slv_reg0,
-
-		// Global Clock Signal
-		input wire  S_AXI_ACLK,
-		// Global Reset Signal. This Signal is Active LOW
-		input wire  S_AXI_ARESETN,
-		// Write address (issued by master, acceped by Slave)
-		input wire [C_S_AXI_ADDR_WIDTH-1 : 0] S_AXI_AWADDR,
-		// Write channel Protection type. This signal indicates the
-		// privilege and security level of the transaction, and whether
-		// the transaction is a data access or an instruction access.
-		input wire [2 : 0] S_AXI_AWPROT,
-		// Write address valid. This signal indicates that the master signaling
-		// valid write address and control information.
-		input wire  S_AXI_AWVALID,
-		// Write address ready. This signal indicates that the slave is ready
-		// to accept an address and associated control signals.
-		output wire  S_AXI_AWREADY,
-		// Write data (issued by master, acceped by Slave) 
-		input wire [C_S_AXI_DATA_WIDTH-1 : 0] S_AXI_WDATA,
-		// Write strobes. This signal indicates which byte lanes hold
-		// valid data. There is one write strobe bit for each eight
-		// bits of the write data bus.    
-		input wire [(C_S_AXI_DATA_WIDTH/8)-1 : 0] S_AXI_WSTRB,
-		// Write valid. This signal indicates that valid write
-		// data and strobes are available.
-		input wire  S_AXI_WVALID,
-		// Write ready. This signal indicates that the slave
-		// can accept the write data.
-		output wire  S_AXI_WREADY,
-		// Write response. This signal indicates the status
-		// of the write transaction.
-		output wire [1 : 0] S_AXI_BRESP,
-		// Write response valid. This signal indicates that the channel
-		// is signaling a valid write response.
-		output wire  S_AXI_BVALID,
-		// Response ready. This signal indicates that the master
-		// can accept a write response.
-		input wire  S_AXI_BREADY,
-		// Read address (issued by master, acceped by Slave)
-		input wire [C_S_AXI_ADDR_WIDTH-1 : 0] S_AXI_ARADDR,
-		// Protection type. This signal indicates the privilege
-		// and security level of the transaction, and whether the
-		// transaction is a data access or an instruction access.
-		input wire [2 : 0] S_AXI_ARPROT,
-		// Read address valid. This signal indicates that the channel
-		// is signaling valid read address and control information.
-		input wire  S_AXI_ARVALID,
-		// Read address ready. This signal indicates that the slave is
-		// ready to accept an address and associated control signals.
-		output wire  S_AXI_ARREADY,
-		// Read data (issued by slave)
-		output wire [C_S_AXI_DATA_WIDTH-1 : 0] S_AXI_RDATA,
-		// Read response. This signal indicates the status of the
-		// read transfer.
-		output wire [1 : 0] S_AXI_RRESP,
-		// Read valid. This signal indicates that the channel is
-		// signaling the required read data.
-		output wire  S_AXI_RVALID,
-		// Read ready. This signal indicates that the master can
-		// accept the read data and response information.
-		input wire  S_AXI_RREADY
-	);
-	
-		// AXI4LITE signals
-		reg [C_S_AXI_ADDR_WIDTH-1 : 0] 	axi_awaddr;
-		reg  	axi_awready;
-		reg  	axi_wready;
-		reg [1 : 0] 	axi_bresp;
-		reg  	axi_bvalid;
-		reg [C_S_AXI_ADDR_WIDTH-1 : 0] 	axi_araddr;
-		reg  	axi_arready;
-		reg [C_S_AXI_DATA_WIDTH-1 : 0] 	axi_rdata;
-		reg [1 : 0] 	axi_rresp;
-		reg  	axi_rvalid;
-	
-		// Example-specific design signals
-		// local parameter for addressing 32 bit / 64 bit C_S_AXI_DATA_WIDTH
-		// ADDR_LSB is used for addressing 32/64 bit registers/memories
-		// ADDR_LSB = 2 for 32 bits (n downto 2)
-		// ADDR_LSB = 3 for 64 bits (n downto 3)
-		localparam integer ADDR_LSB = (C_S_AXI_DATA_WIDTH/32) + 1;
-		localparam integer OPT_MEM_ADDR_BITS = «log2_regnumb»;
-
-		//----------------------------------------------
-		//-- Signals for user logic register space example
-		//------------------------------------------------
-		wire	 slv_reg_rden;
-		wire	 slv_reg_wren;
-		reg [C_S_AXI_DATA_WIDTH-1:0]	 reg_data_out;
-		integer	 byte_index;
-	
-		// I/O Connections assignments
-	
-		assign S_AXI_AWREADY	= axi_awready;
-		assign S_AXI_WREADY	= axi_wready;
-		assign S_AXI_BRESP	= axi_bresp;
-		assign S_AXI_BVALID	= axi_bvalid;
-		assign S_AXI_ARREADY	= axi_arready;
-		assign S_AXI_RDATA	= axi_rdata;
-		assign S_AXI_RRESP	= axi_rresp;
-		assign S_AXI_RVALID	= axi_rvalid;
-		
-		
-		// Implement axi_awready generation
-		// axi_awready is asserted for one S_AXI_ACLK clock cycle when both
-		// S_AXI_AWVALID and S_AXI_WVALID are asserted. axi_awready is
-		// de-asserted when reset is low.
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_awready <= 1'b0;
-		    end 
-		  else
-		    begin    
-		      if (~axi_awready && S_AXI_AWVALID && S_AXI_WVALID)
-		        begin
-		          // slave is ready to accept write address when 
-		          // there is a valid write address and write data
-		          // on the write address and data bus. This design 
-		          // expects no outstanding transactions. 
-		          axi_awready <= 1'b1;
-		        end
-		      else           
-		        begin
-		          axi_awready <= 1'b0;
-		        end
-		    end 
-		end
-		
-		// Implement axi_awaddr latching
-		// This process is used to latch the address when both 
-		// S_AXI_AWVALID and S_AXI_WVALID are valid. 
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_awaddr <= 0;
-		    end 
-		  else
-		    begin    
-		      if (~axi_awready && S_AXI_AWVALID && S_AXI_WVALID)
-		        begin
-		          // Write Address latching 
-		          axi_awaddr <= S_AXI_AWADDR;
-		        end
-		    end 
-		end
-		
-		// Implement axi_wready generation
-		// axi_wready is asserted for one S_AXI_ACLK clock cycle when both
-		// S_AXI_AWVALID and S_AXI_WVALID are asserted. axi_wready is 
-		// de-asserted when reset is low. 
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_wready <= 1'b0;
-		    end 
-		  else
-		    begin    
-		      if (~axi_wready && S_AXI_WVALID && S_AXI_AWVALID)
-		        begin
-		          // slave is ready to accept write data when 
-		          // there is a valid write address and write data
-		          // on the write address and data bus. This design 
-		          // expects no outstanding transactions. 
-		          axi_wready <= 1'b1;
-		        end
-		      else
-		        begin
-		          axi_wready <= 1'b0;
-		        end
-		    end 
-		end
-		
-	// Implement memory mapped register select and write logic generation
-	// The write data is accepted and written to memory mapped registers when
-	// axi_awready, S_AXI_WVALID, axi_wready and S_AXI_WVALID are asserted. Write strobes are used to
-	// select byte enables of slave registers while writing.
-	// These registers are cleared when reset (active low) is applied.
-	// Slave register write enable is asserted when valid address and data are available
-	// and the slave is ready to accept the write address and write data.
-	assign slv_reg_wren = axi_wready && S_AXI_WVALID && axi_awready && S_AXI_AWVALID;
-	always @( posedge S_AXI_ACLK )
-	begin
-	  if ( S_AXI_ARESETN == 1'b0 )
-	    begin
-      slv_reg0 <=  32'd4; //inizialize the accelerator as ready
-      «IF coupling.equals("mm")»
-      «FOR port : portMap.keySet»
-      slv_reg«portMap.get(port)+1» <= 0;
-      «ENDFOR» 
-      «IF enableMonitoring»
-  	  «FOR String monitor: monList»	
-  	  slv_reg«portMap.size+1+monList.indexOf(monitor)» <= 0;
-  	  «ENDFOR»
-      «ENDIF»
-      «ELSE»
-      «FOR output : outputMap.keySet»
-      slv_reg«outputMap.get(output)+1» <= 0;
-      «ENDFOR»
-      «ENDIF»
-		end 
-		else begin
-		«IF coupling.equals("mm")»
-		if (done)
-			slv_reg0 <= {slv_reg0[31:3],1'b1,slv_reg0[1:0]};
-		else
-		«ENDIF»
-		if (slv_reg_wren)
-		begin
-		case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-		«log2_regnumb»'h0:
-		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-		// Respective byte enables are asserted as per write strobes 
-		// Slave register 0
-		slv_reg0[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-		end
-		«IF coupling.equals("mm")»
-	    «FOR port : portMap.keySet»		«log2_regnumb»'h«portMap.get(port)+1»:
-	    	for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-	    	if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-	        	// Respective byte enables are asserted as per write strobes
-	        	// Slave register «portMap.get(port)+1»
-	        	slv_reg«portMap.get(port)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	        	end
-	    «ENDFOR»
-	    «IF enableMonitoring»
-      	«FOR String monitor: monList»    	«log2_regnumb»'h«portMap.size+1+monList.indexOf(monitor)»:	
-      		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-		if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-    		// Respective byte enables are asserted as per write strobes
-    		// Slave register «portMap.size+1+monList.indexOf(monitor)»
-    		slv_reg«portMap.size+1+monList.indexOf(monitor)»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-    	end
-      	«ENDFOR»
-		«ENDIF»
-	    «ELSE»
-	    «FOR output : outputMap.keySet»		«log2_regnumb»'h«outputMap.get(output)+4»:
-	    		for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-	    			if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-	        		// Respective byte enables are asserted as per write strobes
-	        		// Slave register «outputMap.get(output)+4»
-	        		slv_reg«outputMap.get(output)+1»[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	        		end
-	        	
-	    «ENDFOR»
-	    «ENDIF»
-		default : begin
-		slv_reg0 <= slv_reg0;
-		«IF coupling.equals("mm")»
-		«FOR port : portMap.keySet»
-		slv_reg«portMap.get(port)+1» <= slv_reg«portMap.get(port)+1»;
-		«ENDFOR»
-		«FOR String monitor: monList»
-		slv_reg«portMap.size+1+monList.indexOf(monitor)» <= slv_reg«portMap.size+1+monList.indexOf(monitor)»;
-		«ENDFOR»
-		«ELSE»
-	  	«FOR output : outputMap.keySet»
-	  	slv_reg«outputMap.get(output)+1» <= slv_reg«outputMap.get(output)+1»;
-	  	«ENDFOR»
-		«ENDIF»
-		end
-		endcase
-		end
-	  end
-	end
-		
-		assign start = (slv_reg_wren) && (axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB]==0) &&
-						(S_AXI_WSTRB[0]==1) && (S_AXI_WDATA[0]==1'b1);
-						
-		«IF enableMonitoring»
-		«FOR String monitor: monList»
-		// clear of monitor «monitor»
-		assign clear_monitor_«monList.indexOf(monitor)» = (slv_reg_wren) && (axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB]==«portMap.size+1+monList.indexOf(monitor)») && 
-								(S_AXI_WSTRB[0]==1) && (S_AXI_WDATA[31]==1'b1);
-		«ENDFOR»
-		«ENDIF»	
-		
-		// Implement write response logic generation
-		// The write response and response valid signals are asserted by the slave 
-		// when axi_wready, S_AXI_WVALID, axi_wready and S_AXI_WVALID are asserted.  
-		// This marks the acceptance of address and indicates the status of 
-		// write transaction.
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_bvalid  <= 0;
-		      axi_bresp   <= 2'b0;
-		    end 
-		  else
-		    begin    
-		      if (axi_awready && S_AXI_AWVALID && ~axi_bvalid && axi_wready && S_AXI_WVALID)
-		        begin
-		          // indicates a valid write response is available
-		          axi_bvalid <= 1'b1;
-		          axi_bresp  <= 2'b0; // 'OKAY' response 
-		        end                   // work error responses in future
-		      else
-		        begin
-		          if (S_AXI_BREADY && axi_bvalid) 
-		            //check if bready is asserted while bvalid is high) 
-		            //(there is a possibility that bready is always asserted high)   
-		            begin
-		              axi_bvalid <= 1'b0; 
-		            end  
-		        end
-		    end
-		end
-		
-		// Implement axi_arready generation
-		// axi_arready is asserted for one S_AXI_ACLK clock cycle when
-		// S_AXI_ARVALID is asserted. axi_awready is 
-		// de-asserted when reset (active low) is asserted. 
-		// The read address is also latched when S_AXI_ARVALID is 
-		// asserted. axi_araddr is reset to zero on reset assertion.
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_arready <= 1'b0;
-		      axi_araddr  <= 32'b0;
-		    end 
-		  else
-		    begin    
-		      if (~axi_arready && S_AXI_ARVALID)
-		        begin
-		          // indicates that the slave has acceped the valid read address
-		          axi_arready <= 1'b1;
-		          // Read address latching
-		          axi_araddr  <= S_AXI_ARADDR;
-		        end
-		      else
-		        begin
-		          axi_arready <= 1'b0;
-		        end
-		    end 
-		end 
-		
-		// Implement axi_arvalid generation
-		// axi_rvalid is asserted for one S_AXI_ACLK clock cycle when both 
-		// S_AXI_ARVALID and axi_arready are asserted. The slave registers 
-		// data are available on the axi_rdata bus at this instance. The 
-		// assertion of axi_rvalid marks the validity of read data on the 
-		// bus and axi_rresp indicates the status of read transaction.axi_rvalid 
-		// is deasserted on reset (active low). axi_rresp and axi_rdata are 
-		// cleared to zero on reset (active low).  
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_rvalid <= 0;
-		      axi_rresp  <= 0;
-		    end 
-		  else
-		    begin    
-		      if (axi_arready && S_AXI_ARVALID && ~axi_rvalid)
-		        begin
-		          // Valid read data is available at the read data bus
-		          axi_rvalid <= 1'b1;
-		          axi_rresp  <= 2'b0; // 'OKAY' response
-		        end   
-		      else if (axi_rvalid && S_AXI_RREADY)
-		        begin
-		          // Read data is accepted by the master
-		          axi_rvalid <= 1'b0;
-		        end                
-		    end
-		end
-		
-		// Implement memory mapped register select and read logic generation
-		// Slave register read enable is asserted when valid address is available
-		// and the slave is ready to accept the read address.
-		assign slv_reg_rden = axi_arready & S_AXI_ARVALID & ~axi_rvalid;
-		always @(*)
-		begin
-			// Address decoding for reading registers
-			case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS-1:ADDR_LSB] )
-			«log2_regnumb»'h0   : reg_data_out <= slv_reg0;
-			«IF coupling.equals("mm")»«FOR port : portMap.keySet»
-			«log2_regnumb»'h«portMap.get(port)+1»   : reg_data_out <= slv_reg«portMap.get(port)+1»;
-			«ENDFOR»
-			«IF enableMonitoring»
-			«FOR String monitor: monList»
-			«log2_regnumb»'h«portMap.size+1+monList.indexOf(monitor)»   : reg_data_out <= «monitor»;
-			«ENDFOR»
-			«ENDIF»
-			«ELSE»«FOR output : outputMap.keySet»«log2_regnumb»'h«outputMap.get(output)+1»   : reg_data_out <= slv_reg«outputMap.get(output)+1»;
-			«ENDFOR»«ENDIF»
-			default : reg_data_out <= 0;
-			endcase
-		end
-		
-		// Output register or memory read data
-		always @( posedge S_AXI_ACLK )
-		begin
-		  if ( S_AXI_ARESETN == 1'b0 )
-		    begin
-		      axi_rdata  <= 0;
-		    end 
-		  else
-		    begin    
-		      // When there is a valid read address (S_AXI_ARVALID) with 
-		      // acceptance of read address by the slave (axi_arready), 
-		      // output the read dada 
-		      if (slv_reg_rden)
-		        begin
-		          axi_rdata <= reg_data_out;     // register read data
-		        end   
-		    end
-		end
-
-	endmodule
-	'''
-	}
-	
-	def printXML(){
-		
-	'''
-	<?xml version="1.0" encoding="UTF-8"?>
-	<mdcInfo>
-	  <baseAddress>0x43C00000</baseAddress>
-	  <nbEvents>«monList.size»</nbEvents>
-	  «FOR String monitor: monList»
-	  <event> 
-	    <index>«portMap.size+1+monList.indexOf(monitor)»</index>
-	    «IF monitor.contains("count_full_")»
-	    <name>MDC_«monitor.replace("count_", "").toUpperCase()»</name>
-	    <desc>Total number of FIFO full of input «monitor.replace("count_full_", "")» during the execution of the accelerator</desc>
-	    «ENDIF»
-	    «IF monitor.contains("count_clock_cycles")»
-	    <name>MDC_«monitor.replace("count_", "").toUpperCase()»</name>
-	    <desc>Number of clock cycles from start to done signals.</desc>
-	    «ENDIF»
-	    «IF monitor.contains("count_in_tokens_")»
-	    <name>MDC_«monitor.replace("count_in_", "").toUpperCase()»</name>
-	    <desc>Number of input tokens to the accelerator at port «monitor.replace("count_in_tokens_", "")»</desc>
-	    «ENDIF»
-	    «IF monitor.contains("count_out_tokens_")»
-	    <name>MDC_«monitor.replace("count_out_", "").toUpperCase()»</name>
-	    <desc>Number of output tokens from the accelerator at port «monitor.replace("count_out_tokens_", "")»</desc>
-	    «ENDIF»
-	  </event>
-	  «ENDFOR»
-	</mdcInfo>
-	'''
-	}
-
 }
