@@ -46,7 +46,6 @@ class ConfigPrinter {
 		for(Network net:configManager.getNetworkList()){
 			networks.add(luts.get(0).getNetworkByName(net.simpleName));
 		}
-		//networks.addAll(luts.get(0).getNetworks());
 	}
 	
 	def printBody() {
@@ -102,7 +101,6 @@ class ConfigPrinter {
 		networks = new ArrayList<Network>();
 				
 		computeNets();
-		System.out.println("ZZZZ - " + networks);
 
 		'''
 		«headerComments()»
