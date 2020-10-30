@@ -374,7 +374,6 @@ public class MDCBackend extends AbstractBackend {
 			/// <li> add current network to the input network list </ol> 
 			networks.add(currNet);
 	    }	
-		System.out.println("CCCC - " + networks.toString());
 		
 		/// <li> Set configuration manager with the input networks list: ConfigManager.setNetworkList()
 		configManager.setNetworkList(networks);
@@ -391,7 +390,6 @@ public class MDCBackend extends AbstractBackend {
 		
 		/// <li> Generate the list of maps of input networks
 		List<Map<Network,Integer>> netMapList = getNetMapList(networks);
-		System.out.println("BBBB - " + netMapList.toString());
 		
 		// <li> Extract size map and progress (for profiling purposes)
 		int sizeMap = netMapList.size();
@@ -430,7 +428,6 @@ public class MDCBackend extends AbstractBackend {
 			}	
 			try {
 				/// <ol> <li> Merge current map of input networks into the resulting network: doMergingProcess()
-				System.out.println("AAAA - " + currMap.toString());
 				Network resultNetwork = doMergingProcess(copyMap(currMap), true);
 
 				
