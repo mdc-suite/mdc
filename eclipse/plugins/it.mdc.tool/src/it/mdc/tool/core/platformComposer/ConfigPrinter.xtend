@@ -99,6 +99,7 @@ class ConfigPrinter {
 		networks = new ArrayList<Network>();
 				
 		computeNets();
+		System.out.println("ZZZZ - " + networks);
 
 		'''
 		«headerComments()»
