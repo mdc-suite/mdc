@@ -9,6 +9,7 @@ import static net.sf.orcc.util.OrccUtil.getFile;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
@@ -373,6 +374,7 @@ public class MDCBackend extends AbstractBackend {
 			/// <li> add current network to the input network list </ol> 
 			networks.add(currNet);
 	    }	
+		System.out.println("CCCC - " + networks.toString());
 		
 		/// <li> Set configuration manager with the input networks list: ConfigManager.setNetworkList()
 		configManager.setNetworkList(networks);
@@ -389,6 +391,7 @@ public class MDCBackend extends AbstractBackend {
 		
 		/// <li> Generate the list of maps of input networks
 		List<Map<Network,Integer>> netMapList = getNetMapList(networks);
+		System.out.println("BBBB - " + netMapList.toString());
 		
 		// <li> Extract size map and progress (for profiling purposes)
 		int sizeMap = netMapList.size();
@@ -427,6 +430,7 @@ public class MDCBackend extends AbstractBackend {
 			}	
 			try {
 				/// <ol> <li> Merge current map of input networks into the resulting network: doMergingProcess()
+				System.out.println("AAAA - " + currMap.toString());
 				Network resultNetwork = doMergingProcess(copyMap(currMap), true);
 
 				
@@ -617,7 +621,6 @@ public class MDCBackend extends AbstractBackend {
 				clkDomainCombiner.combineClockDomain();
 				clockDomains = clkDomainCombiner.getClockDomains();
 			}
-			
 			
 			//TODO  uniformare notazioni per clock domains e logic regions e gestire caso con 0 lr e 0 cd
 			
@@ -822,13 +825,51 @@ public class MDCBackend extends AbstractBackend {
 		/// Platform composing process completed (<i> Back to compile()</i> )
 		
 	}
+	
+	/**
+	 * Initialize internal variables
+	 */
+	protected void doInitializeInternalVariables() {
+
+		////////////////////////
+		// General attributes //
+		////////////////////////
+		
+		luts = new ArrayList<SboxLut>();
+		networkVertexMap = new LinkedHashMap<String,Map<String,String>>();
+		netInstances = new LinkedHashMap<String,Set<String>>();
+
+		//////////////////////////
+		// Profiling attributes //
+		//////////////////////////
+		enMon = false;
+		enArtico = false;
+		enPulp = false;
+		profileEn = false;
+		bestInputMap = new LinkedHashMap<Network,Integer>();
+		bestValues = new ArrayList<Float>();
+		bestLuts = new ArrayList<SboxLut>();
+		bestNetInstances = new LinkedHashMap<String,Set<String>>();
+
+		///////////////////////////////
+		// HDL generation attributes //
+		///////////////////////////////
+		genHDL = false;	
+		lrEn = false;
+		genCopr = false;
+
+		///////////////////////////////
+		// CAL generation attributes //
+		///////////////////////////////
+		genCAL = false;
+	}
 
 	@Override
 	/**
 	 * Initialize general attributes with options set by the Users*/
 	protected void doInitializeOptions() {
 		
-		
+		doInitializeInternalVariables();
 
 		printer = new Printer();
 				
@@ -878,7 +919,7 @@ public class MDCBackend extends AbstractBackend {
 			bestValues = new ArrayList<Float>();
 			bestNetwork = null;
 			bestLuts = new ArrayList<SboxLut>();
-			bestInputMap = new HashMap<Network,Integer>();
+			bestInputMap = new LinkedHashMap<Network,Integer>();
 			profilingEffort = getOption("it.unica.diee.mdc.effort", "<unknown>");
 		}
 		prifileCount = 0;
@@ -1169,7 +1210,7 @@ public class MDCBackend extends AbstractBackend {
 					//OrccLogger.traceln("Combinations created!");
 				} else {					// if the size is greater or equal than 9 only a subset of combinations is calculated 
 					int indx=1;
-					Map<Network,Integer> map = new HashMap<Network,Integer>();
+					Map<Network,Integer> map = new LinkedHashMap<Network,Integer>();
 					for(Network net : networks) {
 						map.put(net,indx);
 						indx++;
@@ -1187,7 +1228,7 @@ public class MDCBackend extends AbstractBackend {
 				}
 			} else {						// profiling disabled: generation of the map with the given input networks order
 				int indx=1;
-				Map<Network,Integer> map = new HashMap<Network,Integer>();
+				Map<Network,Integer> map = new LinkedHashMap<Network,Integer>();
 				for(Network net : networks) {
 					map.put(net,indx);
 					indx++;
@@ -1195,7 +1236,7 @@ public class MDCBackend extends AbstractBackend {
 				netMapList.add(map);
 			}
 		} else { 							// there is only one network in the list of input networks
-			Map<Network,Integer> newMap = new HashMap<Network,Integer>();
+			Map<Network,Integer> newMap = new LinkedHashMap<Network,Integer>();
 			newMap.put(networks.get(0),DONT_MERGE);
 			netMapList.add(newMap);
 		}
@@ -1374,7 +1415,7 @@ public class MDCBackend extends AbstractBackend {
 		//TODO  gestire clk o no in base a power saving selezionato
 		//bestNetInstances = merger.getNetworksClkInstances();
 		bestNetInstances = merger.getNetworksInstances();
-		bestInputMap =  new HashMap<Network,Integer>(netMap);
+		bestInputMap =  new LinkedHashMap<Network,Integer>(netMap);
 	}
 		
 }

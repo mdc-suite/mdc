@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,7 +141,7 @@ public class EmpiricMerger extends Merger {
 		sboxActorManager = new SboxActorManager();
 		//sboxLutManager = new SboxLutManager();
 		actorManager = new ActorManager();
-		networksInstances = new HashMap<String,Set<String>>();
+		networksInstances = new LinkedHashMap<String,Set<String>>();
 		//networkVertexMap = new HashMap<String,Map<String,String>>();
 	}
 
