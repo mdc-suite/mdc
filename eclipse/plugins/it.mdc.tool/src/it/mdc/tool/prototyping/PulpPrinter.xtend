@@ -14,6 +14,7 @@ import net.sf.orcc.df.Port
 import java.util.List
 import it.mdc.tool.core.platformComposer.ProtocolManager
 import it.mdc.tool.core.sboxManagement.SboxLut
+import java.io.File
 
 /**
  * Pulp HWPE Wrapper Printer 
@@ -440,7 +441,7 @@ class PulpPrinter {
 		multi_dataflow_ctrl #(
 		    .N_CORES   ( 2  ),
 		    .N_CONTEXT ( 2  ),
-		    .N_IO_REGS ( «outputMap.size+1» ),
+		    .N_IO_REGS ( 16 ),
 		    .ID ( ID )
 		) i_ctrl (
 		    .clk_i            ( clk_i          ),
@@ -513,7 +514,7 @@ class PulpPrinter {
 			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
 			«ENDFOR»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
-			.ID(slv_reg0[31:24])«ENDIF»
+			.ID(engine_ctrl.configuration)«ENDIF»
 		);
 		'''
 	}
@@ -866,7 +867,7 @@ class PulpPrinter {
 		    «ENDFOR»
 		    
 		    // ucode
-		    // ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
+		    ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
 		                                     // ucode to an accelerator-specific module
 		    // engine
 		    ctrl_engine_o.clear      = '1;
@@ -889,7 +890,7 @@ class PulpPrinter {
         	«FOR input : inputMap.keySet»
           	ctrl_streamer_o.«input.name»_source_ctrl.req_start    = '0;
           	«ENDFOR»
-	        «FOR output : outputMap.keySet SEPARATOR " & "»
+	        «FOR output : outputMap.keySet»
     		ctrl_streamer_o.«output.name»_sink_ctrl.req_start      = '0;
     		«ENDFOR»
 		    ctrl_ucode_o.enable                        = '0;
@@ -966,7 +967,7 @@ class PulpPrinter {
 		          «FOR input : inputMap.keySet»
 		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
 				  «ENDFOR»
-				  «FOR output : outputMap.keySet SEPARATOR " & "»
+				  «FOR output : outputMap.keySet»
 				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
 				  «ENDFOR»
 		        end
@@ -992,7 +993,7 @@ class PulpPrinter {
   		          «FOR input : inputMap.keySet»
   		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
   				  «ENDFOR»
-  				  «FOR output : outputMap.keySet SEPARATOR " & "»
+  				  «FOR output : outputMap.keySet»
   				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
   				  «ENDFOR»
 		        end
@@ -1018,7 +1019,7 @@ class PulpPrinter {
 		'''
 	}
 	
-	def printBender(){
+	def printBender(String hclPath){
 		'''
 		hw-mac-engine:
 		  incdirs : [
@@ -1030,6 +1031,16 @@ class PulpPrinter {
 		    rtl/multi_dataflow_ctrl.sv,
 		    rtl/multi_dataflow_streamer.sv,
 		    rtl/multi_dataflow_engine.sv,
+		    «FOR file : new File(hclPath).listFiles»
+		    rtl/«file.name»,
+			«ENDFOR»
+			«IF !luts.empty»
+			rtl/configurator.v\
+			rtl/sbox1x2.v\
+			rtl/sbox2x1.v\
+			«ENDIF»
+			/rtl/multi_dataflow.v,
+			/rtl/interface_wrapper.sv,
 		    rtl/multi_dataflow_top.sv,
 		    wrap/multi_dataflow_top_wrap.sv
 		  ]
@@ -1067,7 +1078,7 @@ class PulpPrinter {
 		  // Custom register files
 		  parameter int unsigned CONFIG             = «portMap.size+5»;
 		  «FOR port : portMap.keySet»
-		  parameter int unsigned PORT_«port.name»             = «portMap.get(port)+6»;
+		  parameter int unsigned PORT_«port.name»             = «portMap.get(port)+portMap.size+6»;
 		  «ENDFOR»
 		  
 		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
@@ -1232,7 +1243,7 @@ class PulpPrinter {
 		  «FOR output : outputMap.keySet»
 		  hwpe_stream_sink #(
 		    .DATA_WIDTH ( 32 )
-		  ) i_d_sink (
+		  ) i_«output.name»_sink (
 		    .clk_i       ( clk_i                ),
 		    .rst_ni      ( rst_ni               ),
 		    .test_mode_i ( test_mode_i          ),
@@ -1309,6 +1320,54 @@ class PulpPrinter {
 		«ENDFOR»
 		
 		endmodule // multi_dataflow_streamer
+		'''
+	}
+	
+	def printMk(String hclPath) {
+		'''
+		IP=hwpe_multi_dataflow
+		IP_PATH=$(IPS_PATH)/hwpe-multi-dataflow
+		LIB_NAME=$(IP)_lib
+		
+		include vcompile/build.mk
+		
+		.PHONY: vcompile-$(IP) vcompile-subip-hw-multi-dataflow 
+		
+		vcompile-$(IP): $(LIB_PATH)/_vmake
+		
+		$(LIB_PATH)/_vmake : $(LIB_PATH)/hw-multi-dataflow.vmake 
+			@touch $(LIB_PATH)/_vmake
+		
+		
+		# hw-multi-dataflow component
+		INCDIR_HW-MULTI-DATAFLOW=+incdir+$(IP_PATH)/rtl
+		SRC_SVLOG_HW-MULTI-DATAFLOW=\
+			$(IP_PATH)/rtl/multi_dataflow_package.sv\
+			$(IP_PATH)/rtl/multi_dataflow_fsm.sv\
+			$(IP_PATH)/rtl/multi_dataflow_ctrl.sv\
+			$(IP_PATH)/rtl/multi_dataflow_streamer.sv\
+			«FOR file : new File(hclPath).listFiles»
+			$(IP_PATH)/rtl/«file.name»\
+			«ENDFOR»
+			«IF !luts.empty»
+			$(IP_PATH)/rtl/configurator.v\
+			$(IP_PATH)/rtl/sbox1x2.v\
+			$(IP_PATH)/rtl/sbox2x1.v\
+			«ENDIF»
+			$(IP_PATH)/rtl/multi_dataflow.v\
+			$(IP_PATH)/rtl/interface_wrapper.sv\
+			$(IP_PATH)/rtl/multi_dataflow_top.sv\
+			$(IP_PATH)/wrap/multi_dataflow_top_wrap.sv
+		SRC_VHDL_HW-MULTI-DATAFLOW=
+		
+		vcompile-subip-hw-multi-dataflow: $(LIB_PATH)/hw-multi-dataflow.vmake
+		
+		$(LIB_PATH)/hw-multi-dataflow.vmake: $(SRC_SVLOG_HW-MULTI-DATAFLOW) $(SRC_VHDL_HW-MULTI-DATAFLOW)
+			$(call subip_echo,hw-multi-dataflow)
+			$(SVLOG_CC) -work $(LIB_PATH) +define+HWPE_ASSERT_SEVERITY="\$$fatal" -L hwpe_ctrl_lib -L hwpe_stream_lib -suppress 2583 -suppress 13314 $(INCDIR_HW-MULTI-DATAFLOW) $(SRC_SVLOG_HW-MULTI-DATAFLOW)
+			
+			@touch $(LIB_PATH)/hw-multi-dataflow.vmake
+		
 		'''
 	}
 	

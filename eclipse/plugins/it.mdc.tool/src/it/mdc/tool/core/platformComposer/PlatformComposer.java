@@ -312,6 +312,7 @@ public abstract class PlatformComposer {
 		/// <ul>
 		String file;
 		CharSequence sequence;
+		String hdlCompLib = (String) options.get("it.mdc.tool.hdlCompLib");
 
 		PulpPrinter pulpPrinter;
 		
@@ -427,7 +428,21 @@ public abstract class PlatformComposer {
 
 		/// <ol> <li> Generate Bender
 		file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "src_files.yml";
-		sequence = pulpPrinter.printBender();
+		sequence = pulpPrinter.printBender(hdlCompLib);
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate Bender
+		file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "hwpe-multi-dataflow.mk";
+		sequence = pulpPrinter.printMk(hdlCompLib);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
