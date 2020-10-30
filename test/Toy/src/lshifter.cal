@@ -1,0 +1,5 @@
+actor lshifter()
+  uint(size=16) in0 ==>
+  uint(size=16) out0 :
+  
+end

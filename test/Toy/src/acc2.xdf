@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XDF name="acc2">
+    <Port kind="Input" name="inStream0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Input" name="inStream1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="outStream0">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Port kind="Output" name="outStream1">
+        <Type name="int">
+            <Entry kind="Expr" name="size">
+                <Expr kind="Literal" literal-kind="Integer" value="16"/>
+            </Entry>
+        </Type>
+    </Port>
+    <Instance id="acc_0">
+        <Class name="accumulator"/>
+    </Instance>
+    <Instance id="acc_1">
+        <Class name="accumulator"/>
+    </Instance>
+    <Connection dst="acc_0" dst-port="in0" src="" src-port="inStream0"/>
+    <Connection dst="" dst-port="outStream0" src="acc_0" src-port="out0"/>
+    <Connection dst="acc_1" dst-port="in0" src="" src-port="inStream1"/>
+    <Connection dst="" dst-port="outStream1" src="acc_1" src-port="out0"/>
+</XDF>
