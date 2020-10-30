@@ -3,6 +3,7 @@ package it.mdc.tool.core.sboxManagement;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Instance;
@@ -44,7 +45,7 @@ public class SboxLut{
 	 */
 	public SboxLut(Instance sboxInstance){
 		this.sboxInstance = sboxInstance;
-		lutMap = new HashMap<Network, Map<Integer,Boolean>>();
+		lutMap = new LinkedHashMap<Network, Map<Integer,Boolean>>();
 	}
 	
 	/**
