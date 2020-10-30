@@ -14,6 +14,7 @@ import net.sf.orcc.df.Port
 import java.util.List
 import it.mdc.tool.core.platformComposer.ProtocolManager
 import it.mdc.tool.core.sboxManagement.SboxLut
+import java.util.LinkedHashMap
 
 /**
  * Vivado AXI IP Wrapper Printer 
@@ -43,7 +44,7 @@ class WrapperPrinter {
 	
 	def computeNetsPorts(Map<String,Map<String,String>> networkVertexMap) {
 		
-		netPorts = new HashMap<String,List<Port>>();
+		netPorts = new LinkedHashMap<String,List<Port>>();
 		
 		for(String net : networkVertexMap.keySet()) {
 			for(int id : portMap.values.sort) {
@@ -88,9 +89,9 @@ class WrapperPrinter {
 		var index=0;
 		var size=0;
 		
-		inputMap = new HashMap<Port,Integer>();
-		outputMap = new HashMap<Port,Integer>();
-		portMap = new HashMap<Port,Integer>();
+		inputMap = new LinkedHashMap<Port,Integer>();
+		outputMap = new LinkedHashMap<Port,Integer>();
+		portMap = new LinkedHashMap<Port,Integer>();
 		
 		for(Port input : network.getInputs()) {
 			inputMap.put(input,index);
@@ -1133,7 +1134,7 @@ class WrapperPrinter {
 	}
 		
 	def getOutLastModCommSignals(){
-		var Map<String,String> result = new HashMap<String,String>();
+		var Map<String,String> result = new LinkedHashMap<String,String>();
 		for(commSigId : getLastModCommSignals().keySet) {
 			if( (getLastModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("output") 
 					&& getLastModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
@@ -1154,7 +1155,7 @@ class WrapperPrinter {
 	}
 	
 	def getInFirstModCommSignals(){
-		var Map<String,String> result = new HashMap<String,String>();
+		var Map<String,String> result = new LinkedHashMap<String,String>();
 		for(commSigId : getFirstModCommSignals().keySet) {
 			if( (getFirstModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("input") 
 					&& getFirstModCommSignals().get(commSigId).get(ProtocolManager.DIR).equals("direct") )
@@ -1185,7 +1186,7 @@ class WrapperPrinter {
 	}
 	
 	def getResetSysSignals(){
-		var Map<String,String> result = new HashMap<String,String>();
+		var Map<String,String> result = new LinkedHashMap<String,String>();
 		for(String sysSigId : netSysSignals.keySet) {
 			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)) {
 				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"HIGH")

@@ -12,6 +12,7 @@ import java.util.Map
 import java.util.HashMap
 import net.sf.orcc.df.Port
 import it.mdc.tool.core.ConfigManager
+import java.util.LinkedHashMap
 
 /**
  * Vivado AXI IP Driver Printer 
@@ -58,7 +59,7 @@ class DriverPrinter {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
-		var Map<String,ArrayList<Port>> netIdPortMap = new HashMap<String,ArrayList<Port>>();		
+		var Map<String,ArrayList<Port>> netIdPortMap = new LinkedHashMap<String,ArrayList<Port>>();		
 		var i = 0;
 		
 		for (String net : networkVertexMap.keySet()) {
@@ -221,7 +222,7 @@ class DriverPrinter {
 		
 		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		var date = new Date();
-		var Map<String,ArrayList<Port>> netIdPortMap = new HashMap<String,ArrayList<Port>>();		
+		var Map<String,ArrayList<Port>> netIdPortMap = new LinkedHashMap<String,ArrayList<Port>>();		
 		var i = 0;
 		
 		for (String net : networkVertexMap.keySet()) {
