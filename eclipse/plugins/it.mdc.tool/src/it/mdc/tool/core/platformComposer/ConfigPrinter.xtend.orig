@@ -43,10 +43,7 @@ class ConfigPrinter {
 	}
 	
 	def computeNets() {
-		for(Network net:configManager.getNetworkList()){
-			networks.add(luts.get(0).getNetworkByName(net.simpleName));
-		}
-		//networks.addAll(luts.get(0).getNetworks());
+		networks.addAll(luts.get(0).getNetworks());
 	}
 	
 	def printBody() {
@@ -101,7 +98,12 @@ class ConfigPrinter {
 		this.configManager = configManager;
 		networks = new ArrayList<Network>();
 				
+<<<<<<< HEAD
 		computeNets();
+=======
+		//computeNets();
+		networks = this.configManager.getNetworkList();
+>>>>>>> Added a getter for the list of networks in ConfigManager. Using this getter to print configurator.v contents with a specific order
 		System.out.println("ZZZZ - " + networks);
 
 		'''

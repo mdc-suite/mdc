@@ -557,5 +557,12 @@ public class ConfigManager {
 		}
 	}
 	
+	/**
+	 * Get the list of networks (ordered)
+	 */
+	public List<Network> getNetworkList(){
+		return this.networks;
+	}
+	
 	///<i> Go back to it.mdc.tool.core.MDCBackend.compile(). </i> </ul>		
 }
