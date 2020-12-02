@@ -11,6 +11,9 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import net.sf.orcc.df.Actor;
+import net.sf.orcc.df.Connection;
+import net.sf.orcc.df.Port;
 import net.sf.orcc.util.OrccLogger;
 
 /**
@@ -261,28 +264,327 @@ public class ProtocolManager {
 
 	}
 	
-	public Map<String,Map<String,String>> getNetSysSignals() {
-		return netSysSignals;
+	/**
+	 * TODO add description
+	 * 
+	 * @param module
+	 * @param actor
+	 * @param commSigId
+	 * @param port
+	 * @return
+	 */
+	public int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
+		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable")) {
+			return port.getType().getSizeInBits();
+		} else if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("broadcast")) {
+			if (actor != null) {
+			 	if (actor.getOutgoingPortMap().containsKey(port)) {
+					if (actor.getOutgoingPortMap().get(port).get(0).hasAttribute("broadcast")) {
+						actor.getOutgoingPortMap().get(port).size();
+					} else {
+						return 1;
+					}
+				} else {
+					return 1;
+				}
+			} else if (port != null) {
+				if(port.getOutgoing().size() != 0) {
+					if (((Connection) port.getOutgoing().get(0)).hasAttribute("broadcast")) {
+						port.getOutgoing().size();
+					} else {
+						return 1;
+					}
+				
+				} else {
+					return 1;
+				}
+			} else {
+				return 1;
+			}
+		} else {	
+			return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(SIZE));
+		}
+		return 1;
+	} 
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getFirstMod(){
+		if (modNames.containsKey(PRED)) {
+			return PRED;
+		} else {
+			return ACTOR;	
+	 	}
 	}
 	
+	/**
+	 * This method returns communication signals of the first module (PRED or ACTOR)
+	 * 
+	 * @return map of first module communication signals
+	 */
+	public Map<String,Map<String,String>> getFirstModCommSignals(){
+		if(modCommSignals.containsKey(PRED)) {
+			return modCommSignals.get(PRED);
+		} else {
+			return modCommSignals.get(ACTOR);
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */
+	public Map<String,String> getInFirstModCommSignals(){
+		Map<String,String> result = new HashMap<String,String>();
+		for(String commSigId : getFirstModCommSignals().keySet()) {
+			if( (getFirstModCommSignals().get(commSigId).get(KIND).equals("input") 
+					&& getFirstModCommSignals().get(commSigId).get(DIR).equals("direct") )
+					|| (getFirstModCommSignals().get(commSigId).get(KIND).equals("output")
+					&& getFirstModCommSignals().get(commSigId).get(DIR).equals("reverse") ) ) {
+				result.put(commSigId,getFirstModCommSignals().get(commSigId).get(CH));		
+			}
+		}
+		return result;
+	} 
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getLastMod(){
+		if (modNames.containsKey(SUCC)) {
+			return SUCC;
+		} else {
+			return ACTOR;	
+	 	}
+	}
+	
+	/**
+	 * This method returns communication signals of the last module (SUCC or ACTOR)
+	 * 
+	 * @return map of last module communication signals
+	 */
+	public Map<String,Map<String,String>> getLastModCommSignals(){
+		if(modCommSignals.containsKey(SUCC)) {
+			return modCommSignals.get(SUCC);
+		} else {
+			return modCommSignals.get(ACTOR);
+		}
+	}
+	
+	/**
+	 * This method returns mapping signal name of the channel passed as argument
+	 * 
+	 * @param channel
+	 * 				the channel for which corresponding mapping signal name is asked
+	 * 
+	 * @return name of the mapping signal
+	 */
+ 	public String getMatchingWrapMapping(String channel){
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).containsKey(CH)) {
+				if(channel.equals(wrapCommSignals.get(commSigId).get(CH))) {
+					return wrapCommSignals.get(commSigId).get(MAP);
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param module
+	 * @return
+	 */
+	public String getModName(String module) {
+		if (modNames.containsKey(module)) {
+			return modNames.get(module) + "_";
+		} else {
+			return "";
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */
 	public Map<String,String> getModNames() {
 		return modNames;
 	}
 	
-	public Map<String,Map<String,Map<String,String>>> getModSysSignals() {
-		return modSysSignals;
-	}
-	
+	/**
+	 * TODO add description
+	 * */
 	public Map<String,Map<String,Map<String,String>>> getModCommSignals() {
 		return modCommSignals;
 	}
 	
+	/**
+	 * TODO add description
+	 * */
 	public Map<String,Map<String,Map<String,String>>> getModCommParms() {
 		return modCommParms;
 	}
 	
+	/**
+	 * TODO add description
+	 * */
 	public Map<String,Map<String,String>> getWrapCommSignals() {
 		return wrapCommSignals;
 	}
+	
+	/**
+	 * TODO add description
+	 * */
+	public Map<String,Map<String,Map<String,String>>> getModSysSignals() {
+		return modSysSignals;
+	}
+	
+	/**
+	 * TODO add description
+	 * */
+	public Map<String,Map<String,String>> getNetSysSignals() {
+		return netSysSignals;
+	}
+	
+
+	public Map<String,String> getOutLastModCommSignals(){
+		Map<String,String> result = new HashMap<String,String>();
+		for(String commSigId : getLastModCommSignals().keySet()) {
+			if( (getLastModCommSignals().get(commSigId).get(KIND).equals("output") 
+					&& getLastModCommSignals().get(commSigId).get(DIR).equals("direct") )
+					|| (getLastModCommSignals().get(commSigId).get(KIND).equals("input")
+					&& getLastModCommSignals().get(commSigId).get(DIR).equals("reverse") ) ) {
+				result.put(commSigId,getLastModCommSignals().get(commSigId).get(CH));	
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * TODO add description
+	 * 
+	 * @param module
+	 * @param commSigId
+	 * @param port
+	 * @return
+	 */
+	public String getSigName(String module, String commSigId, Port port) {
+		if (!modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
+			return port.getLabel() + "_" + modCommSignals.get(module).get(commSigId).get(CH);
+		} else {
+			return port.getLabel();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param module
+	 * @param commSigId
+	 * @return
+	 */
+	public int getSysSigSize(String module, String commSigId) {
+		if(module == null) {
+			return Integer.parseInt(netSysSignals.get(commSigId).get(SIZE));
+		} else {
+			return Integer.parseInt(modSysSignals.get(module).get(commSigId).get(SIZE));
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */
+	public boolean isInputSide(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
+			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true;	
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * TODO add description
+	 * */
+	public boolean isInputSideDirect(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct")) ) {
+			return true;	
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */
+	public boolean isInputSideReverse(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true;	
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * This method returns if the matching wrapping signal is discordant or not with the channel passed as argument
+	 * 
+	 * @param channel
+	 * 				the channel for which corresponding mapping signal discordance is asked
+	 * @return true if the matching wrapping signal is discordant, false otherwise
+	 */
+	public boolean isNegMatchingWrapMapping(String channel){
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).containsKey(CH)) {
+				if(channel.equals(wrapCommSignals.get(commSigId).get(CH))) {
+					return wrapCommSignals.get(commSigId).containsKey(INV);
+				}
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * TODO add description
+	 * */	
+	public boolean isOutputSide(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
+			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true;		
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */	
+	public boolean isOutputSideDirect(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct")) ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * TODO add description
+	 * */	
+	public boolean isOutputSideReverse(String module, String commSigId) {
+		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
+			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
+			return true;	
+		} else {
+			return false;
+		}
+	}
+	
+	
 	
 }

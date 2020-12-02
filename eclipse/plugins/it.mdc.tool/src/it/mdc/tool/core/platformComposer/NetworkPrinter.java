@@ -377,6 +377,21 @@ public class NetworkPrinter extends PlatformComposer {
 				OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 			}
 		}
+		
+		// Print test bench module
+		String tbFile = dir.getPath() + File.separator + "tb_multi_dataflow.v";	
+		
+		TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
+		CharSequence tbSequence = testBenchPrinter.printTestBench(network,luts,protocolManager);
+		logicRegionID = printer.getClockDomainIndex();
+		
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(tbFile));
+			ps.print(tbSequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
 			
 		return false;
 	
