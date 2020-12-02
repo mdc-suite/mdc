@@ -100,8 +100,10 @@ class TestBenchPrinterGeneric {
 		parameter «input.name.toUpperCase»_FILE = "«input.name»_file.mem";
 		parameter «input.name.toUpperCase»_SIZE = 64;
 	 	«ENDFOR»
-	 	«FOR output : network.outputs»parameter «output.name.toUpperCase»_FILE = "«output.name»_file.mem";
-	 	parameter «output.name.toUpperCase»_SIZE = 64;
+
+		«FOR output : network.outputs»
+		parameter «output.name.toUpperCase»_FILE = "«output.name»_file.mem";
+		parameter «output.name.toUpperCase»_SIZE = 64;
 	 	«ENDFOR»
 	 	'''
 	 }
@@ -112,33 +114,33 @@ class TestBenchPrinterGeneric {
 	def printSignals(List<SboxLut> luts) {
 	 	
 		'''
-			«FOR input : network.inputs»
-			integer i_«input.name» = 0;
-			«FOR commSigId : protocolManager.getFirstModCommSignals().keySet»
-			«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
-			«printModCommSigKind(protocolManager.getFirstMod(),commSigId)» «printCommSigDimension(protocolManager.getFirstMod(),null,commSigId,input)»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»;
-			«ENDIF»
-			«ENDFOR»
-			reg [«input.type.sizeInBits-1»:0] «input.name»_file_data [«input.name.toUpperCase»_SIZE-1:0];
-			«ENDFOR»
-			
-			«FOR output : network.outputs»
-			integer i_«output.name» = 0;
-			«FOR commSigId :protocolManager.getLastModCommSignals().keySet»
-			«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)»
-			«printModCommSigKind(protocolManager.getLastMod(),commSigId)» «printCommSigDimension(protocolManager.getLastMod(),null,commSigId,output)»«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»;
-			«ENDIF»
-			«ENDFOR»
-			reg [«output.type.sizeInBits-1»:0] «output.name»_file_data [«output.name.toUpperCase»_SIZE-1:0];
-			«ENDFOR»	
-			
-			«IF !luts.empty»
-			reg [7:0] ID;
-			«ENDIF»	
-					
-			«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-			«printNetSysSigKind(sysSigId)» «printSysSigDimension(null,sysSigId)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»;
-			«ENDFOR»	
+		«FOR input : network.inputs»
+		integer i_«input.name» = 0;
+		«FOR commSigId : protocolManager.getFirstModCommSignals().keySet»
+		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
+		«printModCommSigKind(protocolManager.getFirstMod(),commSigId)» «printCommSigDimension(protocolManager.getFirstMod(),null,commSigId,input)»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»;
+		«ENDIF»
+		«ENDFOR»
+		reg [«input.type.sizeInBits-1»:0] «input.name»_file_data [«input.name.toUpperCase»_SIZE-1:0];
+		«ENDFOR»
+		
+		«FOR output : network.outputs»
+		integer i_«output.name» = 0;
+		«FOR commSigId :protocolManager.getLastModCommSignals().keySet»
+		«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)»
+		«printModCommSigKind(protocolManager.getLastMod(),commSigId)» «printCommSigDimension(protocolManager.getLastMod(),null,commSigId,output)»«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»;
+		«ENDIF»
+		«ENDFOR»
+		reg [«output.type.sizeInBits-1»:0] «output.name»_file_data [«output.name.toUpperCase»_SIZE-1:0];
+		«ENDFOR»	
+		
+		«IF !luts.empty»
+		reg [7:0] ID;
+		«ENDIF»	
+		
+		«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
+		«printNetSysSigKind(sysSigId)» «printSysSigDimension(null,sysSigId)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»;
+		«ENDFOR»	
 		'''
 	}
 	
@@ -152,12 +154,12 @@ class TestBenchPrinterGeneric {
 	 	«FOR input : network.inputs»
 
 	 	initial
-	 	  $readmemb(«input.name.toUpperCase»_FILE, «input.name»_file_data);
+	 	 	$readmemh(«input.name.toUpperCase»_FILE, «input.name»_file_data);
 	 	«ENDFOR»
 	 	«FOR output : network.outputs»
 
 	 	initial
-	 	  $readmemb(«output.name.toUpperCase»_FILE, «output.name»_file_data);
+	 		$readmemh(«output.name.toUpperCase»_FILE, «output.name»_file_data);
 	 	«ENDFOR»
 	 	
 	 	'''
@@ -219,120 +221,117 @@ class TestBenchPrinterGeneric {
 	 	
 	 	'''	 	
 	 	initial
+	 	begin
+	 		«IF !luts.empty»
+	 		// network configuration
+	 		ID = 8'd1;
+	 		«ENDIF»
+
+	 		// clocks initialization
+	 		«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
+			«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)»		«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = 0;
+			«ENDIF»
+			«ENDFOR»
+
+	 		// network signals initialization
+			«FOR input : network.inputs»
+			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+			«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+			«ELSE»
+			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«ENDIF»
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			«FOR output : network.outputs»
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getLastMod()).keySet»
+			«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
+			«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+	 	
+	 		// initial reset
+			«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
+			«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
+			«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»0«ELSE»1«ENDIF»;
+			«ENDIF»
+			«ENDFOR»
+	 		#2
+			«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
+			«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
+			«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»1«ELSE»0«ENDIF»;
+			«ENDIF»
+			«ENDFOR»
+	 		#100
+			«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
+			«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
+			«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»0«ELSE»1«ENDIF»;
+			«ENDIF»
+			«ENDFOR»
+	 		#100
+	 	
+	 		// network inputs (output side)
+			«FOR output : network.outputs»
+			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
+			«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
+			«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+	 	
+	 		// network inputs (input side)
+	 		«FOR input : network.inputs»while(i_«input.name» < «input.name.toUpperCase»_SIZE)
 	 		begin
-	 			«IF !luts.empty»
-	 			// network configuration
-	 			ID = 8'd1;
-	 			«ENDIF»
-
-	 			// clocks initialization
-	 			«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-				«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)»
-				«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = 0;
-				«ENDIF»
-				«ENDFOR»
-
-	 			// network signals initialization
-				«FOR input : network.inputs»
+	 			#10
 				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-				«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
-				«ELSE»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-				«ENDIF»
+				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("full")»
+				if(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
+	 			begin
 				«ENDIF»
 				«ENDFOR»
-				«ENDFOR»
-				«FOR output : network.outputs»
-				«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getLastMod()).keySet»
-				«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
-				«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-				«ENDIF»
-				«ENDFOR»
-				«ENDFOR»
-	 	
-	 			// initial reset
-				«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-				«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
-				«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»0«ELSE»1«ENDIF»;
-				«ENDIF»
-				«ENDFOR»
-	 			#2
-				«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-				«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
-				«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»1«ELSE»0«ENDIF»;
-				«ENDIF»
-				«ENDFOR»
-	 			#100
-				«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-				«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST) || protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)»
-				«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)» = «IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)»0«ELSE»1«ENDIF»;
-				«ENDIF»
-				«ENDFOR»
-	 			#100
-	 	
-	 			// network inputs (output side)
-				«FOR output : network.outputs»
-				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
-				«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
-				«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-				«ENDIF»
-				«ENDFOR»
-				«ENDFOR»
-	 	
-	 			// network inputs (input side)
-				«FOR input : network.inputs»while(i_«input.name» < «input.name.toUpperCase»_SIZE)
-				begin
-					#10
 					«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-					«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("full")»
-					if(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
-					begin
+					«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+					«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_file_data[i_«input.name»];
+					«ELSE»
+					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
+					«ENDIF»
 					«ENDIF»
 					«ENDFOR»
-						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_file_data[i_«input.name»];
-						«ELSE»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
-						«ENDIF»
-						«ENDIF»
-						«ENDFOR»
-						i_«input.name» = i_«input.name» + 1;
-					end
-					else
-					begin
-						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
-						«ELSE»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-						«ENDIF»
-						«ENDIF»
-						«ENDFOR»						
-					end
-				end
-				
-				#10
-				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-				«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
-				«ELSE»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-				«ENDIF»
-				«ENDIF»
-				«ENDFOR»
-
-				«ENDFOR»
-	 	
-	 			#1000
-	 			$stop;
-	 	
+	 				i_«input.name» = i_«input.name» + 1;
+	 			end
+	 			else
+	 			begin
+					«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+					«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+					«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+					«ELSE»
+					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+					«ENDIF»
+					«ENDIF»
+					«ENDFOR»						
+	 			end
 	 		end
+
+
+	 		#10
+			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+			«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+			«ELSE»
+			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«ENDIF»
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+
+	 		#1000
+	 		$stop;
+	 	end
 	 	'''
 	 }
 	 	 
@@ -344,20 +343,19 @@ class TestBenchPrinterGeneric {
 	 	
 	 	'''	 	
 	 	«FOR output : network.outputs»always@(posedge «FOR sysSigId : protocolManager.getNetSysSignals.keySet»«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»«ENDFOR»)
-		«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
-		«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»	if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)
-			«ENDIF»
-		«ENDFOR»
-		«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
+			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
+			«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)«ENDIF»
+			«ENDFOR»
+			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
 			«IF protocolManager.isOutputSideDirect(protocolManager.getLastMod(),commSigId)»
 			«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»	begin	
 				if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» != «output.name»_file_data[i_«output.name»])
-					$display("Error");
+					$display("Error on output %d: obtained %d, expected %d", i_«output.name», «protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)», «output.name»_file_data[i_«output.name»]);
 				i_«output.name» = i_«output.name» + 1;
-			end
+				end
 			«ENDIF»
 			«ENDIF»
-		«ENDFOR»
+			«ENDFOR»
 		«ENDFOR»
 	 	'''
 	 }	
