@@ -7,6 +7,7 @@ import net.sf.orcc.df.Actor
 import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 import it.mdc.tool.core.sboxManagement.SboxLut
+import java.util.Map
 
 /**
  * A Verilog Multi-Dataflow Network Test Bench printer
@@ -86,20 +87,25 @@ class TestBenchPrinterGeneric {
 	/**
 	 * Print test bench parameters.
 	 */
-	 def printParameters() {
+	 def printParameters(Map<Integer,String> configMap) {
 	 	'''
 	 	«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
 		«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)»parameter «protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP).toUpperCase»_PERIOD = 10;
 		«ENDIF»
 		«ENDFOR»
+		
 		«FOR input : network.inputs»
-		parameter «input.name.toUpperCase»_FILE = "«input.name»_file.mem";
-		parameter «input.name.toUpperCase»_SIZE = 64;
+		«FOR config : configMap.keySet»
+		parameter «input.name.toUpperCase»_«configMap.get(config).toUpperCase»_FILE = "«input.name»_«configMap.get(config)»_file.mem";
+		parameter «input.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE = 64;
+		«ENDFOR»				
 	 	«ENDFOR»
 
 		«FOR output : network.outputs»
-		parameter «output.name.toUpperCase»_FILE = "«output.name»_file.mem";
-		parameter «output.name.toUpperCase»_SIZE = 64;
+		«FOR config : configMap.keySet»
+		parameter «output.name.toUpperCase»_«configMap.get(config).toUpperCase»_FILE = "«output.name»_«configMap.get(config)»_file.mem";
+		parameter «output.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE = 64;
+		«ENDFOR»
 	 	«ENDFOR»
 	 	'''
 	 }
@@ -107,27 +113,32 @@ class TestBenchPrinterGeneric {
 	/**
 	 * Print test bench internal signals.
 	 */
-	def printSignals(List<SboxLut> luts) {
+	def printSignals(List<SboxLut> luts, Map<Integer,String> configMap) {
 	 	
 		'''
+		reg start_feeding;
 		«FOR input : network.inputs»
-		integer i_«input.name» = 0;
 		«FOR commSigId : protocolManager.getFirstModCommSignals().keySet»
 		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
 		«printModCommSigKind(protocolManager.getFirstMod(),commSigId)» «printCommSigDimension(protocolManager.getFirstMod(),null,commSigId,input)»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»;
 		«ENDIF»
 		«ENDFOR»
-		reg [«input.type.sizeInBits-1»:0] «input.name»_file_data [«input.name.toUpperCase»_SIZE-1:0];
+		«FOR config : configMap.keySet»
+		reg [«input.type.sizeInBits-1»:0] «input.name»_«configMap.get(config)»_file_data [«input.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE-1:0];
+		«ENDFOR»
+		integer «input.name»_i = 0;
 		«ENDFOR»
 		
 		«FOR output : network.outputs»
-		integer i_«output.name» = 0;
 		«FOR commSigId :protocolManager.getLastModCommSignals().keySet»
 		«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)»
 		«printModCommSigKind(protocolManager.getLastMod(),commSigId)» «printCommSigDimension(protocolManager.getLastMod(),null,commSigId,output)»«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»;
 		«ENDIF»
 		«ENDFOR»
-		reg [«output.type.sizeInBits-1»:0] «output.name»_file_data [«output.name.toUpperCase»_SIZE-1:0];
+		«FOR config : configMap.keySet»
+		reg [«output.type.sizeInBits-1»:0] «output.name»_«configMap.get(config)»_file_data [«output.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE-1:0];
+		«ENDFOR»
+		integer «output.name»_i = 0;
 		«ENDFOR»	
 		
 		«IF !luts.empty»
@@ -144,20 +155,19 @@ class TestBenchPrinterGeneric {
 	 /**
 	  * read data files to initialize I/O
 	  */
-	 def readDataFiles() {
+	 def readDataFiles(Map<Integer,String> configMap) {
 
 	 	'''
+	 	«FOR config : configMap.keySet»
 	 	«FOR input : network.inputs»
-
 	 	initial
-	 	 	$readmemh(«input.name.toUpperCase»_FILE, «input.name»_file_data);
+	 	 	$readmemh(«input.name.toUpperCase»_«configMap.get(config).toUpperCase»_FILE, «input.name»_«configMap.get(config)»_file_data);
 	 	«ENDFOR»
 	 	«FOR output : network.outputs»
-
 	 	initial
-	 		$readmemh(«output.name.toUpperCase»_FILE, «output.name»_file_data);
+	 		$readmemh(«output.name.toUpperCase»_«configMap.get(config).toUpperCase»_FILE, «output.name»_«configMap.get(config)»_file_data);
 	 	«ENDFOR»
-	 	
+	 	«ENDFOR»
 	 	'''
 	 }
 	 
@@ -213,14 +223,18 @@ class TestBenchPrinterGeneric {
 	 /**
 	  * print signals initialization and behavior
 	  */
-	 def printInitial(List<SboxLut> luts) {
+	 def printInitial(List<SboxLut> luts, Map<Integer,String> configMap) {
+	 	
 	 	
 	 	'''	 	
 	 	initial
 	 	begin
+	 		// feeding flag initialization
+	 		start_feeding = 0;
+	 		
 	 		«IF !luts.empty»
 	 		// network configuration
-	 		ID = 8'd1;
+	 		ID = 8'd0;
 	 		«ENDIF»
 
 	 		// clocks initialization
@@ -276,44 +290,17 @@ class TestBenchPrinterGeneric {
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
-	 	
-	 		// network inputs (input side)
-	 		«FOR input : network.inputs»while(i_«input.name» < «input.name.toUpperCase»_SIZE)
-	 		begin
-	 			#10
-				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("full")»
-				if(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
-	 			begin
-				«ENDIF»
-				«ENDFOR»
-					«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-					«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-					«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_file_data[i_«input.name»];
-					«ELSE»
-					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
-					«ENDIF»
-					«ENDIF»
-					«ENDFOR»
-	 				i_«input.name» = i_«input.name» + 1;
-	 			end
-	 			else
-	 			begin
-					«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
-					«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-					«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
-					«ELSE»
-					«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
-					«ENDIF»
-					«ENDIF»
-					«ENDFOR»						
-	 			end
-	 		end
-
-
-	 		#10
+			
+	 		«FOR config : configMap.keySet»
+	 		// executing «configMap.get(config)»
+	 		ID = 8'd«config»;
+			start_feeding = 1;
+			«FOR input : network.inputs»
+			while(«input.name»_i != «input.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE)
+				#10;
+			«ENDFOR»
+			start_feeding = 0;
+			«FOR input : network.inputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 			«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
 			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
@@ -323,35 +310,99 @@ class TestBenchPrinterGeneric {
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
+			«input.name»_i = 0;
+			«ENDFOR»
+			#1000
 			«ENDFOR»
 
-	 		#1000
 	 		$stop;
 	 	end
+	 	'''
+	 }
+	 
+	 def printInputFeeding(Map<Integer,String> configMap){
+	 	'''
+	 	«FOR config : configMap.keySet»
+	 	«FOR input : network.inputs»
+	 	always@(*)
+	 		if(start_feeding && ID == «config»)
+ 			begin
+	 			while(«input.name»_i < «input.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE)
+	 			begin
+	 				#10
+		 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+		 			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("full")»
+		 			if(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
+		 			begin
+					«ENDIF»
+					«ENDFOR»
+						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_«configMap.get(config)»_file_data[«input.name»_i];
+						«ELSE»
+						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
+						«ENDIF»
+						«ENDIF»
+						«ENDFOR»
+	 					«input.name»_i = «input.name»_i + 1;
+	 				end
+	 				else
+	 				begin
+						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+						«ELSE»
+						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+						«ENDIF»
+						«ENDIF»
+						«ENDFOR»						
+	 				end
+	 			end
+	 			#10
+				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
+				«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
+				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
+				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+				«ELSE»
+				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+				«ENDIF»
+				«ENDIF»
+				«ENDFOR»						
+			end
+		«ENDFOR»
+		«ENDFOR»
 	 	'''
 	 }
 	 	 
 	 /**
 	  * print output check logic
 	  */
-	 def printOutputCheck(){
+	 def printOutputCheck(Map<Integer,String> configMap){
 
-	 	
-	 	'''	 	
+	 	'''
+	 	«FOR config : configMap.keySet»	
 	 	«FOR output : network.outputs»always@(posedge «FOR sysSigId : protocolManager.getNetSysSignals.keySet»«IF protocolManager.getNetSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»«ENDFOR»)
-			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
-			«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)«ENDIF»
-			«ENDFOR»
-			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
-			«IF protocolManager.isOutputSideDirect(protocolManager.getLastMod(),commSigId)»
-			«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»	begin	
-				if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» != «output.name»_file_data[i_«output.name»])
-					$display("Error on output %d: obtained %d, expected %d", i_«output.name», «protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)», «output.name»_file_data[i_«output.name»]);
-				i_«output.name» = i_«output.name» + 1;
+			if(ID == «config»)
+				begin
+				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
+				«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)«ENDIF»
+				«ENDFOR»
+				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
+				«IF protocolManager.isOutputSideDirect(protocolManager.getLastMod(),commSigId)»
+				«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»	begin	
+					if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» != «output.name»_«configMap.get(config)»_file_data[«output.name»_i])
+						$display("Error for config %d on output %d: obtained %d, expected %d", «config», «output.name»_i, «protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)», «output.name»_«configMap.get(config)»_file_data[«output.name»_i]);
+					«output.name»_i = «output.name»_i + 1;
+					end
+				«ENDIF»
+				«ENDIF»
+				«ENDFOR»
+				if(«output.name»_i == «output.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE)
+					«output.name»_i = 0;
 				end
-			«ENDIF»
-			«ENDIF»
-			«ENDFOR»
+		«ENDFOR»
 		«ENDFOR»
 	 	'''
 	 }	
@@ -377,7 +428,8 @@ class TestBenchPrinterGeneric {
 	def printTestBench(
 		Network network, 
 		List<SboxLut> luts,
-		ProtocolManager protocolManager
+		ProtocolManager protocolManager,
+		Map<Integer,String> configMap
 	){	 	
 		
 		// Initialize members
@@ -390,40 +442,45 @@ class TestBenchPrinterGeneric {
 
 		module tb_multi_dataflow;
 		
-		// test bench parameters
-		// ----------------------------------------------------------------------------
-			«printParameters()»
-		// ----------------------------------------------------------------------------
+			// test bench parameters
+			// ----------------------------------------------------------------------------
+			«printParameters(configMap)»
+			// ----------------------------------------------------------------------------
 			
-		// multi_dataflow signals
-		// ----------------------------------------------------------------------------
-			«printSignals(luts)»
-		// ----------------------------------------------------------------------------
+			// multi_dataflow signals
+			// ----------------------------------------------------------------------------
+			«printSignals(luts,configMap)»
+			// ----------------------------------------------------------------------------
 		
-		// network input and output files
-		// ----------------------------------------------------------------------------
-			«readDataFiles()»
-		// ----------------------------------------------------------------------------
+			// network input and output files
+			// ----------------------------------------------------------------------------
+			«readDataFiles(configMap)»
+			// ----------------------------------------------------------------------------
 		
-		// dut
-		// ----------------------------------------------------------------------------
+			// dut
+			// ----------------------------------------------------------------------------
 			«printDUT(luts)»
-		// ----------------------------------------------------------------------------
+			// ----------------------------------------------------------------------------
 		
-		// clocks
-		// ----------------------------------------------------------------------------
+			// clocks
+			// ----------------------------------------------------------------------------
 			«printClocks()»
-		// ----------------------------------------------------------------------------
+			// ----------------------------------------------------------------------------
 		
-		// signals evolution
-		// ----------------------------------------------------------------------------
-			«printInitial(luts)»
-		// ----------------------------------------------------------------------------
+			// signals evolution
+			// ----------------------------------------------------------------------------
+			«printInitial(luts,configMap)»
+			// ----------------------------------------------------------------------------
 		
-		// output check
-		// ----------------------------------------------------------------------------
-			«printOutputCheck()»
-		// ----------------------------------------------------------------------------
+			// input feeding
+			// ----------------------------------------------------------------------------
+			«printInputFeeding(configMap)»
+			// ----------------------------------------------------------------------------
+		
+			// output check
+			// ----------------------------------------------------------------------------
+			«printOutputCheck(configMap)»
+			// ----------------------------------------------------------------------------
 		
 		endmodule
 		'''

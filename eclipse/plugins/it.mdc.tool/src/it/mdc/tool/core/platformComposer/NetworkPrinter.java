@@ -382,7 +382,7 @@ public class NetworkPrinter extends PlatformComposer {
 		String tbFile = dir.getPath() + File.separator + "tb_multi_dataflow.v";	
 		
 		TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
-		CharSequence tbSequence = testBenchPrinter.printTestBench(network,luts,protocolManager);
+		CharSequence tbSequence = testBenchPrinter.printTestBench(network,luts,protocolManager,configManager.getConfigMap());
 		logicRegionID = printer.getClockDomainIndex();
 		
 		try {

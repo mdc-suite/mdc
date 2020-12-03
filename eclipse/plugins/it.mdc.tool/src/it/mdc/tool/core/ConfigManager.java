@@ -431,6 +431,15 @@ public class ConfigManager {
 
 	}
 	
+	public Map<Integer,String> getConfigMap(){
+		if(configMap.size() != networks.size()) {
+			for(Network network : networks) {
+				getNetworkId(network.getSimpleName());
+			}
+		}
+		return configMap;
+	}
+	
 	/**
 	 * Set and return a configuration ID for the given network
 	 * 
