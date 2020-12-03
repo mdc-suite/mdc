@@ -1,7 +1,3 @@
-/*
- *
- */
- 
 package it.mdc.tool.core.platformComposer;
 
 import java.text.SimpleDateFormat
