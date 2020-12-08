@@ -978,6 +978,11 @@ class NetworkPrinterGeneric {
 				result.add(actVar)
 			}
 		}
+		for(actVar : actor.parameters) {
+			if (getMatchingVariable(actVar) === null && getMatchingParameter(actVar) === null) {
+				result.add(actVar)
+			}
+		}
 		return result
 	}
 	
