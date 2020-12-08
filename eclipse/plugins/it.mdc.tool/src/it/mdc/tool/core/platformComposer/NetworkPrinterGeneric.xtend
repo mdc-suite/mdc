@@ -57,6 +57,11 @@ class NetworkPrinterGeneric {
 	private static final String SIZE = "size";
 	private static final String VAL = "value";
 	private static final String FILTER = "filter";
+	
+	//TODO finish parameters management (dynamic and/or static)		
+	private static final int STATIC = 0;
+	private static final int DYNAMIC = 1;
+	private int param_mode = DYNAMIC;
 		
 	
 	var Network network;
@@ -669,7 +674,13 @@ class NetworkPrinterGeneric {
 	 	}
 	 	
 		'''
-		module multi_dataflow (
+		module multi_dataflow «IF !network.variables.empty»#(
+			// Static Parameter(s)
+			«FOR param : network.variables SEPARATOR ","»
+			parameter «IF param.type.sizeInBits != 1»[«param.type.sizeInBits-1»:0] «ENDIF»«param.name» = «evaluator.evaluateAsInteger(param.initialValue as Expression)»
+			«ENDFOR»
+		) «ENDIF»(
+			// Input(s)
 			«FOR input : network.inputs»
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId)»
@@ -677,6 +688,7 @@ class NetworkPrinterGeneric {
 			«ENDIF»
 			«ENDFOR»
 			
+			// Output(s)
 			«ENDFOR»
 			«FOR output : network.outputs»
 			«FOR commSigId : modCommSignals.get(succ).keySet»
@@ -686,9 +698,18 @@ class NetworkPrinterGeneric {
 			«ENDFOR»
 			«ENDFOR»	
 			
+			// Dynamic Parameter(s)
+			«IF (!network.parameters.empty)»
+			«FOR param : network.parameters»
+			input [«param.type.sizeInBits-1»:0] «param.name»,
+			«ENDFOR»
+			«ENDIF»
+			
+			// Configuration ID
 			«IF !luts.empty»
 			input [7:0] ID,
 			«ENDIF»
+			
 			«IF enablePowerGating»
 			input [17:0] reference_count, //to set the time necessary for be sure power is off or on
 			
@@ -696,7 +717,8 @@ class NetworkPrinterGeneric {
 			output	status«clockDomainsIndex.get(lr)»,
 			«ENDFOR»
 			«ENDIF»			
-					
+			
+			// System Signal(s)		
 			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
 			«netSysSignals.get(sysSigId).get(KIND)» «getSysSigDimension(null,sysSigId)»«netSysSignals.get(sysSigId).get(NETP)»
 			«ENDFOR»
@@ -883,6 +905,96 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
+	 * TODO
+	 */
+	def printActorStaticParm(Var parm, int size) {
+		
+		var String result = "";
+		var String value = "";
+		for(Var netParm : network.variables) {
+			if(netParm.name.equals(parm.name)) {
+				value = netParm.name;
+			}
+		}
+		if(value.equals("")) {
+			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
+		}
+		result = "." + parm.name + "(" + value + ")";
+		
+		return result;
+		
+	}
+	
+	/**
+	 * TODO
+	 */
+	def printActorDynamicParm(Var parm, int size) {
+		
+		var String result = "";
+		var String value = "";
+		for(Var netParm : network.parameters) {
+			if(netParm.name.equals(parm.name)) {
+				value = netParm.name;
+			}
+		}
+		if(value.equals("")) {
+			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
+		}
+		result = "." + parm.name + "(" + value + ")";
+		
+		return result;
+		
+	}
+	
+	/**
+	 * TODO
+	 */
+	def Var getMatchingVariable(Var actVar) {
+		for(Var netVar : network.variables) {
+			if(actVar.name.equals(netVar.name))
+				return netVar
+		}
+		return null
+	}
+	
+	/**
+	 * TODO
+	 */
+	def Var getMatchingParameter(Var actVar) {
+		for(Var netVar : network.parameters) {
+			if(actVar.name.equals(netVar.name))
+				return netVar
+		}
+		return null
+	}
+	
+	/**
+	 * TODO
+	 */
+	def List<Var> getActorStaticParms(Actor actor) {
+		var List<Var> result = new ArrayList<Var>;
+		for(actVar : actor.parameters) {
+			if (getMatchingVariable(actVar) !== null) {
+				result.add(actVar)
+			}
+		}
+		return result
+	}
+	
+	/**
+	 * TODO
+	 */
+	def List<Var> getActorDynamicParms(Actor actor) {
+		var List<Var> result = new ArrayList<Var>;
+		for(actVar : actor.parameters) {
+			if (getMatchingParameter(actVar) !== null) {
+				result.add(actVar)
+			}
+		}
+		return result
+	}
+	
+	/**
 	 * Print actors instantiation in top module.
 	 */	
 	def printActors(Map<String,Set<String>> clockSets) {
@@ -930,9 +1042,10 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		
 		// actor «actor.simpleName»
-		«getActorName(actor)» «IF !actor.parameters.empty»#(
+		«getActorName(actor)» «IF !getActorStaticParms(actor).empty»#(
 			// Parameter(s)
-		«FOR parm : actor.parameters»	«printParm(parm,actor.parameters.size)»
+		«FOR parm : getActorStaticParms(actor) SEPARATOR ","»
+			«printActorStaticParm(parm,actor.parameters.size)»
 		«ENDFOR»
 		)
 		«ENDIF»
@@ -949,6 +1062,13 @@ class NetworkPrinterGeneric {
 			.«getActorPortSignal(commSigId,output)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»)
 			«ENDFOR»
 			«ENDFOR»
+			«IF !getActorDynamicParms(actor).empty»,
+			
+			// Dynamic Parameter(s)
+			«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
+			«printActorDynamicParm(parm,actor.parameters.size)»
+			«ENDFOR»
+			«ENDIF»
 			«IF !getActorSysSignals(actor).empty»,«ENDIF»
 			
 			// System Signal(s)
