@@ -8,6 +8,8 @@ import net.sf.orcc.df.Network
 import net.sf.orcc.df.Port
 import it.mdc.tool.core.sboxManagement.SboxLut
 import java.util.Map
+import net.sf.orcc.ir.util.ExpressionEvaluator
+import net.sf.orcc.ir.Expression
 
 /**
  * A Verilog Multi-Dataflow Network Test Bench printer
@@ -22,6 +24,8 @@ class TestBenchPrinterGeneric {
 	var Network network;
 		
 	var ProtocolManager protocolManager;
+	
+	var ExpressionEvaluator evaluator;
 			
 	def String printSysSigDimension(String module, String sysSigId) {
 		if (protocolManager.getSysSigSize(module,sysSigId) != 1) {
@@ -107,6 +111,9 @@ class TestBenchPrinterGeneric {
 		parameter «output.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE = 64;
 		«ENDFOR»
 	 	«ENDFOR»
+
+	 	«FOR netVar : network.variables»parameter «IF netVar.type.sizeInBits != 1»[«netVar.type.sizeInBits-1»:0] «ENDIF»«netVar.name» = «evaluator.evaluateAsInteger(netVar.initialValue as Expression)»;
+	 	«ENDFOR»
 	 	'''
 	 }
 	 
@@ -139,7 +146,11 @@ class TestBenchPrinterGeneric {
 		reg [«output.type.sizeInBits-1»:0] «output.name»_«configMap.get(config)»_file_data [«output.name.toUpperCase»_«configMap.get(config).toUpperCase»_SIZE-1:0];
 		«ENDFOR»
 		integer «output.name»_i = 0;
-		«ENDFOR»	
+		«ENDFOR»
+		
+		«FOR netParm : network.parameters»
+		reg «IF netParm.type.sizeInBits != 1»[«netParm.type.sizeInBits-1»:0] «ENDIF»«netParm.name»;
+	 	«ENDFOR»
 		
 		«IF !luts.empty»
 		reg [7:0] ID;
@@ -177,7 +188,11 @@ class TestBenchPrinterGeneric {
 	def printDUT(List<SboxLut> luts) {
 		
 		'''
-		multi_dataflow dut(
+		multi_dataflow «IF !network.variables.empty»
+			«FOR netVar : network.variables SEPARATOR ","»
+			.«netVar.name»(«netVar.name»)
+			«ENDFOR»
+		) «ENDIF»dut (
 			«FOR input : network.inputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 			«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
@@ -193,6 +208,10 @@ class TestBenchPrinterGeneric {
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»	
+			
+			«FOR netParm : network.parameters»
+			.«netParm.name»(«netParm.name»),
+			«ENDFOR»
 			
 			«IF !luts.empty»
 			.ID(ID),
@@ -235,6 +254,13 @@ class TestBenchPrinterGeneric {
 	 		«IF !luts.empty»
 	 		// network configuration
 	 		ID = 8'd0;
+	 		«ENDIF»
+	 		
+	 		«IF !network.parameters.empty»
+	 		// dynamic parameters initialization
+	 		«FOR netParm : network.parameters»
+			«netParm.name» = 0;
+	 		«ENDFOR»
 	 		«ENDIF»
 
 	 		// clocks initialization
@@ -435,6 +461,7 @@ class TestBenchPrinterGeneric {
 		// Initialize members
 		this.network = network; 
 		this.protocolManager = protocolManager;
+		this.evaluator = new ExpressionEvaluator();
 		
 		'''
 		«printTimeScale()»
