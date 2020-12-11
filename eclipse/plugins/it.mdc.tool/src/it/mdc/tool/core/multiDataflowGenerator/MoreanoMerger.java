@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1443,7 +1444,7 @@ public class MoreanoMerger extends Merger {
 	 */
 	public Map<String, Set<String>> getNetworksClkInstances() {
 		
-		Map<String, Set<String>> networksClkInstances = new HashMap<String, Set<String>>();
+		Map<String, Set<String>> networksClkInstances = new LinkedHashMap<String, Set<String>>();
 		
 		for(String network : networkVertexMap.keySet()) {
 			Set<String> clkInstances = new HashSet<String>();
