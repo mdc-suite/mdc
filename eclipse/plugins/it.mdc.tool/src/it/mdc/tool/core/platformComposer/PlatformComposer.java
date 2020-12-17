@@ -22,6 +22,7 @@ import it.mdc.tool.core.platformComposer.ConfigPrinter;
 import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.ScriptPrinter;
 import it.mdc.tool.prototyping.WrapperPrinter;
+import it.mdc.tool.utility.FileCopier;
 import it.mdc.tool.prototyping.ArticoPrinter;
 import it.mdc.tool.prototyping.PulpPrinter;
 import it.mdc.tool.powerSaving.CgCellPrinter;
@@ -297,6 +298,123 @@ public abstract class PlatformComposer {
 		
 		/// </ol> </ul>
 		/////////////////////////
+	}
+	
+
+	/**
+	 * Generates all the directory hierarchy necessary to generate
+	 * a Pulp Compliant HWPE Wrapper
+	 * @throws IOException 
+	 * 
+	 */
+	public void generatePulpStaticFolders(String hwpeWrapperGeneratorPath, String outputPath) throws IOException {
+
+		FileCopier copier = new FileCopier();
+		// begin deps
+		File deps = new File(outputPath + File.separator + "deps");
+		// If directory doesn't exist, create it
+		if (!deps.exists()) {
+			deps.mkdirs();
+		}
+		File hwpeMultiDataflowWrapper = new File(deps + File.separator + "hwpe-multidataflow-wrapper");
+		// If directory doesn't exist, create it
+		if (!hwpeMultiDataflowWrapper.exists()) {
+			hwpeMultiDataflowWrapper.mkdirs();
+		}
+		File hwpeMultiDataflowWrapperRtl = new File(hwpeMultiDataflowWrapper + File.separator + "rtl");
+		// If directory doesn't exist, create it
+		if (!hwpeMultiDataflowWrapperRtl.exists()) {
+			hwpeMultiDataflowWrapperRtl.mkdirs();
+		}		
+		// hwpe-ctrl
+		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
+				"hwpe-ctrl" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-ctrl");
+		
+		File hwpeEngine = new File(hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-engine");
+		// If directory doesn't exist, create it
+		if (!hwpeEngine.exists()) {
+			hwpeEngine.mkdirs();
+		}	
+		File hwpeEngineDev = new File(hwpeEngine + File.separator + "engine_dev");
+		// If directory doesn't exist, create it
+		if (!hwpeEngineDev.exists()) {
+			hwpeEngineDev.mkdirs();
+		}		
+		// hwpe-stream
+		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
+				"hwpe-stream" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-stream");
+		File hwpeWrap = new File(hwpeMultiDataflowWrapperRtl + File.separator + "wrap");
+		// If directory doesn't exist, create it
+		if (!hwpeWrap.exists()) {
+			hwpeWrap.mkdirs();
+		}		
+		File hwpeMultiDataflowWrapperSw = new File(hwpeMultiDataflowWrapper + File.separator + "sw");
+		// If directory doesn't exist, create it
+		if (!hwpeMultiDataflowWrapperSw.exists()) {
+			hwpeMultiDataflowWrapperSw.mkdirs();
+		}
+		File hwpeMultiDataflowRiscV = new File(hwpeMultiDataflowWrapperSw + File.separator + "hwpe-multidataflow-riscv");
+		// If directory doesn't exist, create it
+		if (!hwpeMultiDataflowRiscV.exists()) {
+			hwpeMultiDataflowRiscV.mkdirs();
+		}
+		File hwpeMultiDataflowRiscVInc = new File(hwpeMultiDataflowRiscV + File.separator + "inc");
+		// If directory doesn't exist, create it
+		if (!hwpeMultiDataflowRiscVInc.exists()) {
+			hwpeMultiDataflowRiscVInc.mkdirs();
+		}
+		// common
+		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
+				"inc" + File.separator + "common", hwpeMultiDataflowRiscVInc + File.separator + "common");
+		// hero_lib
+		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
+				"inc" + File.separator + "hero_lib", hwpeMultiDataflowRiscVInc + File.separator + "hero_lib");
+		File hwpeLib = new File(hwpeMultiDataflowRiscVInc + File.separator + "hwpe_lib");
+		// If directory doesn't exist, create it
+		if (!hwpeLib.exists()) {
+			hwpeLib.mkdirs();
+		}
+		File hwpeStim = new File(hwpeMultiDataflowRiscVInc + File.separator + "stim");
+		// If directory doesn't exist, create it
+		if (!hwpeStim.exists()) {
+			hwpeStim.mkdirs();
+		}
+		/*
+		 * sw_tb
+		 */
+		// test_lib
+		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
+				"inc" + File.separator + "test_lib", hwpeMultiDataflowRiscVInc + File.separator + "test_lib");
+		// Makefile
+		File makefile = new File(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal");
+		copier.copy(makefile, hwpeMultiDataflowRiscV);
+		File pulp_cluster = new File(deps + File.separator + "pulp_cluster");
+		// If directory doesn't exist, create it
+		if (!pulp_cluster.exists()) {
+			pulp_cluster.mkdirs();
+		}
+		File pulp_cluster_rtl = new File(pulp_cluster + File.separator + "rtl");
+		// If directory doesn't exist, create it
+		if (!pulp_cluster_rtl.exists()) {
+			pulp_cluster_rtl.mkdirs();
+		}
+		// end deps
+		// begin src
+		File src = new File(outputPath + File.separator + "src");
+		// If directory doesn't exist, create it
+		if (!src.exists()) {
+			src.mkdirs();
+		}
+		// end src
+		// begin test
+		File test = new File(outputPath + File.separator + "test");
+		// If directory doesn't exist, create it
+		if (!test.exists()) {
+			test.mkdirs();
+		}
+		// end test
+		
+		
 	}
 	
 	
@@ -1231,5 +1349,6 @@ public abstract class PlatformComposer {
 	 * @return
 	 */
 	abstract protected boolean printNetwork(List<SboxLut> luts, Map<String,Object> options);
+
 	
 }

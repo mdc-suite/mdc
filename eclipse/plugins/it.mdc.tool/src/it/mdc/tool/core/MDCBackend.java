@@ -176,6 +176,11 @@ public class MDCBackend extends AbstractBackend {
 	private boolean enPulp;
 	
 	/**
+	 * Hwpe wrapper generator tool folder
+	 */
+	private String hwpeWrapperGeneratorPath;
+	
+	/**
 	 * Enable profiling flag
 	 */
 	private boolean profileEn;
@@ -737,6 +742,7 @@ public class MDCBackend extends AbstractBackend {
 			}
 			
 			if(!genCopr && enPulp){
+				hdlWriter.generatePulpStaticFolders(hwpeWrapperGeneratorPath, outputPath);
 				hdlWriter.generatePulpWrapper(luts,networkVertexMap,getOptions());
 			}
 			
@@ -759,15 +765,15 @@ public class MDCBackend extends AbstractBackend {
 			}
 		} else  if(enArtico && !genCopr){
 			subfolder = "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog";
-		} else  if(enPulp && !genCopr){
+		} /*else  if(enPulp && !genCopr){
 			subfolder = "rtl";
-		}
+		}*/
 		try {
 			if(enArtico && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
-			} else if(enPulp && !genCopr){
+			} /*else if(enPulp && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
-			} else {
+			} */else {
 				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
 			}
 		} catch (IOException e) {
@@ -902,6 +908,9 @@ public class MDCBackend extends AbstractBackend {
 			enMon = getOption("it.unica.diee.mdc.monitoring", false);			
 			enArtico = getOption("it.unica.diee.mdc.artico", false);			
 			enPulp = getOption("it.unica.diee.mdc.pulp", false);
+			if(enPulp) {
+				hwpeWrapperGeneratorPath = getOption("it.unica.diee.mdc.hwpeWrapperGenTool", "<unknown>");
+			}
 		}
 		
 
