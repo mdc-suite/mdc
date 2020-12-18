@@ -216,11 +216,13 @@ class PulpPrinter {
 		return direction;
 	}
 	
-	def printHWPELicense(String modulePrinted){
+	def printHWPELicense(Boolean printHWPEName, String modulePrinted){
 		'''		
 		
 		/*
+		«IF printHWPEName»
 		 * HWPE: Francesco Conti <fconti@iis.ee.ethz.ch>
+		«ENDIF»
 		 *
 		 * Copyright (C) 2018 ETH Zurich, University of Bologna
 		 * Copyright and related rights are licensed under the Solderpad Hardware
@@ -651,7 +653,7 @@ class PulpPrinter {
 		
 		
 		'''
-	«printHWPELicense("ctrl")»
+	«printHWPELicense(true, "ctrl")»
 	 
 	import multi_dataflow_package::*;
 	import hwpe_ctrl_package::*;
@@ -699,7 +701,9 @@ class PulpPrinter {
  	«FOR netParm : this.network.parameters»
 	  logic unsigned [(32-1):0] static_reg_«netParm.name»;
  	«ENDFOR»
+	«IF !luts.empty»
 	  logic unsigned [(32-1):0] static_reg_config;
+	«ENDIF»
 	  ctrl_fsm_t fsm_ctrl;
 	  /* Peripheral slave & register file */
 	  hwpe_ctrl_slave #(
@@ -730,7 +734,9 @@ class PulpPrinter {
    		«FOR netParm : this.network.parameters»
 	  assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
    		«ENDFOR»
+	«IF !luts.empty»
 	  assign static_reg_config = reg_file.hwpe_params[CONFIG];
+	«ENDIF»
 	  /* Microcode processor */
 	  generate
 	    if(UCODE_HARDWIRED != 0) begin
@@ -798,7 +804,9 @@ class PulpPrinter {
     «FOR netParm : this.network.parameters»
 	  fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
 	«ENDFOR»
+	«IF !luts.empty»
 	    fsm_ctrl.configuration    = static_reg_config;
+	«ENDIF»
 	  end		  
 	endmodule
 	'''
@@ -807,7 +815,7 @@ class PulpPrinter {
 	def printFSM(){
 		
 		'''
-		«printHWPELicense("fsm")»
+		«printHWPELicense(true, "fsm")»
 		import multi_dataflow_package::*;
 		import hwpe_ctrl_package::*;
 		module multi_dataflow_fsm (
@@ -896,7 +904,9 @@ class PulpPrinter {
 		    «FOR netParm : this.network.parameters»
 		    ctrl_engine_o.«netParm.name»    = ctrl_i.«netParm.name»;
 		    «ENDFOR»
+			«IF !luts.empty»
 		    ctrl_engine_o.configuration    = ctrl_i.configuration;		
+			«ENDIF»
 		    // slave
 		    ctrl_slave_o.done = '0;
 		    ctrl_slave_o.evt  = '0;
@@ -1035,40 +1045,84 @@ class PulpPrinter {
 	
 	def printBender(String hclPath){
 		'''
-		hw-mac-engine:
-		  incdirs : [
-		    rtl
-		  ]
-		  files : [
-		    rtl/multi_dataflow_package.sv,
-		    rtl/multi_dataflow_fsm.sv,
-		    rtl/multi_dataflow_ctrl.sv,
-		    rtl/multi_dataflow_streamer.sv,
-		    rtl/multi_dataflow_engine.sv,
-		    «FOR file : new File(hclPath).listFiles»
-		    rtl/«file.name»,
-			«ENDFOR»
-			«IF !luts.empty»
-			rtl/configurator.v\
-			rtl/sbox1x2.v\
-			rtl/sbox2x1.v\
-			«ENDIF»
-			/rtl/multi_dataflow.v,
-			/rtl/interface_wrapper.sv,
-		    rtl/multi_dataflow_top.sv,
-		    wrap/multi_dataflow_top_wrap.sv
-		  ]
-		  vlog_opts : [
-		    "-L hwpe_ctrl_lib",
-		    "-L hwpe_stream_lib"
-		  ]
+		package:
+		  name: hwpe-multidataflow-wrapper
+		sources:
+		  - include_dirs:
+		      - rtl/hwpe-stream
+		    files:
+		      - rtl/hwpe-stream/hwpe_stream_package.sv
+		      - rtl/hwpe-stream/hwpe_stream_interfaces.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_assign.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_mux_static.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_demux_static.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_buffer.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_merge.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_fence.sv
+		      - rtl/hwpe-stream/basic/hwpe_stream_split.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall_sidech.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm_test_wrap.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_sidech.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo.sv
+		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_ctrl.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen_v2.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_strbgen.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_sink.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_sink_realign.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_source.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_source_realign.sv
+		      - rtl/hwpe-stream/streamer/hwpe_stream_streamer_queue.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load_sidech.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_store.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_assign.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux_static.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder.sv
+		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder_static.sv
+		  - include_dirs:
+		      - rtl/hwpe-ctrl
+		    files:
+		      - rtl/hwpe-ctrl/hwpe_ctrl_package.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_interfaces.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch_test_wrap.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_slave.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_seq_mult.sv
+		      - rtl/hwpe-ctrl/hwpe_ctrl_uloop.sv
+		  - include_dirs:
+		      - rtl/hwpe-engine
+		    files:
+    		    «FOR file : new File(hclPath).listFiles»
+    		    - rtl/hwpe-engine/engine_dev/«file.name»,
+    			«ENDFOR»
+    			«IF !luts.empty»
+    			rtl/configurator.v\
+    			rtl/sbox1x2.v\
+    			rtl/sbox2x1.v\
+    			«ENDIF»
+		      - rtl/hwpe-engine/multi_dataflow_package.sv
+		      - rtl/hwpe-engine/multi_dataflow_fsm.sv
+		      - rtl/hwpe-engine/multi_dataflow_ctrl.sv
+		      - rtl/hwpe-engine/multi_dataflow_streamer.sv
+		      - rtl/hwpe-engine/multi_dataflow_engine.sv
+		      - rtl/hwpe-engine/multi_dataflow_top.sv
+		  - include_dirs:
+		      - rtl/wrap
+		    files:
+		      - rtl/wrap/multi_dataflow_top_wrapper.sv
 		'''
 	}
 	
 	def printPackage(){
 		var counterReg = 0;
 		'''		
-		«printHWPELicense("package")»
+		«printHWPELicense(true, "package")»
 		import hwpe_stream_package::*;
 		
 		package multi_dataflow_package;
@@ -1089,8 +1143,10 @@ class PulpPrinter {
 		  // Custom register files
 		  «FOR netParm : this.network.parameters»
 		  parameter int unsigned «netParm.name.toUpperCase»             = «counterReg++»;
-		  «ENDFOR»		  
+		  «ENDFOR»
+		  «IF !luts.empty»		  
 		  parameter int unsigned CONFIG             = «counterReg++»;
+		  «ENDIF»
 		  
 		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
 		  «FOR port : portMap.keySet»
@@ -1113,7 +1169,9 @@ class PulpPrinter {
 		  «FOR netParm : this.network.parameters»
 	    	logic unsigned [(32-1):0] «netParm.name»;
     	  «ENDFOR»
+		«IF !luts.empty»	
 		    logic unsigned [(32-1):0] configuration;
+		«ENDIF»
 		  } ctrl_engine_t;
 		  typedef struct packed {
 		    logic unsigned [$clog2(CNT_LEN):0] cnt; // 1 bit more as cnt starts from 1, not 0
@@ -1146,7 +1204,9 @@ class PulpPrinter {
 	       «FOR netParm : this.network.parameters»
     	     logic unsigned [(32-1):0] «netParm.name»;
 	       «ENDFOR»
+		«IF !luts.empty»
 		    logic unsigned [(32-1):0] configuration;
+		«ENDIF»
 		  } ctrl_fsm_t;
 		  typedef enum {
 		    FSM_IDLE,
@@ -1162,73 +1222,52 @@ class PulpPrinter {
 	
 	def printStreamer(){
 		'''
-		/*
-		 * multi_dataflow_streamer.sv
-		 */
-		
+		«printHWPELicense(false ,"streamer")»
 		import multi_dataflow_package::*;
 		import hwpe_stream_package::*;
-		
 		module multi_dataflow_streamer
 		#(
 		  parameter int unsigned MP = «portMap.size», // number of master ports
 		  parameter int unsigned FD = 2  // FIFO depth
 		)
 		(
-		  // global signals
-		  input  logic                   clk_i,
-		  input  logic                   rst_ni,
-		  input  logic                   test_mode_i,
-		  // local enable & clear
-		  input  logic                   enable_i,
-		  input  logic                   clear_i,
-		
+		  // Global signals
+		  input  logic          clk_i,
+		  input  logic          rst_ni,
+		  input  logic          test_mode_i,
+		  // Local enable & clear
+		  input  logic          enable_i,
+		  input  logic          clear_i,
+		  // Streaming interfaces
 	    «FOR input : inputMap.keySet»
-	      // input «input.name» stream + handshake
-	      hwpe_stream_intf_stream.source stream_if_«input.name»,
+		  hwpe_stream_intf_stream.source stream_if_«input.name»,
 	    «ENDFOR»
 	    «FOR output : outputMap.keySet»
-	      // output «output.name» stream + handshake
-	      hwpe_stream_intf_stream.sink stream_if_«output.name»,
+		  hwpe_stream_intf_stream.sink stream_if_«output.name»,
 	    «ENDFOR»
 		
 		  // TCDM ports
 		  hwpe_stream_intf_tcdm.master tcdm [MP-1:0],
-		
 		  // control channel
 		  input  ctrl_streamer_t  ctrl_i,
 		  output flags_streamer_t flags_o
 		);
-		
-		logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;		
-		
-		«FOR input : portMap.keySet»
-		  hwpe_stream_intf_stream #(
-		    .DATA_WIDTH ( 32 )
-		  ) «input.name»_prefifo (
-		    .clk ( clk_i )
-		  );
+		// FIFO ready signals
+		logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;
+		  // Pre-FIFO streamer interfaces (TCDM-side)
+		«FOR input : inputMap.keySet»
+		  hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «input.name»_prefifo ( .clk (clk_i) );
 	    «ENDFOR»
-		
-		«FOR output : portMap.keySet»
-		  hwpe_stream_intf_stream #(
-		    .DATA_WIDTH ( 32 )
-		  ) «output.name»_postfifo (
-		    .clk ( clk_i )
-		  );
+		  // Post-FIFO streamer interfaces (TCDM-side)
+		«FOR output : outputMap.keySet»
+		  hwpe_stream_intf_stream #( .DATA_WIDTH (32) ) «output.name»_postfifo ( .clk (clk_i) );
 	    «ENDFOR»
-		
-		  hwpe_stream_intf_tcdm tcdm_fifo [MP-1:0] (
-		    .clk ( clk_i )
-		  );
-		
+		  // FIFO interfaces
+		hwpe_stream_intf_tcdm tcdm_fifo [MP-1:0] ( .clk ( clk_i ) );
   		«FOR port : portMap.keySet»
-  		  hwpe_stream_intf_tcdm tcdm_fifo_«portMap.get(port)» [0:0] (
-		    .clk ( clk_i )
-		  );
-		«ENDFOR»
-		
-		  // source and sink modules
+		  hwpe_stream_intf_tcdm tcdm_fifo_«portMap.get(port)» [0:0] ( .clk (clk_i) );
+		«ENDFOR»		
+		  // Source modules (TCDM -> HWPE)
 		  «FOR input : inputMap.keySet»
 		  hwpe_stream_source #(
 		    .DATA_WIDTH ( 32 ),
@@ -1238,14 +1277,14 @@ class PulpPrinter {
 		    .rst_ni             ( rst_ni                 ),
 		    .test_mode_i        ( test_mode_i            ),
 		    .clear_i            ( clear_i                ),
-		    .tcdm               ( tcdm_fifo_«portMap.get(input)»), // this syntax is necessary for Verilator as hwpe_stream_source expects an array of interfaces
+		    .tcdm               ( tcdm_fifo_«portMap.get(input)»	),
 		    .stream             ( «input.name»_prefifo.source),
 		    .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
 		    .flags_o            ( flags_o.«input.name»_source_flags ),
 		    .tcdm_fifo_ready_o  ( «input.name»_tcdm_fifo_ready      )
 		  );
-		  
 		  «ENDFOR»
+		  // Sink modules (TCDM <- HWPE)
 		  «FOR output : outputMap.keySet»
 		  hwpe_stream_sink #(
 		    .DATA_WIDTH ( 32 )
@@ -1254,16 +1293,13 @@ class PulpPrinter {
 		    .rst_ni      ( rst_ni               ),
 		    .test_mode_i ( test_mode_i          ),
 		    .clear_i     ( clear_i              ),
-		    .tcdm        ( tcdm_fifo_«portMap.get(output)»), // this syntax is necessary for Verilator as hwpe_stream_source expects an array of interfaces
+		    .tcdm        ( tcdm_fifo_«portMap.get(output)»	),
 		    .stream      ( «output.name»_postfifo.sink      ),
 		    .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
 		    .flags_o     ( flags_o.«output.name»_sink_flags )
 		  );
-		  
 		  «ENDFOR»
-		
-		
-		  // TCDM-side FIFOs
+		  // TCDM-side FIFOs (TCDM -> HWPE)
 		«FOR input : inputMap.keySet»
 		  hwpe_stream_tcdm_fifo_load #(
 		    .FIFO_DEPTH ( 4 )
@@ -1276,9 +1312,8 @@ class PulpPrinter {
 		    .tcdm_slave  ( tcdm_fifo_«portMap.get(input)»[0]    ),
 		    .tcdm_master ( tcdm      [«portMap.get(input)»]     )
 		  );
-		  
 		«ENDFOR»
-		
+		  // TCDM-side FIFOs (TCDM <- HWPE)
 		«FOR output : outputMap.keySet»
 		  hwpe_stream_tcdm_fifo_store #(
 		    .FIFO_DEPTH ( 4 )
@@ -1291,8 +1326,7 @@ class PulpPrinter {
 		    .tcdm_master ( tcdm       [«portMap.get(output)»] )
 		  );
 		«ENDFOR»
-		
-		  // datapath-side FIFOs
+		  // Datapath-side FIFOs (TCDM -> HWPE)
 		«FOR input : inputMap.keySet»
 		  hwpe_stream_fifo #(
 		    .DATA_WIDTH( 32 ),
@@ -1306,9 +1340,8 @@ class PulpPrinter {
 		    .pop_o   ( stream_if_«input.name»            ),
 		    .flags_o (                )
 		  );
-		  
 		«ENDFOR»
-		
+		  // Datapath-side FIFOs (TCDM <- HWPE)
 		«FOR output : outputMap.keySet»
 		  hwpe_stream_fifo #(
 		    .DATA_WIDTH( 32 ),
@@ -1379,24 +1412,24 @@ class PulpPrinter {
 	
 	def printWrap() {
 		'''
-		
+		«printHWPELicense(true ,"wrapper")»
 		import multi_dataflow_package::*;
 		import hwpe_ctrl_package::*;
 		
 		module multi_dataflow_top_wrap
 		#(
-		  parameter N_CORES = 2,
-		  parameter MP  = «portMap.size»,
-		  parameter ID  = 10
+		  parameter int unsigned N_CORES = 2,
+		  parameter int unsigned MP  = «portMap.size»,
+		  parameter int unsigned ID  = 10
 		)
 		(
-		  // global signals
-		  input  logic                                  clk_i,
-		  input  logic                                  rst_ni,
-		  input  logic                                  test_mode_i,
-		  // evnets
+		  // Global signals
+		  input  logic          clk_i,
+		  input  logic          rst_ni,
+		  input  logic          test_mode_i,
+		  // Events
 		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
-		  // tcdm master ports
+		  // TCDM master ports
 		  output logic [MP-1:0]                         tcdm_req,
 		  input  logic [MP-1:0]                         tcdm_gnt,
 		  output logic [MP-1:0][31:0]                   tcdm_add,
@@ -1405,7 +1438,7 @@ class PulpPrinter {
 		  output logic [MP-1:0][31:0]                   tcdm_data,
 		  input  logic [MP-1:0][31:0]                   tcdm_r_data,
 		  input  logic [MP-1:0]                         tcdm_r_valid,
-		  // periph slave port
+		  // Peripheral slave port
 		  input  logic                                  periph_req,
 		  output logic                                  periph_gnt,
 		  input  logic         [31:0]                   periph_add,
@@ -1417,17 +1450,14 @@ class PulpPrinter {
 		  output logic                                  periph_r_valid,
 		  output logic       [ID-1:0]                   periph_r_id
 		);
-		
 		  hwpe_stream_intf_tcdm tcdm[MP-1:0] (
 		    .clk ( clk_i )
 		  );
-		
 		  hwpe_ctrl_intf_periph #(
 		    .ID_WIDTH ( ID )
 		  ) periph (
 		    .clk ( clk_i )
 		  );
-		
 		  // bindings
 		  generate
 		    for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
@@ -1454,7 +1484,6 @@ class PulpPrinter {
 		    periph_r_valid = periph.r_valid;
 		    periph_r_id    = periph.r_id;
 		  end
-		
 		  multi_dataflow_top #(
 		    .N_CORES ( N_CORES ),
 		    .MP      ( MP      ),
@@ -1467,7 +1496,6 @@ class PulpPrinter {
 		    .tcdm        ( tcdm        ),
 		    .periph      ( periph      )
 		  );
-		
 		endmodule // multi_dataflow_top_wrap
 		'''
 	}
