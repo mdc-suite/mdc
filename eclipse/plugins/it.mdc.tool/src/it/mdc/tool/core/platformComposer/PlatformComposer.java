@@ -471,7 +471,8 @@ public abstract class PlatformComposer {
 				luts,
 				protocolManager.getNetSysSignals(),
 				protocolManager.getModCommSignals(),
-				protocolManager.getWrapCommSignals());
+				protocolManager.getWrapCommSignals(),
+				network);
 
 		
 		////////////////////////
@@ -516,7 +517,7 @@ public abstract class PlatformComposer {
 
 		/// <ol> <li> Generate ctrl
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_ctrl.sv";
-		sequence = pulpPrinter.printCtrl(network);
+		sequence = pulpPrinter.printCtrl();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());

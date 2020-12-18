@@ -43,6 +43,8 @@ class PulpPrinter {
 	Map<String,Map<String,String>> wrapCommSignals;
 	List<String> monList;
 	
+	Network network;
+	
 	def computeNetsPorts(Map<String,Map<String,String>> networkVertexMap) {
 		
 		netPorts = new HashMap<String,List<Port>>();
@@ -141,7 +143,8 @@ class PulpPrinter {
 						List<SboxLut> luts,
 						Map<String,Map<String,String>> netSysSignals, 
 						Map<String,Map<String,Map<String,String>>> modCommSignals,
-						Map<String,Map<String,String>> wrapCommSignals
+						Map<String,Map<String,String>> wrapCommSignals,
+						Network network
 	) {
 		this.coupling = coupling;
 		this.enableMonitoring = enableMonitoring;
@@ -150,6 +153,7 @@ class PulpPrinter {
 		this.netSysSignals = netSysSignals;
 		this.modCommSignals = modCommSignals;
 		this.wrapCommSignals = wrapCommSignals;
+		this.network = network;
 	}
 	
 	def hasParameter(String portValue) {
@@ -643,7 +647,7 @@ class PulpPrinter {
 		return result
 	}
 	
-	def printCtrl(Network network){
+	def printCtrl(){
 		
 		
 		'''
@@ -692,7 +696,7 @@ class PulpPrinter {
 	  logic unsigned [15:0] static_reg_shift;
 	  logic static_reg_simplemul;
 	  // Custom register files
- 	«FOR netParm : network.parameters»
+ 	«FOR netParm : this.network.parameters»
 	  logic unsigned [(32-1):0] static_reg_«netParm.name»;
  	«ENDFOR»
 	  logic unsigned [(32-1):0] static_reg_config;
@@ -723,7 +727,7 @@ class PulpPrinter {
 	  assign static_reg_vectstride = reg_file.hwpe_params[REG_SHIFT_VECTSTRIDE];
 	  assign static_reg_onestride  = 4;
 	  // Custom registers
-   		«FOR netParm : network.parameters»
+   		«FOR netParm : this.network.parameters»
 	  assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
    		«ENDFOR»
 	  assign static_reg_config = reg_file.hwpe_params[CONFIG];
@@ -791,7 +795,7 @@ class PulpPrinter {
 	    fsm_ctrl.shift      = static_reg_shift[$clog2(32)-1:0];
 	    fsm_ctrl.len        = static_reg_len_iter[$clog2(CNT_LEN):0];
 	    // Custom register file mappings to fsm
-    «FOR netParm : network.parameters»
+    «FOR netParm : this.network.parameters»
 	  fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
 	«ENDFOR»
 	    fsm_ctrl.configuration    = static_reg_config;
@@ -801,14 +805,11 @@ class PulpPrinter {
 	}
 	
 	def printFSM(){
-		'''
 		
-		/*
-		 * Module: multi_dataflow_fsm.sv
-		 */
+		'''
+		«printHWPELicense("fsm")»
 		import multi_dataflow_package::*;
 		import hwpe_ctrl_package::*;
-		
 		module multi_dataflow_fsm (
 		  // Global signals
 		  input  logic                                  clk_i,
@@ -820,8 +821,8 @@ class PulpPrinter {
 		  input  flags_streamer_t                       flags_streamer_i,
 		  output ctrl_engine_t                          ctrl_engine_o,
 		  input  flags_engine_t                         flags_engine_i,
-		  output ctrl_ucode_t                           ctrl_ucode_o,
-		  input  flags_ucode_t                          flags_ucode_i,
+		  output ctrl_uloop_t                           ctrl_ucode_o,
+		  input  flags_uloop_t                          flags_ucode_i,
 		  output ctrl_slave_t                           ctrl_slave_o,
 		  input  flags_slave_t                          flags_slave_i,
 		  input  ctrl_regfile_t                         reg_file_i,
@@ -851,7 +852,6 @@ class PulpPrinter {
 		    //
 		    // INITIALIZATION
 		    //
-		    
 		    /* INPUT FLOW */
 		    «FOR input : inputMap.keySet»
 		    // «input.name» stream
@@ -864,9 +864,9 @@ class PulpPrinter {
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_roll   = '0;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.loop_outer  = '0;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = '0;
-		    
+		    //
 		    «ENDFOR»
-		    
+		    //
 		    /* OUTPUT FLOW */
 		    «FOR output : outputMap.keySet»
 		    // «output.name» stream
@@ -882,11 +882,9 @@ class PulpPrinter {
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.loop_outer  = '0;
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = '0;
 		    //
-		    
 		    «ENDFOR»
-		    
 		    // ucode
-		    ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
+		    //ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
 		                                     // ucode to an accelerator-specific module
 		    // engine
 		    ctrl_engine_o.clear      = '1;
@@ -895,15 +893,13 @@ class PulpPrinter {
 		    ctrl_engine_o.simple_mul = ctrl_i.simple_mul;
 		    ctrl_engine_o.shift      = ctrl_i.shift;
 		    ctrl_engine_o.len        = ctrl_i.len;
-		    ctrl_engine_o.configuration    = ctrl_i.configuration;
-		    «FOR port : portMap.keySet»
-		    ctrl_engine_o.port_«port.name»    = ctrl_i.port_«port.name»;
+		    «FOR netParm : this.network.parameters»
+		    ctrl_engine_o.«netParm.name»    = ctrl_i.«netParm.name»;
 		    «ENDFOR»
-		
+		    ctrl_engine_o.configuration    = ctrl_i.configuration;		
 		    // slave
 		    ctrl_slave_o.done = '0;
 		    ctrl_slave_o.evt  = '0;
-		    
 		    // real finite-state machine
 		    next_state   = curr_state;
         	«FOR input : inputMap.keySet»
@@ -914,7 +910,6 @@ class PulpPrinter {
     		«ENDFOR»
 		    ctrl_ucode_o.enable                        = '0;
 		    ctrl_ucode_o.clear                         = '0;
-		    
 		    //
 		    // STATES
 		    //
@@ -1071,12 +1066,9 @@ class PulpPrinter {
 	}
 	
 	def printPackage(){
-		'''
-		
-		/*
-		 * Module: multi_dataflow_package.sv
-		 */
-		 
+		var counterReg = 0;
+		'''		
+		«printHWPELicense("package")»
 		import hwpe_stream_package::*;
 		
 		package multi_dataflow_package;
@@ -1084,21 +1076,21 @@ class PulpPrinter {
 		  /* Registers */
 		  // TCDM addresses
 		  «FOR port : portMap.keySet»
-		  parameter int unsigned PORT_«port.name»_ADDR              = «portMap.get(port)»;
+		  parameter int unsigned PORT_«port.name»_ADDR              = «counterReg++»;
 		  «ENDFOR»
 		  
 		  // Standard registers
-		  parameter int unsigned REG_NB_ITER              = «portMap.size»;
-		  parameter int unsigned REG_LEN_ITER             = «portMap.size+1»;
-		  parameter int unsigned REG_SHIFT_SIMPLEMUL      = «portMap.size+2»;
-		  parameter int unsigned REG_SHIFT_VECTSTRIDE     = «portMap.size+3»;
-		  parameter int unsigned REG_SHIFT_VECTSTRIDE2    = «portMap.size+4»; // Added to be aligned with sw (not used in hw)
+		  parameter int unsigned REG_NB_ITER              = «counterReg++»;
+		  parameter int unsigned REG_LEN_ITER             = «counterReg++»;
+		  parameter int unsigned REG_SHIFT_SIMPLEMUL      = «counterReg++»;
+		  parameter int unsigned REG_SHIFT_VECTSTRIDE     = «counterReg++»;
+		  parameter int unsigned REG_SHIFT_VECTSTRIDE2    = «counterReg++»; // Added to be aligned with sw (not used in hw)
 		  
 		  // Custom register files
-		  parameter int unsigned CONFIG             = «portMap.size+5»;
-		  «FOR port : portMap.keySet»
-		  parameter int unsigned PORT_«port.name»             = «portMap.get(port)+portMap.size+6»;
-		  «ENDFOR»
+		  «FOR netParm : this.network.parameters»
+		  parameter int unsigned «netParm.name.toUpperCase»             = «counterReg++»;
+		  «ENDFOR»		  
+		  parameter int unsigned CONFIG             = «counterReg++»;
 		  
 		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
 		  «FOR port : portMap.keySet»
@@ -1118,19 +1110,17 @@ class PulpPrinter {
 		    logic unsigned [$clog2(32)-1       :0] shift;
 		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
 		    // Custom register files
+		  «FOR netParm : this.network.parameters»
+	    	logic unsigned [(32-1):0] «netParm.name»;
+    	  «ENDFOR»
 		    logic unsigned [(32-1):0] configuration;
-		    «FOR port : portMap.keySet»
-		    logic unsigned [(32-1):0] port_«port.name»;
-		    «ENDFOR»
 		  } ctrl_engine_t;
-		  
 		  typedef struct packed {
 		    logic unsigned [$clog2(CNT_LEN):0] cnt; // 1 bit more as cnt starts from 1, not 0
 		    logic done;
 		    logic idle;
 		    logic ready;
 		  } flags_engine_t;
-		  
 		  typedef struct packed {
 		  	«FOR input : inputMap.keySet»
 		  	hwpe_stream_package::ctrl_sourcesink_t «input.name»_source_ctrl;
@@ -1139,7 +1129,6 @@ class PulpPrinter {
 		    hwpe_stream_package::ctrl_sourcesink_t «output.name»_sink_ctrl;
 		    «ENDFOR»
 		  } ctrl_streamer_t;
-		  
 		  typedef struct packed {
 		  	«FOR input : inputMap.keySet»
 		  	hwpe_stream_package::flags_sourcesink_t «input.name»_source_flags;
@@ -1154,12 +1143,11 @@ class PulpPrinter {
 		    logic unsigned [$clog2(32)-1       :0] shift;
 		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
 		    // Custom register files
+	       «FOR netParm : this.network.parameters»
+    	     logic unsigned [(32-1):0] «netParm.name»;
+	       «ENDFOR»
 		    logic unsigned [(32-1):0] configuration;
-		    «FOR port : portMap.keySet»
-		    logic unsigned [(32-1):0] port_«port.name»;
-		    «ENDFOR»
 		  } ctrl_fsm_t;
-		  
 		  typedef enum {
 		    FSM_IDLE,
 		    FSM_START,
@@ -1168,7 +1156,6 @@ class PulpPrinter {
 		    FSM_UPDATEIDX,
 		    FSM_TERMINATE
 		  } state_fsm_t;
-		
 		endpackage
 		'''
 	}
