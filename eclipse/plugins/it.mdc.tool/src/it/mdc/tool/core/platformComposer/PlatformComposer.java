@@ -309,137 +309,144 @@ public abstract class PlatformComposer {
 	public void generatePulpStaticFolders(String hwpeWrapperGeneratorPath, String outputPath) {
 
 		FileCopier copier = new FileCopier();
-		// begin deps
+		// output/deps 
 		File deps = new File(outputPath + File.separator + "deps");
 		// If directory doesn't exist, create it
 		if (!deps.exists()) {
 			deps.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper
 		File hwpeMultiDataflowWrapper = new File(deps + File.separator + "hwpe-multidataflow-wrapper");
 		// If directory doesn't exist, create it
 		if (!hwpeMultiDataflowWrapper.exists()) {
 			hwpeMultiDataflowWrapper.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper/rtl
 		File hwpeMultiDataflowWrapperRtl = new File(hwpeMultiDataflowWrapper + File.separator + "rtl");
 		// If directory doesn't exist, create it
 		if (!hwpeMultiDataflowWrapperRtl.exists()) {
 			hwpeMultiDataflowWrapperRtl.mkdirs();
 		}		
-		// hwpe-ctrl
+		// output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-ctrl
 		try {
 			copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
 					"hwpe-ctrl" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-ctrl");
 		} catch (IOException e) {
 			OrccLogger.severeln("The hwpe-ctrl folder could not have been copied: " + e.getMessage());
 		}
-		
+
+		// output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-engine
 		File hwpeEngine = new File(hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-engine");
 		// If directory doesn't exist, create it
 		if (!hwpeEngine.exists()) {
 			hwpeEngine.mkdirs();
 		}	
+		// output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-engine/engine_dev
 		File hwpeEngineDev = new File(hwpeEngine + File.separator + "engine_dev");
 		// If directory doesn't exist, create it
 		if (!hwpeEngineDev.exists()) {
 			hwpeEngineDev.mkdirs();
 		}		
-		// hwpe-stream
+		// output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-stream
 		try {
 		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
 				"hwpe-stream" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-stream");
 		} catch (IOException e) {
 			OrccLogger.severeln("The hwpe-stream folder could not have been copied: " + e.getMessage());
 		}
+		// output/deps/hwpe-multidataflow-wrapper/rtl/wrap
 		File hwpeWrap = new File(hwpeMultiDataflowWrapperRtl + File.separator + "wrap");
 		// If directory doesn't exist, create it
 		if (!hwpeWrap.exists()) {
 			hwpeWrap.mkdirs();
 		}		
+		// output/deps/hwpe-multidataflow-wrapper/sw
 		File hwpeMultiDataflowWrapperSw = new File(hwpeMultiDataflowWrapper + File.separator + "sw");
 		// If directory doesn't exist, create it
 		if (!hwpeMultiDataflowWrapperSw.exists()) {
 			hwpeMultiDataflowWrapperSw.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv
 		File hwpeMultiDataflowRiscV = new File(hwpeMultiDataflowWrapperSw + File.separator + "hwpe-multidataflow-riscv");
 		// If directory doesn't exist, create it
 		if (!hwpeMultiDataflowRiscV.exists()) {
 			hwpeMultiDataflowRiscV.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc
 		File hwpeMultiDataflowRiscVInc = new File(hwpeMultiDataflowRiscV + File.separator + "inc");
 		// If directory doesn't exist, create it
 		if (!hwpeMultiDataflowRiscVInc.exists()) {
 			hwpeMultiDataflowRiscVInc.mkdirs();
 		}
-		// common
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/common
 		try {
 		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
 				"inc" + File.separator + "common", hwpeMultiDataflowRiscVInc + File.separator + "common");
 		} catch (IOException e) {
 			OrccLogger.severeln("The hwpe-common folder could not have been copied: " + e.getMessage());
 		}
-		// hero_lib
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/hero_lib
 		try {
 		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
 				"inc" + File.separator + "hero_lib", hwpeMultiDataflowRiscVInc + File.separator + "hero_lib");
 		} catch (IOException e) {
 			OrccLogger.severeln("The hero_lib folder could not have been copied: " + e.getMessage());
 		}
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/hwpe_lib
 		File hwpeLib = new File(hwpeMultiDataflowRiscVInc + File.separator + "hwpe_lib");
 		// If directory doesn't exist, create it
 		if (!hwpeLib.exists()) {
 			hwpeLib.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/stim
 		File hwpeStim = new File(hwpeMultiDataflowRiscVInc + File.separator + "stim");
 		// If directory doesn't exist, create it
 		if (!hwpeStim.exists()) {
 			hwpeStim.mkdirs();
 		}
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/sw_tb
 		/*
 		 * sw_tb
 		 */
-		// test_lib
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/inc/test_lib
 		try {
 		copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal" + File.separator + 
 				"inc" + File.separator + "test_lib", hwpeMultiDataflowRiscVInc + File.separator + "test_lib");
 		} catch (IOException e) {
 			OrccLogger.severeln("The test_lib folder could not have been copied: " + e.getMessage());
 		}
-		// Makefile
+		// output/deps/hwpe-multidataflow-wrapper/sw/hwpe-multidataflow-riscv/Makefile file
 		File makefile = new File(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_baremetal");
 		try {
 		copier.copy(makefile, hwpeMultiDataflowRiscV);
 		} catch (IOException e) {
 			OrccLogger.severeln("The Malefile could not have been copied: " + e.getMessage());
 		}
+		// output/deps/pulp_cluster
 		File pulp_cluster = new File(deps + File.separator + "pulp_cluster");
 		// If directory doesn't exist, create it
 		if (!pulp_cluster.exists()) {
 			pulp_cluster.mkdirs();
 		}
+		// output/deps/pulp_cluster/rtl
 		File pulp_cluster_rtl = new File(pulp_cluster + File.separator + "rtl");
 		// If directory doesn't exist, create it
 		if (!pulp_cluster_rtl.exists()) {
 			pulp_cluster_rtl.mkdirs();
 		}
-		// end deps
-		// begin src
+		// output/src
 		File src = new File(outputPath + File.separator + "src");
 		// If directory doesn't exist, create it
 		if (!src.exists()) {
 			src.mkdirs();
 		}
-		// end src
-		// begin test
+		// output/test
 		File test = new File(outputPath + File.separator + "test");
 		// If directory doesn't exist, create it
 		if (!test.exists()) {
 			test.mkdirs();
 		}
-		// end test
-		
-		
 	}
-	
 	
 	/**
 	 * Wrap the multi-dataflow network with the logic necessary to
@@ -469,8 +476,9 @@ public abstract class PlatformComposer {
 		
 		////////////////////////
 		/// <li> HDL sources 
-		
-		File hdlDir = new File(hdlPath);
+		//output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-engine
+		File hdlDir = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+							File.separator + "rtl" + File.separator + "hwpe-engine");
 		// If directory doesn't exist, create it
 		if (!hdlDir.exists()) {
 			hdlDir.mkdirs();
@@ -549,12 +557,12 @@ public abstract class PlatformComposer {
 		/////////////////////////
 
 		/// <ol> <li> Generate Wrap
-		File wrapDir = new File(hdlPath.replaceFirst("rtl","wrap"));
+		File wrapDir = new File(hdlDir.getPath().replaceFirst("hwpe-engine","wrap"));
 		// If directory doesn't exist, create it
 		if (!wrapDir.exists()) {
 			wrapDir.mkdirs();
 		}
-		file = wrapDir.getPath() + File.separator + "multi_dataflow_top_wrap.sv";
+		file = wrapDir.getPath() + File.separator + "multi_dataflow_top_wrapper.sv";
 		sequence = pulpPrinter.printWrap();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -568,7 +576,9 @@ public abstract class PlatformComposer {
 		/////////////////////////
 
 		/// <ol> <li> Generate Bender
-		file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "src_files.yml";
+		file = hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+				File.separator + "Bender.yml";
+		//hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "src_files.yml";
 		sequence = pulpPrinter.printBender(hdlCompLib);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -582,7 +592,7 @@ public abstract class PlatformComposer {
 		/////////////////////////
 
 		/// <ol> <li> Generate Bender
-		file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "hwpe-multi-dataflow.mk";
+		/*file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "hwpe-multi-dataflow.mk";
 		sequence = pulpPrinter.printMk(hdlCompLib);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -590,7 +600,7 @@ public abstract class PlatformComposer {
 			ps.close();
 		} catch (FileNotFoundException e) {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
+		}*/
 		
 		/// </ol> </ul>
 		/////////////////////////

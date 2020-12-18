@@ -549,7 +549,7 @@ public class MDCBackend extends AbstractBackend {
 		} else if(enArtico && !genCopr) {
 			   hdlDir = new File(outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog");
 		} else if(enPulp && !genCopr) {
-			   hdlDir = new File(outputPath + File.separator + "rtl");
+			   hdlDir = new File(outputPath);
 		}
 		else{
 			hdlDir = new File(outputPath + File.separator + "hdl");
@@ -771,9 +771,10 @@ public class MDCBackend extends AbstractBackend {
 		try {
 			if(enArtico && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
-			} /*else if(enPulp && !genCopr){
-				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
-			} */else {
+			} else if(enPulp && !genCopr){
+				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" +
+						File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev");
+			} else {
 				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
 			}
 		} catch (IOException e) {
@@ -997,9 +998,9 @@ public class MDCBackend extends AbstractBackend {
 			result.merge(FilesManagerMdc.extract("/bundle/copr/vivado/mm/counter.v", (outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog")));
 		} 
 		
-		if(enPulp && !genCopr) {
+		/*if(enPulp && !genCopr) {
 			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "rtl")));
-		} 
+		} */
 				
 		
 		return result;
