@@ -516,7 +516,7 @@ public abstract class PlatformComposer {
 
 		/// <ol> <li> Generate ctrl
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_ctrl.sv";
-		sequence = pulpPrinter.printCtrl();
+		sequence = pulpPrinter.printCtrl(network);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
