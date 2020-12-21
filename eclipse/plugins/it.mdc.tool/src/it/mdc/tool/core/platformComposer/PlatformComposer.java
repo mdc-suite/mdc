@@ -487,8 +487,9 @@ public abstract class PlatformComposer {
 		
 		// TODO fix stream with tlast signal generation (slv_reg and counter!)
 		
-		/// <ol> <li> Generate top module
-		file = hdlDir.getPath() + File.separator +  "multi_dataflow_top.sv";
+		
+		/// <ol> <li> Generate engine
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_reconf_datapath_top.sv";
 		sequence = pulpPrinter.printTop(network);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -500,7 +501,36 @@ public abstract class PlatformComposer {
 		
 		/// </ol> </ul>
 		/////////////////////////
+		
+		
+		/// <ol> <li> Generate engine
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_engine.sv";
+		sequence = pulpPrinter.printEngine();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
 
+		/// <ol> <li> Generate top module
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_top.sv";
+		sequence = pulpPrinter.printPulpTop();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+		
 		/// <ol> <li> Generate streamer
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_streamer.sv";
 		sequence = pulpPrinter.printStreamer();

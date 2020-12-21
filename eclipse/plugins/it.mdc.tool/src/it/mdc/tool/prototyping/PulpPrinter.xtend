@@ -331,15 +331,8 @@ class PulpPrinter {
 
 	def printTopSignals() {
 		
-		'''
-		// system level signals
-		logic enable, clear;
-		ctrl_streamer_t  streamer_ctrl;
-		flags_streamer_t streamer_flags;
-		ctrl_engine_t    engine_ctrl;
-		flags_engine_t   engine_flags;
-		
-		// communication signals
+		'''		
+		// Communication signals
 		«FOR input : inputMap.keySet()»
 		«FOR commSigId : getInFirstModCommSignals().keySet»
 		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
@@ -365,23 +358,28 @@ class PulpPrinter {
 	def printTopInterface() {
 		
 		'''
-		module multi_dataflow_top 
-		#(
-			parameter int unsigned N_CORES = 2,
-		  	parameter int unsigned MP  = «portMap.size»,
-		  	parameter int unsigned ID  = 10 
-		)
+		module multi_dataflow_reconf_datapath_top 
 		(
-			// global signals
+			// Global signals
 			input  logic                                  clk_i,
 			input  logic                                  rst_ni,
-			input  logic                                  test_mode_i,
-			// events
-			output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
-			// tcdm master ports
-			hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
-			// periph slave port
-			hwpe_ctrl_intf_periph.slave                   periph
+		    // Sink ports
+		    «FOR port: inputMap.keySet»  
+            hwpe_stream_intf_stream.sink    «port.name»_i,
+		    «ENDFOR»  
+		    // Source ports
+		    «FOR port: outputMap.keySet»  
+            hwpe_stream_intf_stream.source  «port.name»_o,
+		    «ENDFOR»  	
+            // Algorithm parameters
+		    «FOR param: network.parameters» 
+            logic unsigned [(32-1):0] 		«param.name»,
+            «ENDFOR»  
+            // Control signals
+            input logic 								  ap_start,
+            output logic 								  ap_done,
+            output logic 								  ap_idle,
+            output logic 								  ap_ready	  
 		);
 		
 		'''
@@ -390,16 +388,7 @@ class PulpPrinter {
 	def printTopBody() {
 		//TODO check zero and last for size=0 with stream accelerator
 		
-		'''
-		// hwpe stream interfaces
-		«FOR port : portMap.keySet»// hwpe stream intf «port.name»
-		hwpe_stream_intf_stream #(
-			.DATA_WIDTH(32)
-		) stream_if_«port.name» (
-			.clk ( clk_i )
-		);
-  		«ENDFOR»
-		
+		'''		
 		// hwpe strem interface wrappers
 		«FOR input : inputMap.keySet»// hwpe stream intf in «input.name»
 		interface_wrapper_in i_interface_wrapper_in_«input.name»(
@@ -451,45 +440,6 @@ class PulpPrinter {
 		//	.last(m«getLongId(outputMap.get(output))»_axis_tlast)
 		//);
 		«ENDFOR»
-		
-		multi_dataflow_streamer #(
-		    .MP ( MP )
-		) i_streamer (
-		    .clk_i            ( clk_i          ),
-		    .rst_ni           ( rst_ni         ),
-		    .test_mode_i      ( test_mode_i    ),
-		    .enable_i         ( enable         ),
-		    .clear_i          ( clear          ),
-		    «FOR input : inputMap.keySet»
-		    .stream_if_«input.name» (stream_if_«input.name».source),
-      		«ENDFOR»
-		    «FOR output : outputMap.keySet»
-		    .stream_if_«output.name» (stream_if_«output.name».sink),
-      		«ENDFOR»
-		    .tcdm             ( tcdm           ),
-		    .ctrl_i           ( streamer_ctrl  ),
-		    .flags_o          ( streamer_flags )
-		);
-		
-		multi_dataflow_ctrl #(
-		    .N_CORES   ( 2  ),
-		    .N_CONTEXT ( 2  ),
-		    .N_IO_REGS ( 16 ),
-		    .ID ( ID )
-		) i_ctrl (
-		    .clk_i            ( clk_i          ),
-		    .rst_ni           ( rst_ni         ),
-		    .test_mode_i      ( test_mode_i    ),
-		    .evt_o            ( evt_o          ),
-		    .clear_o          ( clear          ),
-		    .ctrl_streamer_o  ( streamer_ctrl  ),
-		    .flags_streamer_i ( streamer_flags ),
-		    .ctrl_engine_o    ( engine_ctrl    ),
-		    .flags_engine_i   ( engine_flags   ),
-		    .periph           ( periph         )
-		);
-		
-		assign enable = 1'b1;
 		// ----------------------------------------------------------------------------
 		'''
 	}
@@ -546,6 +496,15 @@ class PulpPrinter {
 			«FOR resetSignal : getResetSysSignals().keySet»
 			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
 			«ENDFOR»
+            // Algorithm parameters
+		    «FOR param: network.parameters» 
+            .«param.name»        (  «param.name»      ),
+            «ENDFOR»  
+            «/* // Control signals
+            .ap_start           ( ap_start     ),
+            .ap_done            ( ap_done             ),
+            .ap_idle            ( ap_idle             ),
+            .ap_ready           ( ap_ready            )*/»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
 			.ID(engine_ctrl.configuration)«ENDIF»
 		);
@@ -1620,6 +1579,194 @@ class PulpPrinter {
 		  localparam bit          HWPE_PRESENT = 1'b1;
 		  localparam int unsigned N_HWPE_PORTS = «portMap.keySet.size»;
 		endpackage
+		'''
+	}	
+	
+	def printPulpTop() {
+		'''	
+		«printHWPELicense(true ,"top")»
+		import multi_dataflow_package::*;
+		import hwpe_ctrl_package::*;
+		module multi_dataflow_top
+		#(
+		  parameter int unsigned N_CORES = 2,
+		  parameter int unsigned MP  = «portMap.keySet.size»,
+		  parameter int unsigned ID  = 10
+		)
+		(
+		  // Global signals
+		  input  logic          clk_i,
+		  input  logic          rst_ni,
+		  input  logic          test_mode_i,
+		  // Events
+		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+		  // TCDM master ports
+		  hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
+		  // Peripheral slave port
+		  hwpe_ctrl_intf_periph.slave                   periph
+		);
+		  // Signals
+		  logic enable, clear;
+		  logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
+		  ctrl_streamer_t  streamer_ctrl;
+		  flags_streamer_t streamer_flags;
+		  ctrl_engine_t    engine_ctrl;
+		  flags_engine_t   engine_flags;
+		  // Streamer interfaces
+		«FOR port: portMap.keySet»  
+		  hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «port.name» ( .clk (clk_i) );
+		«ENDFOR»  
+		  // HWPE engine wrapper
+		  multi_dataflow_engine i_engine (
+		    .clk_i            ( clk_i          ),
+		    .rst_ni           ( rst_ni         ),
+		    .test_mode_i      ( test_mode_i    ),
+    		«FOR port: inputMap.keySet»  
+	        .«port.name»_i              ( «port.name».sink       ),
+    		«ENDFOR»  
+    		«FOR port: outputMap.keySet»  
+	        .«port.name»_o              ( «port.name».source       ),
+    		«ENDFOR»  
+		    .ctrl_i           ( engine_ctrl    ),
+		    .flags_o          ( engine_flags   )
+		  );
+		  // HWPE streamer wrapper
+		  multi_dataflow_streamer #(
+		    .MP ( MP )
+		  ) i_streamer (
+		    .clk_i            ( clk_i          ),
+		    .rst_ni           ( rst_ni         ),
+		    .test_mode_i      ( test_mode_i    ),
+		    .enable_i         ( enable         ),
+		    .clear_i          ( clear          ),
+      		«FOR port: inputMap.keySet»  
+  	        .«port.name»_o              ( «port.name».source       ),
+      		«ENDFOR»  
+      		«FOR port: outputMap.keySet»  
+  	        .«port.name»_i              ( «port.name».sink       ),
+      		«ENDFOR»  		  
+		    .tcdm             ( tcdm           ),
+		    .ctrl_i           ( streamer_ctrl  ),
+		    .flags_o          ( streamer_flags )
+		  );
+		  // HWPE ctrl wrapper
+		  multi_dataflow_ctrl #(
+		    .N_CORES   ( 2  ),
+		    .N_CONTEXT ( 2  ),
+		    .N_IO_REGS ( 16 ),
+		    .ID ( ID )
+		  ) i_ctrl (
+		    .clk_i            ( clk_i          ),
+		    .rst_ni           ( rst_ni         ),
+		    .test_mode_i      ( test_mode_i    ),
+		    .clear_o          ( clear          ),
+		    .evt_o            ( evt_o          ),
+		    .ctrl_streamer_o  ( streamer_ctrl  ),
+		    .flags_streamer_i ( streamer_flags ),
+		    .ctrl_engine_o    ( engine_ctrl    ),
+		    .flags_engine_i   ( engine_flags   ),
+		    .periph           ( periph         )
+		  );
+		  assign enable = 1'b1;
+		endmodule
+		    
+		'''
+	}	
+	
+	def printEngine() {
+		'''	
+		«printHWPELicense(true ,"engine")»
+		import multi_dataflow_package::*;
+		module multi_dataflow_engine (
+		  // Global signals
+		  input  logic          clk_i,
+		  input  logic          rst_ni,
+		  input  logic          test_mode_i,
+		  // Sink ports
+		  «FOR port: inputMap.keySet»  
+          hwpe_stream_intf_stream.sink    «port.name»_i,
+		  «ENDFOR»  
+		  // Source ports
+		  «FOR port: outputMap.keySet»  
+          hwpe_stream_intf_stream.source  «port.name»_o,
+		  «ENDFOR»  		  
+		  // Control channel
+		  input  ctrl_engine_t            ctrl_i,
+		  output flags_engine_t           flags_o
+		);
+		  // multi_dataflow control
+		  logic clear;
+		  logic done, idle, ready;
+		  assign clear = ctrl_i.clear;
+		  assign flags_o.done = done;
+		  assign flags_o.idle = idle;
+		  always_ff @(posedge clk_i or negedge rst_ni)
+		  begin: fsm_ready
+		    if(~rst_ni)
+		      flags_o.ready = 1'b0;
+		    else if(~(ready | idle))
+		      flags_o.ready = 1'b0;
+		    else
+		      flags_o.ready = 1'b1;
+		  end
+		  // IN/OUT synchronization
+		  logic unsigned [$clog2(CNT_LEN):0] cnt_in;
+		  logic unsigned [$clog2(CNT_LEN):0] cnt_out;
+		  always_ff @(posedge clk_i or negedge rst_ni)
+		  begin: engine_cnt_in
+		    if((~rst_ni) | clear)
+		      cnt_in = 32'b0;
+		    else if((a_i.valid)&(a_i.ready))
+		      cnt_in = cnt_in + 1;
+		    else
+		      cnt_in = cnt_in;
+		  end
+		  always_ff @(posedge clk_i or negedge rst_ni or posedge done)
+		  begin: engine_cnt_out
+		    if((~rst_ni) | clear)
+		      cnt_out = 32'b0;
+		    else if((done)&(cnt_in>cnt_out))
+		      cnt_out = cnt_out + 1;
+		    else
+		      cnt_out = cnt_out;
+		  end
+		  assign flags_o.cnt = cnt_out;
+		  // Engine
+		  generate
+		  begin: multi_dataflow_gen
+		    multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
+		          // Global signals
+		          .ap_clk             ( clk_i            ),
+		          .ap_rst_n           ( rst_ni           ),
+		          // Input data (to-hwpe)
+          		  «FOR port: inputMap.keySet»  
+      	          .«port.name»_i              ( «port.name».sink       ),
+          		  «ENDFOR»  
+  		            // Output data (from-hwpe)
+          		  «FOR port: outputMap.keySet»  
+      	          .«port.name»_o              ( «port.name».source       ),
+          		  «ENDFOR»  	  
+		          // Algorithm parameters
+        		  «FOR param: network.parameters» 
+		          .«param.name»        (  ctrl_i.«param.name»      ),
+		          «ENDFOR»  
+		          // Control signals
+		          .ap_start           ( ctrl_i.start     ),
+		          .ap_done            ( done             ),
+		          .ap_idle            ( idle             ),
+		          .ap_ready           ( ready            )
+		    );
+		  end
+		  endgenerate
+		  // At the moment output strobe is always '1
+		  // All bytes of output streams are written
+		  // to TCDM
+		  always_comb
+		  begin
+		    c_o.strb = '1;
+		    d_o.strb = '1;
+		  end
+		endmodule
 		'''
 	}	
 	
