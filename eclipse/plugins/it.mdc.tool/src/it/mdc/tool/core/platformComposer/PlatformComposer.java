@@ -592,6 +592,37 @@ public abstract class PlatformComposer {
 		/// </ol> </ul>
 		/////////////////////////
 
+
+		/// <ol> <li> Generate pulp_hwpe_wrap
+		file = hdlPath + File.separator + "deps" + File.separator + "pulp_cluster" + 
+				File.separator + "rtl" + File.separator + "pulp_hwpe_wrap.sv";
+		sequence = pulpPrinter.printPulpHwpeWrap();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+
+		/// <ol> <li> Generate pulp_cluster_hwpe_pkg
+		file = hdlPath + File.separator + "test" + File.separator + "pulp_tb.wave.do";
+		sequence = pulpPrinter.printPulpTbWave();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
 		/// <ol> <li> Generate Bender
 		/*file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "hwpe-multi-dataflow.mk";
 		sequence = pulpPrinter.printMk(hdlCompLib);
