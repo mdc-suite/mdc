@@ -640,6 +640,21 @@ public abstract class PlatformComposer {
 
 
 		/// <ol> <li> Generate pulp_cluster_hwpe_pkg
+		file = hdlPath + File.separator + "src" + File.separator + "pulp_cluster_hwpe_pkg.sv";
+		sequence = pulpPrinter.printPulpClusterHwpePkg();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+
+		/// <ol> <li> Generate pulp_cluster_hwpe_pkg
 		file = hdlPath + File.separator + "test" + File.separator + "pulp_tb.wave.do";
 		sequence = pulpPrinter.printPulpTbWave();
 		try {
@@ -653,6 +668,59 @@ public abstract class PlatformComposer {
 		/// </ol> </ul>
 		/////////////////////////
 
+		/*
+		 * Now it's time to generate the sw part
+		 */
+
+		/// <ol> <li> Generate archi_hwpe.h
+		file = hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + File.separator + "sw" + File.separator +
+						"hwpe-multidataflow-riscv" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + 
+						"archi_hwpe.h";
+		sequence = pulpPrinter.printRiscvArchiHwpe();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate hal_hwpe.h
+		file = hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + File.separator + "sw" + File.separator +
+						"hwpe-multidataflow-riscv" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + 
+						"hal_hwpe.h";
+		sequence = pulpPrinter.printRiscvHalHwpe();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
+		/// <ol> <li> Generate test_hwpe.c
+		file = hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + File.separator + "sw" + File.separator +
+						"hwpe-multidataflow-riscv" + File.separator + "test_hwpe.c";
+		sequence = pulpPrinter.printRiscvTestHwpe();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+		
+		
+		
 		/// <ol> <li> Generate Bender
 		/*file = hdlDir.getPath().replaceFirst("rtl","") + File.separator +  "hwpe-multi-dataflow.mk";
 		sequence = pulpPrinter.printMk(hdlCompLib);

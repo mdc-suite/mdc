@@ -1561,7 +1561,7 @@ class PulpPrinter {
 	
 	def printPulpClusterHwpePkg() {
 		'''	
-			
+		
 		/*
 		 *
 		 * pulp_cluster_hwpe_pkg.sv
@@ -3141,5 +3141,407 @@ class PulpPrinter {
 		WaveRestoreZoom {0 ps} {530958 ps}
 		'''
 	}
+	
+	def printRiscvHeader(){
+		
+		'''	
+		
+		/*
+		 * Copyright (C) 2018-2019 ETH Zurich and University of Bologna
+		 *
+		 * Licensed under the Apache License, Version 2.0 (the "License");
+		 * you may not use this file except in compliance with the License.
+		 * You may obtain a copy of the License at
+		 *
+		 *     http://www.apache.org/licenses/LICENSE-2.0
+		 *
+		 * Unless required by applicable law or agreed to in writing, software
+		 * distributed under the License is distributed on an "AS IS" BASIS,
+		 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+		 * See the License for the specific language governing permissions and
+		 * limitations under the License.
+		 */
+		/*
+		 * Authors:     Francesco Conti <fconti@iis.ee.ethz.ch>
+		 * Contribute:  Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
+		 */
+		 '''		
+	}
+	
+	def printRiscvRegs() {
+		var counterReg = 0;
+		var counterOffset = 64;
+		'''
+		/*
+		 * Control and generic configuration register layout
+		 * ================================================================================
+		 *  # reg |  offset  |  bits   |   bitmask    ||  content
+		 * -------+----------+---------+--------------++-----------------------------------
+		 *     0  |  0x0000  |  31: 0  |  0xffffffff  ||  TRIGGER
+		 *     1  |  0x0004  |  31: 0  |  0xffffffff  ||  ACQUIRE
+		 *     2  |  0x0008  |  31: 0  |  0xffffffff  ||  EVT_ENABLE
+		 *     3  |  0x000c  |  31: 0  |  0xffffffff  ||  STATUS
+		 *     4  |  0x0010  |  31: 0  |  0xffffffff  ||  RUNNING_JOB
+		 *     5  |  0x0014  |  31: 0  |  0xffffffff  ||  SOFT_CLEAR
+		 *   6-7  |          |         |              ||  Reserved
+		 *     8  |  0x0020  |  31: 0  |  0xffffffff  ||  BYTECODE0 [31:0]
+		 *     9  |  0x0024  |  31: 0  |  0xffffffff  ||  BYTECODE1 [63:32]
+		 *    10  |  0x0028  |  31: 0  |  0xffffffff  ||  BYTECODE2 [95:64]
+		 *    11  |  0x002c  |  31: 0  |  0xffffffff  ||  BYTECODE3 [127:96]
+		 *    12  |  0x0030  |  31: 0  |  0xffffffff  ||  BYTECODE4 [159:128]
+		 *    13  |  0x0034  |  31:16  |  0xffff0000  ||  LOOPS0    [15:0]
+		 *        |          |  15: 0  |  0x0000ffff  ||  BYTECODE5 [175:160]
+		 *    14  |  0x0038  |  31: 0  |  0xffffffff  ||  LOOPS1    [47:16]
+		 *    15  |          |  31: 0  |  0xffffffff  ||  Reserved
+		 * ================================================================================
+		 *
+		 * Job-dependent registers layout
+		 * ================================================================================
+		 *  # reg |  offset  |  bits   |   bitmask    ||  content
+		 * -------+----------+---------+--------------++-----------------------------------
+ 		  «FOR port: inputMap.keySet»  
+           *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
+ 		  «ENDFOR»  
+ 		  «FOR port: outputMap.keySet»  
+           *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
+ 		  «ENDFOR»  
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  NB_ITER
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  LEN_ITER
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31:16  |  0xffff0000  ||  SHIFT
+		 *        |          |   0: 0  |  0x00000001  ||  SIMPLEMUL
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE2
+		 «FOR param: network.parameters»
+		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «param.name.toUpperCase»
+		 «ENDFOR»
+		 *
+		 * ================================================================================
+		 *
+		 */
+		'''
+	}
+	
+	def printRiscvArchiHwpe() {
+		
+		var counterOffset2 = 64;		
+		'''	
+		«printRiscvHeader()»
+		#ifndef __ARCHI_HWPE_H__
+		#define __ARCHI_HWPE_H__
+		«printRiscvRegs»
+		#define ARCHI_CL_EVT_ACC0 0
+		#define ARCHI_CL_EVT_ACC1 1
+		#define ARCHI_HWPE_ADDR_BASE 0x1b201000
+		#define __builtin_bitinsert(a,b,c,d) (a | (((b << (32-c)) >> (32-c)) << d))
+		// flag regs
+		#define HWPE_TRIGGER          0x00
+		#define HWPE_ACQUIRE          0x04
+		#define HWPE_FINISHED         0x08
+		#define HWPE_STATUS           0x0c
+		#define HWPE_RUNNING_JOB      0x10
+		#define HWPE_SOFT_CLEAR       0x14
+		// Microcode-processor regs
+		#define HWPE_BYTECODE         0x20
+		#define HWPE_BYTECODE0_OFFS        0x00
+		#define HWPE_BYTECODE1_OFFS        0x04
+		#define HWPE_BYTECODE2_OFFS        0x08
+		#define HWPE_BYTECODE3_OFFS        0x0c
+		#define HWPE_BYTECODE4_OFFS        0x10
+		#define HWPE_BYTECODE5_LOOPS0_OFFS 0x14
+		#define HWPE_LOOPS1_OFFS           0x18
+		// TCDM address regs
+	    «FOR port: inputMap.keySet»  
+        #define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+	    «ENDFOR»  
+	    «FOR port: outputMap.keySet»  
+        #define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+        «ENDFOR»  
+		// standard regs
+		#define HWPE_NB_ITER          0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+		#define HWPE_LEN_ITER         0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+		#define HWPE_SHIFT_SIMPLEMUL  0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+		#define HWPE_VECTSTRIDE       0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+		#define HWPE_VECTSTRIDE2      0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+		// custom regs
+		«FOR param: network.parameters»
+        #define HWPE_«param.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+        «ENDFOR»
+		#endif
+		'''
+	}	
+	
+	def printRiscvHalHwpe() {
+			
+		'''	
+		«printRiscvHeader()»
+		#ifndef __HAL_HWPE_H__
+		#define __HAL_HWPE_H__
+		«printRiscvRegs()»
+		/* LOW-LEVEL HAL */
+		#define HWPE_ADDR_BASE ARCHI_FC_HWPE_ADDR
+		#define HWPE_ADDR_SPACE 0x00000100
+		// For all the following functions we use __builtin_pulp_OffsetedWrite and __builtin_pulp_OffsetedRead
+		// instead of classic load/store because otherwise the compiler is not able to correctly factorize
+		// the HWPE base in case several accesses are done, ending up with twice more code
+		#define HWPE_WRITE(value, offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset) = value
+		#define HWPE_READ(offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset)
+		static inline void hwpe_bytecode_set(unsigned int offs, unsigned int value) {
+		  HWPE_WRITE(value, HWPE_BYTECODE+offs);
+		}
+		// basic hal
+		static inline void hwpe_trigger_job() {
+		  HWPE_WRITE(0, HWPE_TRIGGER);
+		}
+		static inline int hwpe_acquire_job() {
+		  return HWPE_READ(HWPE_ACQUIRE);
+		}
+		static inline unsigned int hwpe_get_status() {
+		  return HWPE_READ(HWPE_STATUS);
+		}
+		static inline void hwpe_soft_clear() {
+		  volatile int i;
+		  HWPE_WRITE(0, HWPE_SOFT_CLEAR);
+		}
+		static inline void hwpe_cg_enable() {
+		  return;
+		}
+		static inline void hwpe_cg_disable() {
+		  return;
+		}
+		// TCDM address regs
+	    «FOR port: inputMap.keySet»  
+		static inline void hwpe_«port.name»_addr_set(int32_t value) {
+		  HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
+		}
+		«ENDFOR»  
+	    «FOR port: outputMap.keySet»  
+		static inline void hwpe_«port.name»_addr_set(int32_t value) {
+		  HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
+		}
+		«ENDFOR»  
+		// standard hal
+		static inline void hwpe_nb_iter_set(unsigned int value) {
+		  HWPE_WRITE(value, HWPE_NB_ITER);
+		}
+		static inline void hwpe_len_iter_set(unsigned int value) {
+		  HWPE_WRITE(value, HWPE_LEN_ITER);
+		}
+		static inline void hwpe_shift_simplemul_set(unsigned int value) {
+		  HWPE_WRITE(value, HWPE_SHIFT_SIMPLEMUL);
+		}
+		static inline void hwpe_vectstride_set(unsigned int value) {
+		  HWPE_WRITE(value, HWPE_VECTSTRIDE);
+		}
+		static inline void hwpe_vectstride2_set(unsigned int value) {
+		  HWPE_WRITE(value, HWPE_VECTSTRIDE2);
+		}
+		static inline unsigned int hwpe_shift_simplemul_value(
+		  unsigned short shift,
+		  unsigned       simplemul
+		) {
+		  unsigned int res = 0;
+		#if defined(__riscv__) && !defined(RV_ISA_RV32)
+		  res = __builtin_bitinsert(0,   shift,     16, 16);
+		  res = __builtin_bitinsert(res, simplemul,  8,  0);
+		#else
+		  res |= ((shift     & 0xffff) << 16) |
+		         ((simplemul & 0xff));
+		#endif
+		  return res;
+		}
+		// custom hal
+		«FOR param: network.parameters»
+		static inline void hwpe_«param.name.toLowerCase»_set(int32_t value) {
+		  HWPE_WRITE(value, HWPE_«param.name.toUpperCase» );
+		}
+		«ENDFOR»
+		#endif /* __HAL_HWPE_H__ */
+		'''
+	}	
+	
+	def printRiscvTestHwpe() {
+		var counterStim = 1;
+		var counterOutput = 1;
+			
+		'''	
+		
+		/*
+		 * Copyright (C) 2019 ETH Zurich and University of Bologna
+		 *
+		 * Licensed under the Apache License, Version 2.0 (the "License");
+		 * you may not use this file except in compliance with the License.
+		 * You may obtain a copy of the License at
+		 *
+		 *     http://www.apache.org/licenses/LICENSE-2.0
+		 *
+		 * Unless required by applicable law or agreed to in writing, software
+		 * distributed under the License is distributed on an "AS IS" BASIS,
+		 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+		 * See the License for the specific language governing permissions and
+		 * limitations under the License.
+		 */
+		/*
+		 *
+		 * Authors:     Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
+		 *
+		 */
+		/* Libraries inclusion */
+		#include <omp.h>
+		#include <stdlib.h>
+		#include <stdio.h>
+		#include <stdbool.h>
+		#include <stdint.h>
+		#include "inc/hwpe_lib/archi_hwpe.h"
+		#include "inc/hwpe_lib/hal_hwpe.h"
+		#include "inc/hero_lib/hero_memory_map.h"
+		#include "inc/hero_lib/pulp_fc.h"
+		#include "inc/test_lib/test_hwpe.h"
+		/* Stimuli */
+		#include "inc/stim/stim_def.h"
+		#include "inc/stim/stim_input.h"
+		#include "inc/stim/reg_values.h"
+		#include "inc/stim/results.h"
+		/* Defines */
+		#include "inc/test_lib/defines.h"
+		/* HWPE test */
+		int multi_dataflow(uint32_t stim_dim, uint32_t stripe_len) {
+		  /* Init */
+		  omp_set_num_threads(1);
+		  volatile int errors = 0;
+		  int i,j,k,cnt;
+		  int offload_id_tmp, offload_id;
+		  const unsigned stim_dim_local   = hero_tryread((unsigned int *)&stim_dim);
+		  const unsigned stripe_len_local = hero_tryread((unsigned int *)&stripe_len);
+		  const unsigned num_unfiltered = stim_dim_local;
+		  const unsigned num_stripe     = num_unfiltered / stripe_len_local;
+		  /* L2 init - Input stimuli */
+	      «FOR port: inputMap.keySet»  
+		    «port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+		  «ENDFOR»  
+	      «FOR port: inputMap.keySet»  
+		    memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
+		  «ENDFOR»
+  	      «FOR port: inputMap.keySet»  
+  		    «port.name»_l2 = stim_«counterStim++»;
+  		  «ENDFOR»
+		  /* L2 init - Output result */
+  	      «FOR port: outputMap.keySet»  
+  		    «port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+  		  «ENDFOR»  
+  	      «FOR port: outputMap.keySet»  
+  		    memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
+  		  «ENDFOR»
+		  #if DB
+		  #else
+		    /* L1 init - Input stimuli */
+	        «FOR port: inputMap.keySet»  
+		      «port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+		    «ENDFOR»  
+	        «FOR port: inputMap.keySet»  
+		      memset((void *)«port.name»_l1, 0, (size_t)(stripe_len_local));
+		    «ENDFOR»
+		    /* L1 init - Output result */
+	        «FOR port: outputMap.keySet»  
+		      «port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+		    «ENDFOR»  
+	        «FOR port: outputMap.keySet»  
+		      memset((void *)«port.name»_l1, 0, (size_t)(num_unfiltered));
+		    «ENDFOR»
+		  #endif
+		  #if DB
+		  #else
+		    hwpe_cg_enable();
+		    /* Processing loops */
+		    for (i = 0; i < (num_stripe); i++){
+		      while((offload_id_tmp = hwpe_acquire_job()) < 0)
+		      /* Micro-code processor */
+		      // Set up bytecode
+		      hwpe_bytecode_set(HWPE_LOOPS1_OFFS,           0x00000000);
+		      hwpe_bytecode_set(HWPE_BYTECODE5_LOOPS0_OFFS, 0x00040000);
+		      hwpe_bytecode_set(HWPE_BYTECODE4_OFFS,        0x00000000);
+		      hwpe_bytecode_set(HWPE_BYTECODE3_OFFS,        0x00000000);
+		      hwpe_bytecode_set(HWPE_BYTECODE2_OFFS,        0x00000000);
+		      hwpe_bytecode_set(HWPE_BYTECODE1_OFFS,        0x000008cd);
+		      hwpe_bytecode_set(HWPE_BYTECODE0_OFFS,        0x11a12c05);
+		      // Ucode parameters
+		      hwpe_nb_iter_set(1);
+		      hwpe_vectstride_set(sizeof(«inputMap.keySet.get(0).name»_l1)*4);
+		      /* Job-dependent programming */
+  	  	      «FOR port: inputMap.keySet»  
+  	  		    «port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+    		  «ENDFOR»  
+  	  	      «FOR port: outputMap.keySet»  
+  	  		    «port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+    		  «ENDFOR»  
+		      // Stripe -> TCDM
+	  	      «FOR port: inputMap.keySet»  
+	  		    hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«port.type»)*stripe_len_local);
+      		  «ENDFOR»  
+		      // Set TCDM address reg values
+	  	      «FOR port: inputMap.keySet»  
+	  		    hwpe_«port.name»_addr_set( «port.name»_l1 );
+    		  «ENDFOR»  
+  	  	      «FOR port: outputMap.keySet»  
+  	  		    hwpe_«port.name»_addr_set( «port.name»_l1 );
+      		  «ENDFOR»  
+		      hwpe_len_iter_set(stripe_len_local-1);
+		      // Set custom reg values
+	  	      «FOR param: network.parameters»  
+	  		    hwpe_«param.name.toLowerCase»_set( /* Value of «param.name.toUpperCase» */ );
+    		  «ENDFOR»  
+		      hwpe_trigger_job();
+		      printf("Start of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
+		      // Handle interrupt
+		      int u=1;
+		      while(u){
+		        if (HWPE_READ(HWPE_FINISHED))
+		          u=0;
+		      }
+		      printf("End of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
+		      // Stripe -> L2
+	  	      «FOR port: outputMap.keySet»  
+	  		    hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«port.type»)*stripe_len_local);
+    		  «ENDFOR»  
+		      hwpe_soft_clear();
+		    }
+		    hwpe_cg_disable();
+		    /* Free L1 memory */
+  	        «FOR port: inputMap.keySet»  
+  		      hero_l1free(«port.name»_l1);
+		    «ENDFOR»  
+  	        «FOR port: outputMap.keySet»  
+  		      hero_l1free(«port.name»_l1);
+  		    «ENDFOR»  
+		  #endif
+		  /* Error check */
+    	  «FOR port: outputMap.keySet»  
+	        for(i=0;i<num_unfiltered;i++){
+		      printf("multi_dataflow -> #%d is %x (%d)\n\n", i, *(«port.name»_l2+i), *(res_«counterOutput»+i));
+		      if(*(«port.name»_l2+i) != res_«counterOutput++»[i]) errors++;
+		    }
+	      «ENDFOR»  
+		  /* Free L2 memory */
+          «FOR port: inputMap.keySet»  
+	        free(«port.name»_l2);
+    	  «ENDFOR»  
+          «FOR port: outputMap.keySet»  
+	        free(«port.name»_l2);
+	      «ENDFOR»  
+		  /* Return errors */
+		  *(int *) 0x80000000 = errors;
+		  printf("errors: %d\n", errors);
+		  printf("end\n");
+		  return errors;
+		}
+		int main() {
+		  /* Dimension of stimuli array */
+		  uint32_t stim_dim   = STIM_DIM;
+		  /* Length of single stimuli stripe */
+		  uint32_t stripe_len = STRIPE_LEN;
+		  while(!multi_dataflow(stim_dim, stripe_len))
+		  return 0;
+		}
+		'''
+	}	
 	
 }
