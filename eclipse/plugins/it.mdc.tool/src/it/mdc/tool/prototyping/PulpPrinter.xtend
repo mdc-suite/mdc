@@ -1763,8 +1763,9 @@ class PulpPrinter {
 		  // to TCDM
 		  always_comb
 		  begin
-		    c_o.strb = '1;
-		    d_o.strb = '1;
+		    «FOR port: outputMap.keySet»  
+            .«port.name»_o.strb = '1;
+		    «ENDFOR»  	
 		  end
 		endmodule
 		'''

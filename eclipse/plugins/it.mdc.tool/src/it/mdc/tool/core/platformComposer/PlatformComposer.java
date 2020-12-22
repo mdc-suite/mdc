@@ -488,7 +488,7 @@ public abstract class PlatformComposer {
 		// TODO fix stream with tlast signal generation (slv_reg and counter!)
 		
 		
-		/// <ol> <li> Generate engine
+		/// <ol> <li> Generate multi_dataflow_reconf_datapath_top
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_reconf_datapath_top.sv";
 		sequence = pulpPrinter.printTop(network);
 		try {
@@ -503,7 +503,7 @@ public abstract class PlatformComposer {
 		/////////////////////////
 		
 		
-		/// <ol> <li> Generate engine
+		/// <ol> <li> Generate multi_dataflow_engine
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_engine.sv";
 		sequence = pulpPrinter.printEngine();
 		try {
