@@ -31,10 +31,8 @@ class PulpPrinter {
 	List <Integer> signals;
 	List <SboxLut> luts;
 	int portSize;
-	int dataSize = 32;
 	Map<String,List<Port>> netPorts;
 	
-	boolean dedicatedInterfaces = false
 	String coupling = ""
 	boolean enableMonitoring;
 	
@@ -356,32 +354,32 @@ class PulpPrinter {
 	}
 	
 	def printTopInterface() {
-		
+
 		'''
-		module multi_dataflow_reconf_datapath_top 
-		(
-			// Global signals
-			input  logic                                  clk_i,
-			input  logic                                  rst_ni,
-		    // Sink ports
-		    «FOR port: inputMap.keySet»  
-            hwpe_stream_intf_stream.sink    «port.name»_i,
-		    «ENDFOR»  
-		    // Source ports
-		    «FOR port: outputMap.keySet»  
-            hwpe_stream_intf_stream.source  «port.name»_o,
-		    «ENDFOR»  	
-            // Algorithm parameters
-		    «FOR param: network.parameters» 
-            logic unsigned [(32-1):0] 		«param.name»,
-            «ENDFOR»  
-            // Control signals
-            input logic 								  ap_start,
-            output logic 								  ap_done,
-            output logic 								  ap_idle,
-            output logic 								  ap_ready	  
-		);
-		
+			module multi_dataflow_reconf_datapath_top 
+			(
+				// Global signals
+				input  logic                                  clk_i,
+				input  logic                                  rst_ni,
+				   // Sink ports
+				   «FOR port : inputMap.keySet»  
+				   	hwpe_stream_intf_stream.sink    «port.name»_i,
+				   «ENDFOR»  
+				   // Source ports
+				   «FOR port : outputMap.keySet»  
+				   	hwpe_stream_intf_stream.source  «port.name»_o,
+				   «ENDFOR»  	
+				   // Algorithm parameters
+				   «FOR param : network.parameters» 
+				   	logic unsigned [(32-1):0] 		«param.name»,
+				   «ENDFOR»  
+				   // Control signals
+				   input logic 								  ap_start,
+				   output logic 								  ap_done,
+				   output logic 								  ap_idle,
+				   output logic 								  ap_ready	  
+			);
+			
 		'''
 	}
 			
@@ -476,38 +474,38 @@ class PulpPrinter {
 	
 	def printTopDatapath() {
 		'''
-		// to adapt profiling
-		multi_dataflow reconf_dpath (
-			// Multi-Dataflow Input(s)
-			«FOR input : inputMap.keySet()»
-			«FOR commSigId : getInFirstModCommSignals().keySet»
-			.«input.getName()»«getSuffix(getInFirstModCommSignals(),commSigId)»(«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
-			«ENDFOR»
-			«ENDFOR»
-			// Multi-Dataflow Output(s)
-			«FOR output : outputMap.keySet()»
-			«FOR commSigId : getOutLastModCommSignals().keySet»
-			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
-			«ENDFOR»
-			«ENDFOR»
-			«FOR clockSignal : getClockSysSignals()»
-			.«clockSignal»(clk_i)«IF !(getResetSysSignals().empty && this.luts.empty)»,«ENDIF»
-			«ENDFOR»
-			«FOR resetSignal : getResetSysSignals().keySet»
-			.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
-			«ENDFOR»
-            // Algorithm parameters
-		    «FOR param: network.parameters» 
-            .«param.name»        (  «param.name»      ),
-            «ENDFOR»  
-            «/* // Control signals
+			// to adapt profiling
+			multi_dataflow reconf_dpath (
+				// Multi-Dataflow Input(s)
+				«FOR input : inputMap.keySet()»
+					«FOR commSigId : getInFirstModCommSignals().keySet»
+						.«input.getName()»«getSuffix(getInFirstModCommSignals(),commSigId)»(«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+					«ENDFOR»
+				«ENDFOR»
+				// Multi-Dataflow Output(s)
+				«FOR output : outputMap.keySet()»
+					«FOR commSigId : getOutLastModCommSignals().keySet»
+						.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+					«ENDFOR»
+				«ENDFOR»
+				«FOR clockSignal : getClockSysSignals()»
+					.«clockSignal»(clk_i)«IF !(getResetSysSignals().empty && this.luts.empty)»,«ENDIF»
+				«ENDFOR»
+				«FOR resetSignal : getResetSysSignals().keySet»
+					.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
+				«ENDFOR»
+				// Algorithm parameters
+				   «FOR param : network.parameters» 
+				   	.«param.name»        (  «param.name»      ),
+				   «ENDFOR»  
+				   «/* // Control signals
             .ap_start           ( ap_start     ),
             .ap_done            ( ap_done             ),
             .ap_idle            ( ap_idle             ),
             .ap_ready           ( ap_ready            )*/»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
-			.ID(engine_ctrl.configuration)«ENDIF»
-		);
+				.ID(engine_ctrl.configuration)«ENDIF»
+			);
 		'''
 	}
 	
@@ -608,717 +606,716 @@ class PulpPrinter {
 		return result
 	}
 	
-	def printCtrl(){
-		
-		
+	def printCtrl() {
+
 		'''
-	«printHWPELicense(true, "ctrl")»
-	 
-	import multi_dataflow_package::*;
-	import hwpe_ctrl_package::*;
-	module multi_dataflow_ctrl
-	#(
-	  parameter int unsigned N_CORES         = 2,
-	  parameter int unsigned N_CONTEXT       = 2,
-	  parameter int unsigned N_IO_REGS       = 16,
-	  parameter int unsigned ID              = 10,
-	  parameter int unsigned UCODE_HARDWIRED = 0
-	)
-	(  // Global signals
-	  input  logic                                  clk_i,
-	  input  logic                                  rst_ni,
-	  input  logic                                  test_mode_i,
-	  output logic                                  clear_o,
-	  // events
-	  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
-	  // ctrl & flags
-	  output ctrl_streamer_t                        ctrl_streamer_o,
-	  input  flags_streamer_t                       flags_streamer_i,
-	  output ctrl_engine_t                          ctrl_engine_o,
-	  input  flags_engine_t                         flags_engine_i,
-	  // periph slave port
-	  hwpe_ctrl_intf_periph.slave                   periph
-	);
-	  // Ctrl/flags signals
-	  ctrl_slave_t   slave_ctrl;
-	  flags_slave_t  slave_flags;
-	  ctrl_regfile_t reg_file;
-	  // Uloop signals
-	  logic [223:0]  ucode_flat;
-	  uloop_code_t   ucode;
-	  ctrl_uloop_t   ucode_ctrl;
-	  flags_uloop_t  ucode_flags;
-	  logic [11:0][31:0] ucode_registers_read;
-	  // Standard registers
-	  logic unsigned [31:0] static_reg_nb_iter;
-	  logic unsigned [31:0] static_reg_len_iter;
-	  logic unsigned [31:0] static_reg_vectstride;
-	  logic unsigned [31:0] static_reg_onestride;
-	  logic unsigned [15:0] static_reg_shift;
-	  logic static_reg_simplemul;
-	  // Custom register files
- 	«FOR netParm : this.network.parameters»
-	  logic unsigned [(32-1):0] static_reg_«netParm.name»;
- 	«ENDFOR»
-	«IF !luts.empty»
-	  logic unsigned [(32-1):0] static_reg_config;
-	«ENDIF»
-	  ctrl_fsm_t fsm_ctrl;
-	  /* Peripheral slave & register file */
-	  hwpe_ctrl_slave #(
-	    .N_CORES        ( N_CORES               ),
-	    .N_CONTEXT      ( N_CONTEXT             ),
-	    .N_IO_REGS      ( N_IO_REGS             ),
-	    .N_GENERIC_REGS ( (1-UCODE_HARDWIRED)*8 ),
-	    .ID_WIDTH       ( ID                    )
-	  ) i_slave (
-	    .clk_i    ( clk_i       ),
-	    .rst_ni   ( rst_ni      ),
-	    .clear_o  ( clear_o     ),
-	    .cfg      ( periph      ),
-	    .ctrl_i   ( slave_ctrl  ),
-	    .flags_o  ( slave_flags ),
-	    .reg_file ( reg_file    )
-	  );
-	  assign evt_o = slave_flags.evt;
-	  /* Direct register file mappings */
-	  // Standard registers
-	  assign static_reg_nb_iter    = reg_file.hwpe_params[REG_NB_ITER]  + 1;
-	  assign static_reg_len_iter   = reg_file.hwpe_params[REG_LEN_ITER] + 1;
-	  assign static_reg_shift      = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][31:16];
-	  assign static_reg_simplemul  = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][0];
-	  assign static_reg_vectstride = reg_file.hwpe_params[REG_SHIFT_VECTSTRIDE];
-	  assign static_reg_onestride  = 4;
-	  // Custom registers
-   		«FOR netParm : this.network.parameters»
-	  assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
-   		«ENDFOR»
-	«IF !luts.empty»
-	  assign static_reg_config = reg_file.hwpe_params[CONFIG];
-	«ENDIF»
-	  /* Microcode processor */
-	  generate
-	    if(UCODE_HARDWIRED != 0) begin
-	      // equivalent to the microcode in ucode/code.yml
-	      assign ucode_flat = 224'h0000000000040000000000000000000000000000000008cd11a12c05;
-	    end
-	    else begin
-	      // the microcode is stored in registers independent of context (job)
-	      assign ucode_flat = reg_file.generic_params[6:0];
-	    end
-	  endgenerate
-	  assign ucode = {
-	    // loops & bytecode
-	    ucode_flat,
-	    // ranges
-	    12'b0,
-	    12'b0,
-	    12'b0,
-	    12'b0,
-	    12'b0,
-	    static_reg_nb_iter[11:0]
-	  };
-	  assign ucode_registers_read[UCODE_MNEM_NBITER]     = static_reg_nb_iter;
-	  assign ucode_registers_read[UCODE_MNEM_ITERSTRIDE] = static_reg_vectstride;
-	  assign ucode_registers_read[UCODE_MNEM_ONESTRIDE]  = static_reg_onestride;
-	  assign ucode_registers_read[11:3] = '0;
-	  hwpe_ctrl_uloop #(
-	    .NB_LOOPS       ( 1  ),
-	    .NB_REG         ( 4  ),
-	    .NB_RO_REG      ( 12 ),
-	    .DEBUG_DISPLAY  ( 0  )
-	  ) i_uloop (
-	    .clk_i            ( clk_i                ),
-	    .rst_ni           ( rst_ni               ),
-	    .test_mode_i      ( test_mode_i          ),
-	    .clear_i          ( clear_o              ),
-	    .ctrl_i           ( ucode_ctrl           ),
-	    .flags_o          ( ucode_flags          ),
-	    .uloop_code_i     ( ucode                ),
-	    .registers_read_i ( ucode_registers_read )
-	  );
-	  /* Main FSM */
-	  multi_dataflow_fsm i_fsm (
-	    .clk_i            ( clk_i              ),
-	    .rst_ni           ( rst_ni             ),
-	    .test_mode_i      ( test_mode_i        ),
-	    .clear_i          ( clear_o            ),
-	    .ctrl_streamer_o  ( ctrl_streamer_o    ),
-	    .flags_streamer_i ( flags_streamer_i   ),
-	    .ctrl_engine_o    ( ctrl_engine_o      ),
-	    .flags_engine_i   ( flags_engine_i     ),
-	    .ctrl_ucode_o     ( ucode_ctrl         ),
-	    .flags_ucode_i    ( ucode_flags        ),
-	    .ctrl_slave_o     ( slave_ctrl         ),
-	    .flags_slave_i    ( slave_flags        ),
-	    .reg_file_i       ( reg_file           ),
-	    .ctrl_i           ( fsm_ctrl           )
-	  );
-	  always_comb
-	  begin
-	    fsm_ctrl.simple_mul = static_reg_simplemul;
-	    fsm_ctrl.shift      = static_reg_shift[$clog2(32)-1:0];
-	    fsm_ctrl.len        = static_reg_len_iter[$clog2(CNT_LEN):0];
-	    // Custom register file mappings to fsm
-    «FOR netParm : this.network.parameters»
-	  fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
-	«ENDFOR»
-	«IF !luts.empty»
-	    fsm_ctrl.configuration    = static_reg_config;
-	«ENDIF»
-	  end		  
-	endmodule
-	'''
-	}
-	
-	def printFSM(){
-		
-		'''
-		«printHWPELicense(true, "fsm")»
-		import multi_dataflow_package::*;
-		import hwpe_ctrl_package::*;
-		module multi_dataflow_fsm (
-		  // Global signals
-		  input  logic                                  clk_i,
-		  input  logic                                  rst_ni,
-		  input  logic                                  test_mode_i,
-		  output logic                                  clear_i,
-		  // ctrl & flags
-		  output ctrl_streamer_t                        ctrl_streamer_o,
-		  input  flags_streamer_t                       flags_streamer_i,
-		  output ctrl_engine_t                          ctrl_engine_o,
-		  input  flags_engine_t                         flags_engine_i,
-		  output ctrl_uloop_t                           ctrl_ucode_o,
-		  input  flags_uloop_t                          flags_ucode_i,
-		  output ctrl_slave_t                           ctrl_slave_o,
-		  input  flags_slave_t                          flags_slave_i,
-		  input  ctrl_regfile_t                         reg_file_i,
-		  input  ctrl_fsm_t                             ctrl_i
-		);
-		  // State signals
-		  state_fsm_t curr_state, next_state;
-		  // State computation
-		  always_ff @(posedge clk_i or negedge rst_ni)
-		  begin : main_fsm_seq
-		    if(~rst_ni) begin
-		      curr_state <= FSM_IDLE;
-		    end
-		    else if(clear_i) begin
-		      curr_state <= FSM_IDLE;
-		    end
-		    else begin
-		      curr_state <= next_state;
-		    end
-		  end
-		  // State declaration
-		  always_comb
-		  begin : main_fsm_comb
-		    // direct mappings - these have to be here due to blocking/non-blocking assignment
-		    // combination with the same ctrl_engine_o/ctrl_streamer_o variable
-		    // shift-by-3 due to conversion from bits to bytes
-		    //
-		    // INITIALIZATION
-		    //
-		    /* INPUT FLOW */
-		    «FOR input : inputMap.keySet»
-		    // «input.name» stream
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.trans_size  = ctrl_i.len;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_stride = '0;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_length = ctrl_i.len;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_stride = '0;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_length = 1;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«input.name»_ADDR] + (flags_ucode_i.offs[UCODE_«input.name»_OFFS]);
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_roll   = '0;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.loop_outer  = '0;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = '0;
-		    //
-		    «ENDFOR»
-		    //
-		    /* OUTPUT FLOW */
-		    «FOR output : outputMap.keySet»
-		    // «output.name» stream
-		    // ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  =  ctrl_i.len;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_stride = '0;
-		    // ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length =  ctrl_i.len;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_stride = '0;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_length = 1;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«output.name»_ADDR] + (flags_ucode_i.offs[UCODE_«output.name»_OFFS]);
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_roll   = '0;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.loop_outer  = '0;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = '0;
-		    //
-		    «ENDFOR»
-		    // ucode
-		    //ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
-		                                     // ucode to an accelerator-specific module
-		    // engine
-		    ctrl_engine_o.clear      = '1;
-		    ctrl_engine_o.enable     = '1;
-		    ctrl_engine_o.start      = '0;
-		    ctrl_engine_o.simple_mul = ctrl_i.simple_mul;
-		    ctrl_engine_o.shift      = ctrl_i.shift;
-		    ctrl_engine_o.len        = ctrl_i.len;
-		    «FOR netParm : this.network.parameters»
-		    ctrl_engine_o.«netParm.name»    = ctrl_i.«netParm.name»;
-		    «ENDFOR»
+			«printHWPELicense(true, "ctrl")»
+			 
+			import multi_dataflow_package::*;
+			import hwpe_ctrl_package::*;
+			module multi_dataflow_ctrl
+			#(
+			  parameter int unsigned N_CORES         = 2,
+			  parameter int unsigned N_CONTEXT       = 2,
+			  parameter int unsigned N_IO_REGS       = 16,
+			  parameter int unsigned ID              = 10,
+			  parameter int unsigned UCODE_HARDWIRED = 0
+			)
+			(  // Global signals
+			  input  logic                                  clk_i,
+			  input  logic                                  rst_ni,
+			  input  logic                                  test_mode_i,
+			  output logic                                  clear_o,
+			  // events
+			  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+			  // ctrl & flags
+			  output ctrl_streamer_t                        ctrl_streamer_o,
+			  input  flags_streamer_t                       flags_streamer_i,
+			  output ctrl_engine_t                          ctrl_engine_o,
+			  input  flags_engine_t                         flags_engine_i,
+			  // periph slave port
+			  hwpe_ctrl_intf_periph.slave                   periph
+			);
+			  // Ctrl/flags signals
+			  ctrl_slave_t   slave_ctrl;
+			  flags_slave_t  slave_flags;
+			  ctrl_regfile_t reg_file;
+			  // Uloop signals
+			  logic [223:0]  ucode_flat;
+			  uloop_code_t   ucode;
+			  ctrl_uloop_t   ucode_ctrl;
+			  flags_uloop_t  ucode_flags;
+			  logic [11:0][31:0] ucode_registers_read;
+			  // Standard registers
+			  logic unsigned [31:0] static_reg_nb_iter;
+			  logic unsigned [31:0] static_reg_len_iter;
+			  logic unsigned [31:0] static_reg_vectstride;
+			  logic unsigned [31:0] static_reg_onestride;
+			  logic unsigned [15:0] static_reg_shift;
+			  logic static_reg_simplemul;
+			  // Custom register files
+				«FOR netParm : this.network.parameters»
+					logic unsigned [(32-1):0] static_reg_«netParm.name»;
+				«ENDFOR»
 			«IF !luts.empty»
-		    ctrl_engine_o.configuration    = ctrl_i.configuration;		
+				logic unsigned [(32-1):0] static_reg_config;
 			«ENDIF»
-		    // slave
-		    ctrl_slave_o.done = '0;
-		    ctrl_slave_o.evt  = '0;
-		    // real finite-state machine
-		    next_state   = curr_state;
-        	«FOR input : inputMap.keySet»
-          	ctrl_streamer_o.«input.name»_source_ctrl.req_start    = '0;
-          	«ENDFOR»
-	        «FOR output : outputMap.keySet»
-    		ctrl_streamer_o.«output.name»_sink_ctrl.req_start      = '0;
-    		«ENDFOR»
-		    ctrl_ucode_o.enable                        = '0;
-		    ctrl_ucode_o.clear                         = '0;
-		    //
-		    // STATES
-		    //
-		    case(curr_state)
-		      FSM_IDLE: begin
-		        // wait for a start signal
-		        ctrl_ucode_o.clear = '1;
-		        if(flags_slave_i.start) begin
-		          next_state = FSM_START;
-		        end
-		      end
-		      FSM_START: begin
-		        // update the indeces, then load the first feature
-		        if(
-		          	«FOR input : inputMap.keySet»
-		          	flags_streamer_i.«input.name»_source_flags.ready_start &
-		          	«ENDFOR»
-    		        «FOR output : outputMap.keySet SEPARATOR " & "»
-	        		flags_streamer_i.«output.name»_sink_flags.ready_start
-	        		«ENDFOR»)  begin
-		          next_state  = FSM_COMPUTE;
-		          ctrl_engine_o.start  = 1'b1;
-		          ctrl_engine_o.clear  = 1'b0;
-		          ctrl_engine_o.enable = 1'b1;
-		          «FOR input : inputMap.keySet»
-		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
-		          «ENDFOR»
-		          «FOR output : outputMap.keySet»
-		          ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
-		          «ENDFOR»
-		        end
-		        else begin
-		          next_state = FSM_WAIT;
-		        end
-		      end
-		      FSM_COMPUTE: begin
-		        ctrl_engine_o.clear  = 1'b0;
-		        //if((flags_engine_i.cnt == ctrl_i.len) & flags_engine_i.acc_valid)
-		          //next_state = FSM_UPDATEIDX;
-		        if (flags_engine_i.cnt == ctrl_i.len)
-		          next_state = FSM_TERMINATE;
-		        if(flags_engine_i.ready) begin
-		          ctrl_engine_o.start  = 1'b1;
-		          ctrl_engine_o.clear  = 1'b0;
-		          ctrl_engine_o.enable = 1'b1;
-		        end
-		      end
-		      FSM_UPDATEIDX: begin
-		        // update the indeces, then go back to load or idle
-		        if(flags_ucode_i.valid == 1'b0) begin
-		          ctrl_ucode_o.enable = 1'b1;
-		        end
-		        else if(flags_ucode_i.done) begin
-		        // else if(flags_engine_i.cnt == ctrl_i.len) begin // interface with Vivado HLS --> finished filtering input data?
-		        // if(flags_engine_i.cnt == ctrl_i.len) begin
-		          next_state = FSM_TERMINATE;
-		        end
-		        else if(
-    		          	«FOR input : inputMap.keySet»
-    		          	flags_streamer_i.«input.name»_source_flags.ready_start &
-    		          	«ENDFOR»
-        		        «FOR output : outputMap.keySet SEPARATOR " & "»
-		        		flags_streamer_i.«output.name»_sink_flags.ready_start
-		        		«ENDFOR»)  begin
-		          next_state = FSM_COMPUTE;
-		          ctrl_engine_o.start  = 1'b1;
-		          ctrl_engine_o.clear  = 1'b0;
-		          ctrl_engine_o.enable = 1'b1;
-		          «FOR input : inputMap.keySet»
-		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
-				  «ENDFOR»
-				  «FOR output : outputMap.keySet»
-				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
-				  «ENDFOR»
-		        end
-		        else begin
-		          next_state = FSM_WAIT;
-		        end
-		      end
-		      FSM_WAIT: begin
-		        // wait for the flags to be ok then go back to load
-		        ctrl_engine_o.clear  = 1'b0;
-		        ctrl_engine_o.enable = 1'b0;
-		        ctrl_ucode_o.enable  = 1'b0;
-		        if(
-		        	«FOR input : inputMap.keySet»
-		          	flags_streamer_i.«input.name»_source_flags.ready_start &
-		          	«ENDFOR»
-    		        «FOR output : outputMap.keySet SEPARATOR " & "»
-	        		flags_streamer_i.«output.name»_sink_flags.ready_start
-	        		«ENDFOR»)  begin
-		          next_state = FSM_COMPUTE;
-		          ctrl_engine_o.start = 1'b1;
-		          ctrl_engine_o.enable = 1'b1;
-  		          «FOR input : inputMap.keySet»
-  		          ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
-  				  «ENDFOR»
-  				  «FOR output : outputMap.keySet»
-  				  ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
-  				  «ENDFOR»
-		        end
-		      end
-		      FSM_TERMINATE: begin
-		        // wait for the flags to be ok then go back to idle
-		        ctrl_engine_o.clear  = 1'b0;
-		        ctrl_engine_o.enable = 1'b0;
-		        if(
-		        	«FOR input : inputMap.keySet»
-		          	flags_streamer_i.«input.name»_source_flags.ready_start &
-		          	«ENDFOR»
-    		        «FOR output : outputMap.keySet SEPARATOR " & "»
-	        		flags_streamer_i.«output.name»_sink_flags.ready_start
-	        		«ENDFOR»)  begin
-		          next_state = FSM_IDLE;
-		          ctrl_slave_o.done = 1'b1;
-		        end
-		      end
-		    endcase // curr_state
-		  end
-		endmodule // multi_dataflow_fsm
+			  ctrl_fsm_t fsm_ctrl;
+			  /* Peripheral slave & register file */
+			  hwpe_ctrl_slave #(
+			  .N_CORES        ( N_CORES               ),
+			  .N_CONTEXT      ( N_CONTEXT             ),
+			  .N_IO_REGS      ( N_IO_REGS             ),
+			  .N_GENERIC_REGS ( (1-UCODE_HARDWIRED)*8 ),
+			  .ID_WIDTH       ( ID                    )
+			  ) i_slave (
+			    .clk_i    ( clk_i       ),
+			    .rst_ni   ( rst_ni      ),
+			    .clear_o  ( clear_o     ),
+			    .cfg      ( periph      ),
+			    .ctrl_i   ( slave_ctrl  ),
+			    .flags_o  ( slave_flags ),
+			    .reg_file ( reg_file    )
+			  );
+			  assign evt_o = slave_flags.evt;
+			  /* Direct register file mappings */
+			  // Standard registers
+			  assign static_reg_nb_iter    = reg_file.hwpe_params[REG_NB_ITER]  + 1;
+			  assign static_reg_len_iter   = reg_file.hwpe_params[REG_LEN_ITER] + 1;
+			  assign static_reg_shift      = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][31:16];
+			  assign static_reg_simplemul  = reg_file.hwpe_params[REG_SHIFT_SIMPLEMUL][0];
+			  assign static_reg_vectstride = reg_file.hwpe_params[REG_SHIFT_VECTSTRIDE];
+			  assign static_reg_onestride  = 4;
+			  // Custom registers
+			  	«FOR netParm : this.network.parameters»
+			  	assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
+			  	«ENDFOR»
+				«IF !luts.empty»
+					assign static_reg_config = reg_file.hwpe_params[CONFIG];
+				«ENDIF»
+				/* Microcode processor */
+				generate
+				  if(UCODE_HARDWIRED != 0) begin
+				    // equivalent to the microcode in ucode/code.yml
+				    assign ucode_flat = 224'h0000000000040000000000000000000000000000000008cd11a12c05;
+				  end
+				  else begin
+				    // the microcode is stored in registers independent of context (job)
+				    assign ucode_flat = reg_file.generic_params[6:0];
+				  end
+				endgenerate
+				assign ucode = {
+				  // loops & bytecode
+				  ucode_flat,
+				  // ranges
+				  12'b0,
+				  12'b0,
+				  12'b0,
+				  12'b0,
+				  12'b0,
+				  static_reg_nb_iter[11:0]
+				};
+				assign ucode_registers_read[UCODE_MNEM_NBITER]     = static_reg_nb_iter;
+				assign ucode_registers_read[UCODE_MNEM_ITERSTRIDE] = static_reg_vectstride;
+				assign ucode_registers_read[UCODE_MNEM_ONESTRIDE]  = static_reg_onestride;
+				assign ucode_registers_read[11:3] = '0;
+				hwpe_ctrl_uloop #(
+				  .NB_LOOPS       ( 1  ),
+				  .NB_REG         ( 4  ),
+				  .NB_RO_REG      ( 12 ),
+				  .DEBUG_DISPLAY  ( 0  )
+				) i_uloop (
+				  .clk_i            ( clk_i                ),
+				  .rst_ni           ( rst_ni               ),
+				  .test_mode_i      ( test_mode_i          ),
+				  .clear_i          ( clear_o              ),
+				  .ctrl_i           ( ucode_ctrl           ),
+				  .flags_o          ( ucode_flags          ),
+				  .uloop_code_i     ( ucode                ),
+				  .registers_read_i ( ucode_registers_read )
+				);
+				/* Main FSM */
+				multi_dataflow_fsm i_fsm (
+				  .clk_i            ( clk_i              ),
+				  .rst_ni           ( rst_ni             ),
+				  .test_mode_i      ( test_mode_i        ),
+				  .clear_i          ( clear_o            ),
+				  .ctrl_streamer_o  ( ctrl_streamer_o    ),
+				  .flags_streamer_i ( flags_streamer_i   ),
+				  .ctrl_engine_o    ( ctrl_engine_o      ),
+				  .flags_engine_i   ( flags_engine_i     ),
+				  .ctrl_ucode_o     ( ucode_ctrl         ),
+				  .flags_ucode_i    ( ucode_flags        ),
+				  .ctrl_slave_o     ( slave_ctrl         ),
+				  .flags_slave_i    ( slave_flags        ),
+				  .reg_file_i       ( reg_file           ),
+				  .ctrl_i           ( fsm_ctrl           )
+				);
+				always_comb
+				begin
+				  fsm_ctrl.simple_mul = static_reg_simplemul;
+				  fsm_ctrl.shift      = static_reg_shift[$clog2(32)-1:0];
+				  fsm_ctrl.len        = static_reg_len_iter[$clog2(CNT_LEN):0];
+				  // Custom register file mappings to fsm
+				«FOR netParm : this.network.parameters»
+					fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
+				«ENDFOR»
+				«IF !luts.empty»
+					fsm_ctrl.configuration    = static_reg_config;
+				«ENDIF»
+				end		  
+				endmodule
+			'''
+	}
+	
+	def printFSM() {
+
+		'''
+			«printHWPELicense(true, "fsm")»
+			import multi_dataflow_package::*;
+			import hwpe_ctrl_package::*;
+			module multi_dataflow_fsm (
+			  // Global signals
+			  input  logic                                  clk_i,
+			  input  logic                                  rst_ni,
+			  input  logic                                  test_mode_i,
+			  output logic                                  clear_i,
+			  // ctrl & flags
+			  output ctrl_streamer_t                        ctrl_streamer_o,
+			  input  flags_streamer_t                       flags_streamer_i,
+			  output ctrl_engine_t                          ctrl_engine_o,
+			  input  flags_engine_t                         flags_engine_i,
+			  output ctrl_uloop_t                           ctrl_ucode_o,
+			  input  flags_uloop_t                          flags_ucode_i,
+			  output ctrl_slave_t                           ctrl_slave_o,
+			  input  flags_slave_t                          flags_slave_i,
+			  input  ctrl_regfile_t                         reg_file_i,
+			  input  ctrl_fsm_t                             ctrl_i
+			);
+			  // State signals
+			  state_fsm_t curr_state, next_state;
+			  // State computation
+			  always_ff @(posedge clk_i or negedge rst_ni)
+			  begin : main_fsm_seq
+			    if(~rst_ni) begin
+			      curr_state <= FSM_IDLE;
+			    end
+			    else if(clear_i) begin
+			      curr_state <= FSM_IDLE;
+			    end
+			    else begin
+			      curr_state <= next_state;
+			    end
+			  end
+			  // State declaration
+			  always_comb
+			  begin : main_fsm_comb
+			    // direct mappings - these have to be here due to blocking/non-blocking assignment
+			    // combination with the same ctrl_engine_o/ctrl_streamer_o variable
+			    // shift-by-3 due to conversion from bits to bytes
+			    //
+			    // INITIALIZATION
+			    //
+			    /* INPUT FLOW */
+			    «FOR input : inputMap.keySet»
+			    	// «input.name» stream
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.trans_size  = ctrl_i.len;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_stride = '0;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_length = ctrl_i.len;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_stride = '0;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_length = 1;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«input.name»_ADDR] + (flags_ucode_i.offs[UCODE_«input.name»_OFFS]);
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_roll   = '0;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.loop_outer  = '0;
+			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = '0;
+			    	//
+			    «ENDFOR»
+			    //
+			    /* OUTPUT FLOW */
+			    «FOR output : outputMap.keySet»
+			    	// «output.name» stream
+			    	// ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size  =  ctrl_i.len;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_stride = '0;
+			    	// ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length = (ctrl_i.simple_mul) ? ctrl_i.len : 1;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length =  ctrl_i.len;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_stride = '0;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_length = 1;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«output.name»_ADDR] + (flags_ucode_i.offs[UCODE_«output.name»_OFFS]);
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_roll   = '0;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.loop_outer  = '0;
+			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = '0;
+			    	//
+			    «ENDFOR»
+			    // ucode
+			    //ctrl_ucode_o.accum_loop = '0; // this is not relevant for this simple accelerator, and it should be moved from
+			                                     // ucode to an accelerator-specific module
+			    // engine
+			    ctrl_engine_o.clear      = '1;
+			    ctrl_engine_o.enable     = '1;
+			    ctrl_engine_o.start      = '0;
+			    ctrl_engine_o.simple_mul = ctrl_i.simple_mul;
+			    ctrl_engine_o.shift      = ctrl_i.shift;
+			    ctrl_engine_o.len        = ctrl_i.len;
+			    «FOR netParm : this.network.parameters»
+			    	ctrl_engine_o.«netParm.name»    = ctrl_i.«netParm.name»;
+			    «ENDFOR»
+				«IF !luts.empty»
+					ctrl_engine_o.configuration    = ctrl_i.configuration;		
+				«ENDIF»
+				// slave
+				ctrl_slave_o.done = '0;
+				ctrl_slave_o.evt  = '0;
+				// real finite-state machine
+				next_state   = curr_state;
+				  	«FOR input : inputMap.keySet»
+				  		ctrl_streamer_o.«input.name»_source_ctrl.req_start    = '0;
+				  	«ENDFOR»
+				  	«FOR output : outputMap.keySet»
+				  		ctrl_streamer_o.«output.name»_sink_ctrl.req_start      = '0;
+				«ENDFOR»
+				ctrl_ucode_o.enable                        = '0;
+				ctrl_ucode_o.clear                         = '0;
+				//
+				// STATES
+				//
+				case(curr_state)
+				  FSM_IDLE: begin
+				    // wait for a start signal
+				    ctrl_ucode_o.clear = '1;
+				    if(flags_slave_i.start) begin
+				      next_state = FSM_START;
+				    end
+				  end
+				  FSM_START: begin
+				    // update the indeces, then load the first feature
+				    if(
+				      	«FOR input : inputMap.keySet»
+				      		flags_streamer_i.«input.name»_source_flags.ready_start &
+				      	«ENDFOR»
+				      	«FOR output : outputMap.keySet SEPARATOR " & "»
+				      		flags_streamer_i.«output.name»_sink_flags.ready_start
+				    «ENDFOR»)  begin
+				     next_state  = FSM_COMPUTE;
+				     ctrl_engine_o.start  = 1'b1;
+				     ctrl_engine_o.clear  = 1'b0;
+				     ctrl_engine_o.enable = 1'b1;
+				     «FOR input : inputMap.keySet»
+				     	ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+				     «ENDFOR»
+				     «FOR output : outputMap.keySet»
+				     	ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+				     «ENDFOR»
+				    end
+				    else begin
+				      next_state = FSM_WAIT;
+				    end
+				  end
+				  FSM_COMPUTE: begin
+				    ctrl_engine_o.clear  = 1'b0;
+				    //if((flags_engine_i.cnt == ctrl_i.len) & flags_engine_i.acc_valid)
+				      //next_state = FSM_UPDATEIDX;
+				    if (flags_engine_i.cnt == ctrl_i.len)
+				      next_state = FSM_TERMINATE;
+				    if(flags_engine_i.ready) begin
+				      ctrl_engine_o.start  = 1'b1;
+				      ctrl_engine_o.clear  = 1'b0;
+				      ctrl_engine_o.enable = 1'b1;
+				    end
+				  end
+				  FSM_UPDATEIDX: begin
+				    // update the indeces, then go back to load or idle
+				    if(flags_ucode_i.valid == 1'b0) begin
+				      ctrl_ucode_o.enable = 1'b1;
+				    end
+				    else if(flags_ucode_i.done) begin
+				    // else if(flags_engine_i.cnt == ctrl_i.len) begin // interface with Vivado HLS --> finished filtering input data?
+				    // if(flags_engine_i.cnt == ctrl_i.len) begin
+				      next_state = FSM_TERMINATE;
+				    end
+				    else if(
+				          	«FOR input : inputMap.keySet»
+				          		flags_streamer_i.«input.name»_source_flags.ready_start &
+				          	«ENDFOR»
+				          	«FOR output : outputMap.keySet SEPARATOR " & "»
+				          		flags_streamer_i.«output.name»_sink_flags.ready_start
+				    «ENDFOR»)  begin
+				    next_state = FSM_COMPUTE;
+				    ctrl_engine_o.start  = 1'b1;
+				    ctrl_engine_o.clear  = 1'b0;
+				    ctrl_engine_o.enable = 1'b1;
+				    «FOR input : inputMap.keySet»
+				    	ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+				«ENDFOR»
+				«FOR output : outputMap.keySet»
+					ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+				«ENDFOR»
+				end
+				else begin
+				  next_state = FSM_WAIT;
+				       end
+				     end
+				     FSM_WAIT: begin
+				       // wait for the flags to be ok then go back to load
+				       ctrl_engine_o.clear  = 1'b0;
+				       ctrl_engine_o.enable = 1'b0;
+				       ctrl_ucode_o.enable  = 1'b0;
+				       if(
+				       	«FOR input : inputMap.keySet»
+				       		flags_streamer_i.«input.name»_source_flags.ready_start &
+				       	«ENDFOR»
+				       	«FOR output : outputMap.keySet SEPARATOR " & "»
+				       		flags_streamer_i.«output.name»_sink_flags.ready_start
+				       	«ENDFOR»)  begin
+				       	 next_state = FSM_COMPUTE;
+				       	 ctrl_engine_o.start = 1'b1;
+				       	 ctrl_engine_o.enable = 1'b1;
+				       	   «FOR input : inputMap.keySet»
+				       	   	ctrl_streamer_o.«input.name»_source_ctrl.req_start = 1'b1;
+				     «ENDFOR»
+				     «FOR output : outputMap.keySet»
+				     	ctrl_streamer_o.«output.name»_sink_ctrl.req_start = 1'b1;
+				     «ENDFOR»
+				     end
+				     end
+				     FSM_TERMINATE: begin
+				       // wait for the flags to be ok then go back to idle
+				       ctrl_engine_o.clear  = 1'b0;
+				       ctrl_engine_o.enable = 1'b0;
+				       if(
+				       	«FOR input : inputMap.keySet»
+				       		flags_streamer_i.«input.name»_source_flags.ready_start &
+				       	«ENDFOR»
+				       	«FOR output : outputMap.keySet SEPARATOR " & "»
+				       		flags_streamer_i.«output.name»_sink_flags.ready_start
+				       	«ENDFOR»)  begin
+				       	 next_state = FSM_IDLE;
+				       	 ctrl_slave_o.done = 1'b1;
+				       end
+				     end
+				   endcase // curr_state
+				 end
+			endmodule // multi_dataflow_fsm
 		'''
 	}
 	
-	def printBender(String hclPath){
+	def printBender(String hclPath) {
 		'''
-		package:
-		  name: hwpe-multidataflow-wrapper
-		sources:
-		  - include_dirs:
-		      - rtl/hwpe-stream
-		    files:
-		      - rtl/hwpe-stream/hwpe_stream_package.sv
-		      - rtl/hwpe-stream/hwpe_stream_interfaces.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_assign.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_mux_static.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_demux_static.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_buffer.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_merge.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_fence.sv
-		      - rtl/hwpe-stream/basic/hwpe_stream_split.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall_sidech.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm_test_wrap.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_sidech.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo.sv
-		      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_ctrl.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen_v2.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_strbgen.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_sink.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_sink_realign.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_source.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_source_realign.sv
-		      - rtl/hwpe-stream/streamer/hwpe_stream_streamer_queue.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load_sidech.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_store.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_assign.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux_static.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder.sv
-		      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder_static.sv
-		  - include_dirs:
-		      - rtl/hwpe-ctrl
-		    files:
-		      - rtl/hwpe-ctrl/hwpe_ctrl_package.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_interfaces.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch_test_wrap.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_slave.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_seq_mult.sv
-		      - rtl/hwpe-ctrl/hwpe_ctrl_uloop.sv
-		  - include_dirs:
-		      - rtl/hwpe-engine
-		    files:
-    		    «FOR file : new File(hclPath).listFiles»
-    		    - rtl/hwpe-engine/engine_dev/«file.name»,
-    			«ENDFOR»
-    			«IF !luts.empty»
-    			rtl/configurator.v\
-    			rtl/sbox1x2.v\
-    			rtl/sbox2x1.v\
-    			«ENDIF»
-		      - rtl/hwpe-engine/multi_dataflow_package.sv
-		      - rtl/hwpe-engine/multi_dataflow_fsm.sv
-		      - rtl/hwpe-engine/multi_dataflow_ctrl.sv
-		      - rtl/hwpe-engine/multi_dataflow_streamer.sv
-		      - rtl/hwpe-engine/multi_dataflow_engine.sv
-		      - rtl/hwpe-engine/multi_dataflow_top.sv
-		  - include_dirs:
-		      - rtl/wrap
-		    files:
-		      - rtl/wrap/multi_dataflow_top_wrapper.sv
+			package:
+			  name: hwpe-multidataflow-wrapper
+			sources:
+			  - include_dirs:
+			      - rtl/hwpe-stream
+			    files:
+			      - rtl/hwpe-stream/hwpe_stream_package.sv
+			      - rtl/hwpe-stream/hwpe_stream_interfaces.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_assign.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_mux_static.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_demux_static.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_buffer.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_merge.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_fence.sv
+			      - rtl/hwpe-stream/basic/hwpe_stream_split.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall_sidech.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm_test_wrap.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_sidech.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo.sv
+			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_ctrl.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen_v2.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_strbgen.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_sink.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_sink_realign.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_source.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_source_realign.sv
+			      - rtl/hwpe-stream/streamer/hwpe_stream_streamer_queue.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load_sidech.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_store.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_assign.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux_static.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder.sv
+			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder_static.sv
+			  - include_dirs:
+			      - rtl/hwpe-ctrl
+			    files:
+			      - rtl/hwpe-ctrl/hwpe_ctrl_package.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_interfaces.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch_test_wrap.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_slave.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_seq_mult.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_uloop.sv
+			  - include_dirs:
+			      - rtl/hwpe-engine
+			    files:
+			        «FOR file : new File(hclPath).listFiles»
+			        	- rtl/hwpe-engine/engine_dev/«file.name»,
+			    «ENDFOR»
+			    «IF !luts.empty»
+			    	rtl/configurator.v\
+			    	rtl/sbox1x2.v\
+			    	rtl/sbox2x1.v\
+			    «ENDIF»
+			    - rtl/hwpe-engine/multi_dataflow_package.sv
+			    - rtl/hwpe-engine/multi_dataflow_fsm.sv
+			    - rtl/hwpe-engine/multi_dataflow_ctrl.sv
+			    - rtl/hwpe-engine/multi_dataflow_streamer.sv
+			    - rtl/hwpe-engine/multi_dataflow_engine.sv
+			    - rtl/hwpe-engine/multi_dataflow_top.sv
+			  - include_dirs:
+			      - rtl/wrap
+			    files:
+			      - rtl/wrap/multi_dataflow_top_wrapper.sv
 		'''
 	}
 	
-	def printPackage(){
+	def printPackage() {
 		var counterReg = 0;
 		'''		
-		«printHWPELicense(true, "package")»
-		import hwpe_stream_package::*;
-		
-		package multi_dataflow_package;
-		  parameter int unsigned CNT_LEN = 1024; // maximum length of the vectors for a scalar product
-		  /* Registers */
-		  // TCDM addresses
-		  «FOR port : portMap.keySet»
-		  parameter int unsigned REG_«port.name»_ADDR              = «counterReg++»;
-		  «ENDFOR»
-		  
-		  // Standard registers
-		  parameter int unsigned REG_NB_ITER              = «counterReg++»;
-		  parameter int unsigned REG_LEN_ITER             = «counterReg++»;
-		  parameter int unsigned REG_SHIFT_SIMPLEMUL      = «counterReg++»;
-		  parameter int unsigned REG_SHIFT_VECTSTRIDE     = «counterReg++»;
-		  parameter int unsigned REG_SHIFT_VECTSTRIDE2    = «counterReg++»; // Added to be aligned with sw (not used in hw)
-		  
-		  // Custom register files
-		  «FOR netParm : this.network.parameters»
-		  parameter int unsigned «netParm.name.toUpperCase»             = «counterReg++»;
-		  «ENDFOR»
-		  «IF !luts.empty»		  
-		  parameter int unsigned CONFIG             = «counterReg++»;
-		  «ENDIF»
-		  
-		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
-		  «FOR port : portMap.keySet»
-		  parameter int unsigned UCODE_«port.name»_OFFS              = «portMap.get(port)»;
-		  «ENDFOR»
-		  
-		  // microcode mnemonics -- this should be aligned to the microcode compiler of course!
-		  parameter int unsigned UCODE_MNEM_NBITER     = 4 - 4;
-		  parameter int unsigned UCODE_MNEM_ITERSTRIDE = 5 - 4;
-		  parameter int unsigned UCODE_MNEM_ONESTRIDE  = 6 - 4;
-		  
-		  typedef struct packed {
-		    logic clear;
-		    logic enable;
-		    logic simple_mul;
-		    logic start;
-		    logic unsigned [$clog2(32)-1       :0] shift;
-		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
-		    // Custom register files
-		  «FOR netParm : this.network.parameters»
-	    	logic unsigned [(32-1):0] «netParm.name»;
-    	  «ENDFOR»
-		«IF !luts.empty»	
-		    logic unsigned [(32-1):0] configuration;
-		«ENDIF»
-		  } ctrl_engine_t;
-		  typedef struct packed {
-		    logic unsigned [$clog2(CNT_LEN):0] cnt; // 1 bit more as cnt starts from 1, not 0
-		    logic done;
-		    logic idle;
-		    logic ready;
-		  } flags_engine_t;
-		  typedef struct packed {
-		  	«FOR input : inputMap.keySet»
-		  	hwpe_stream_package::ctrl_sourcesink_t «input.name»_source_ctrl;
-		    «ENDFOR»
-		    «FOR output : outputMap.keySet»
-		    hwpe_stream_package::ctrl_sourcesink_t «output.name»_sink_ctrl;
-		    «ENDFOR»
-		  } ctrl_streamer_t;
-		  typedef struct packed {
-		  	«FOR input : inputMap.keySet»
-		  	hwpe_stream_package::flags_sourcesink_t «input.name»_source_flags;
-		    «ENDFOR»
-		    «FOR output : outputMap.keySet»
-		    hwpe_stream_package::flags_sourcesink_t «output.name»_sink_flags;
-		    «ENDFOR»
-		  } flags_streamer_t;
-		  
-		  typedef struct packed {
-		    logic simple_mul;
-		    logic unsigned [$clog2(32)-1       :0] shift;
-		    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
-		    // Custom register files
-	       «FOR netParm : this.network.parameters»
-    	     logic unsigned [(32-1):0] «netParm.name»;
-	       «ENDFOR»
-		«IF !luts.empty»
-		    logic unsigned [(32-1):0] configuration;
-		«ENDIF»
-		  } ctrl_fsm_t;
-		  typedef enum {
-		    FSM_IDLE,
-		    FSM_START,
-		    FSM_COMPUTE,
-		    FSM_WAIT,
-		    FSM_UPDATEIDX,
-		    FSM_TERMINATE
-		  } state_fsm_t;
-		endpackage
-		'''
+			«printHWPELicense(true, "package")»
+			import hwpe_stream_package::*;
+			
+			package multi_dataflow_package;
+			  parameter int unsigned CNT_LEN = 1024; // maximum length of the vectors for a scalar product
+			  /* Registers */
+			  // TCDM addresses
+			  «FOR port : portMap.keySet»
+			  	parameter int unsigned REG_«port.name»_ADDR              = «counterReg++»;
+			  «ENDFOR»
+			  
+			  // Standard registers
+			  parameter int unsigned REG_NB_ITER              = «counterReg++»;
+			  parameter int unsigned REG_LEN_ITER             = «counterReg++»;
+			  parameter int unsigned REG_SHIFT_SIMPLEMUL      = «counterReg++»;
+			  parameter int unsigned REG_SHIFT_VECTSTRIDE     = «counterReg++»;
+			  parameter int unsigned REG_SHIFT_VECTSTRIDE2    = «counterReg++»; // Added to be aligned with sw (not used in hw)
+			  
+			  // Custom register files
+			  «FOR netParm : this.network.parameters»
+			  	parameter int unsigned «netParm.name.toUpperCase»             = «counterReg++»;
+			  «ENDFOR»
+			  «IF !luts.empty»		  
+			  	parameter int unsigned CONFIG             = «counterReg++»;
+			  «ENDIF»
+			  
+			  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
+			  «FOR port : portMap.keySet»
+			  	parameter int unsigned UCODE_«port.name»_OFFS              = «portMap.get(port)»;
+			  «ENDFOR»
+			  
+			  // microcode mnemonics -- this should be aligned to the microcode compiler of course!
+			  parameter int unsigned UCODE_MNEM_NBITER     = 4 - 4;
+			  parameter int unsigned UCODE_MNEM_ITERSTRIDE = 5 - 4;
+			  parameter int unsigned UCODE_MNEM_ONESTRIDE  = 6 - 4;
+			  
+			  typedef struct packed {
+			    logic clear;
+			    logic enable;
+			    logic simple_mul;
+			    logic start;
+			    logic unsigned [$clog2(32)-1       :0] shift;
+			    logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
+			    // Custom register files
+			  «FOR netParm : this.network.parameters»
+			  	logic unsigned [(32-1):0] «netParm.name»;
+			  	«ENDFOR»
+				«IF !luts.empty»	
+					logic unsigned [(32-1):0] configuration;
+				«ENDIF»
+				} ctrl_engine_t;
+				typedef struct packed {
+				  logic unsigned [$clog2(CNT_LEN):0] cnt; // 1 bit more as cnt starts from 1, not 0
+				  logic done;
+				  logic idle;
+				  logic ready;
+				} flags_engine_t;
+				typedef struct packed {
+					«FOR input : inputMap.keySet»
+						hwpe_stream_package::ctrl_sourcesink_t «input.name»_source_ctrl;
+						«ENDFOR»
+						«FOR output : outputMap.keySet»
+							hwpe_stream_package::ctrl_sourcesink_t «output.name»_sink_ctrl;
+						«ENDFOR»
+					} ctrl_streamer_t;
+					typedef struct packed {
+						«FOR input : inputMap.keySet»
+							hwpe_stream_package::flags_sourcesink_t «input.name»_source_flags;
+							«ENDFOR»
+							«FOR output : outputMap.keySet»
+								hwpe_stream_package::flags_sourcesink_t «output.name»_sink_flags;
+							«ENDFOR»
+						} flags_streamer_t;
+						
+						typedef struct packed {
+						  logic simple_mul;
+						  logic unsigned [$clog2(32)-1       :0] shift;
+						  logic unsigned [$clog2(CNT_LEN):0] len; // 1 bit more as cnt starts from 1, not 0
+						  // Custom register files
+						    «FOR netParm : this.network.parameters»
+						    	logic unsigned [(32-1):0] «netParm.name»;
+						    «ENDFOR»
+						«IF !luts.empty»
+							logic unsigned [(32-1):0] configuration;
+						«ENDIF»
+						} ctrl_fsm_t;
+						typedef enum {
+						  FSM_IDLE,
+						  FSM_START,
+						  FSM_COMPUTE,
+						  FSM_WAIT,
+						  FSM_UPDATEIDX,
+						  FSM_TERMINATE
+						} state_fsm_t;
+						endpackage
+					'''
 	}
 	
-	def printStreamer(){
+	def printStreamer() {
 		'''
-		«printHWPELicense(false ,"streamer")»
-		import multi_dataflow_package::*;
-		import hwpe_stream_package::*;
-		module multi_dataflow_streamer
-		#(
-		  parameter int unsigned MP = «portMap.size», // number of master ports
-		  parameter int unsigned FD = 2  // FIFO depth
-		)
-		(
-		  // Global signals
-		  input  logic          clk_i,
-		  input  logic          rst_ni,
-		  input  logic          test_mode_i,
-		  // Local enable & clear
-		  input  logic          enable_i,
-		  input  logic          clear_i,
-		  // Streaming interfaces
-	    «FOR input : inputMap.keySet»
-		  hwpe_stream_intf_stream.source stream_if_«input.name»,
-	    «ENDFOR»
-	    «FOR output : outputMap.keySet»
-		  hwpe_stream_intf_stream.sink stream_if_«output.name»,
-	    «ENDFOR»
-		
-		  // TCDM ports
-		  hwpe_stream_intf_tcdm.master tcdm [MP-1:0],
-		  // control channel
-		  input  ctrl_streamer_t  ctrl_i,
-		  output flags_streamer_t flags_o
-		);
-		// FIFO ready signals
-		logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;
-		  // Pre-FIFO streamer interfaces (TCDM-side)
-		«FOR input : inputMap.keySet»
-		  hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «input.name»_prefifo ( .clk (clk_i) );
-	    «ENDFOR»
-		  // Post-FIFO streamer interfaces (TCDM-side)
-		«FOR output : outputMap.keySet»
-		  hwpe_stream_intf_stream #( .DATA_WIDTH (32) ) «output.name»_postfifo ( .clk (clk_i) );
-	    «ENDFOR»
-		  // FIFO interfaces
-		hwpe_stream_intf_tcdm tcdm_fifo [MP-1:0] ( .clk ( clk_i ) );
-  		«FOR port : portMap.keySet»
-		  hwpe_stream_intf_tcdm tcdm_fifo_«portMap.get(port)» [0:0] ( .clk (clk_i) );
-		«ENDFOR»		
-		  // Source modules (TCDM -> HWPE)
-		  «FOR input : inputMap.keySet»
-		  hwpe_stream_source #(
-		    .DATA_WIDTH ( 32 ),
-		    .DECOUPLED  ( 1  )
-		  ) i_«input.name»_source (
-		    .clk_i              ( clk_i                  ),
-		    .rst_ni             ( rst_ni                 ),
-		    .test_mode_i        ( test_mode_i            ),
-		    .clear_i            ( clear_i                ),
-		    .tcdm               ( tcdm_fifo_«portMap.get(input)»	),
-		    .stream             ( «input.name»_prefifo.source),
-		    .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
-		    .flags_o            ( flags_o.«input.name»_source_flags ),
-		    .tcdm_fifo_ready_o  ( «input.name»_tcdm_fifo_ready      )
-		  );
-		  «ENDFOR»
-		  // Sink modules (TCDM <- HWPE)
-		  «FOR output : outputMap.keySet»
-		  hwpe_stream_sink #(
-		    .DATA_WIDTH ( 32 )
-		  ) i_«output.name»_sink (
-		    .clk_i       ( clk_i                ),
-		    .rst_ni      ( rst_ni               ),
-		    .test_mode_i ( test_mode_i          ),
-		    .clear_i     ( clear_i              ),
-		    .tcdm        ( tcdm_fifo_«portMap.get(output)»	),
-		    .stream      ( «output.name»_postfifo.sink      ),
-		    .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
-		    .flags_o     ( flags_o.«output.name»_sink_flags )
-		  );
-		  «ENDFOR»
-		  // TCDM-side FIFOs (TCDM -> HWPE)
-		«FOR input : inputMap.keySet»
-		  hwpe_stream_tcdm_fifo_load #(
-		    .FIFO_DEPTH ( 4 )
-		  ) i_«input.name»_tcdm_fifo_load (
-		    .clk_i       ( clk_i             ),
-		    .rst_ni      ( rst_ni            ),
-		    .clear_i     ( clear_i           ),
-		    .flags_o     (                   ),
-		    .ready_i     ( «input.name»_tcdm_fifo_ready ),
-		    .tcdm_slave  ( tcdm_fifo_«portMap.get(input)»[0]    ),
-		    .tcdm_master ( tcdm      [«portMap.get(input)»]     )
-		  );
-		«ENDFOR»
-		  // TCDM-side FIFOs (TCDM <- HWPE)
-		«FOR output : outputMap.keySet»
-		  hwpe_stream_tcdm_fifo_store #(
-		    .FIFO_DEPTH ( 4 )
-		  ) i_«output.name»_tcdm_fifo_store (
-		    .clk_i       ( clk_i          ),
-		    .rst_ni      ( rst_ni         ),
-		    .clear_i     ( clear_i        ),
-		    .flags_o     (                ),
-		    .tcdm_slave  ( tcdm_fifo_«portMap.get(output)»[0] ),
-		    .tcdm_master ( tcdm       [«portMap.get(output)»] )
-		  );
-		«ENDFOR»
-		  // Datapath-side FIFOs (TCDM -> HWPE)
-		«FOR input : inputMap.keySet»
-		  hwpe_stream_fifo #(
-		    .DATA_WIDTH( 32 ),
-		    .FIFO_DEPTH( 2  ),
-		    .LATCH_FIFO( 0  )
-		  ) i_«input.name»_fifo (
-		    .clk_i   ( clk_i          ),
-		    .rst_ni  ( rst_ni         ),
-		    .clear_i ( clear_i        ),
-		    .push_i  ( «input.name»_prefifo.sink ),
-		    .pop_o   ( stream_if_«input.name»            ),
-		    .flags_o (                )
-		  );
-		«ENDFOR»
-		  // Datapath-side FIFOs (TCDM <- HWPE)
-		«FOR output : outputMap.keySet»
-		  hwpe_stream_fifo #(
-		    .DATA_WIDTH( 32 ),
-		    .FIFO_DEPTH( 2  ),
-		    .LATCH_FIFO( 0  )
-		  ) i_«output.name»_fifo (
-		    .clk_i   ( clk_i             ),
-		    .rst_ni  ( rst_ni            ),
-		    .clear_i ( clear_i           ),
-		    .push_i  ( stream_if_«output.name»               ),
-		    .pop_o   ( «output.name»_postfifo.source ),
-		    .flags_o (                   )
-		  );
-		  
-		«ENDFOR»
-		
-		endmodule // multi_dataflow_streamer
-		'''
+			«printHWPELicense(false ,"streamer")»
+			import multi_dataflow_package::*;
+			import hwpe_stream_package::*;
+			module multi_dataflow_streamer
+			#(
+			  parameter int unsigned MP = «portMap.size», // number of master ports
+			  parameter int unsigned FD = 2  // FIFO depth
+			)
+			(
+			  // Global signals
+			  input  logic          clk_i,
+			  input  logic          rst_ni,
+			  input  logic          test_mode_i,
+			  // Local enable & clear
+			  input  logic          enable_i,
+			  input  logic          clear_i,
+			  // Streaming interfaces
+			   «FOR input : inputMap.keySet»
+			   	hwpe_stream_intf_stream.source stream_if_«input.name»,
+			   «ENDFOR»
+			   «FOR output : outputMap.keySet»
+			   	hwpe_stream_intf_stream.sink stream_if_«output.name»,
+			   «ENDFOR»
+			  
+			    // TCDM ports
+			    hwpe_stream_intf_tcdm.master tcdm [MP-1:0],
+			    // control channel
+			    input  ctrl_streamer_t  ctrl_i,
+			    output flags_streamer_t flags_o
+			  );
+			  // FIFO ready signals
+			  logic «FOR input : inputMap.keySet SEPARATOR ", "»«input.name»_tcdm_fifo_ready«ENDFOR»;
+			    // Pre-FIFO streamer interfaces (TCDM-side)
+			  «FOR input : inputMap.keySet»
+			  	hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «input.name»_prefifo ( .clk (clk_i) );
+			  «ENDFOR»
+			  // Post-FIFO streamer interfaces (TCDM-side)
+			  «FOR output : outputMap.keySet»
+			  	hwpe_stream_intf_stream #( .DATA_WIDTH (32) ) «output.name»_postfifo ( .clk (clk_i) );
+			  «ENDFOR»
+			  // FIFO interfaces
+			  hwpe_stream_intf_tcdm tcdm_fifo [MP-1:0] ( .clk ( clk_i ) );
+			  		«FOR port : portMap.keySet»
+			  			hwpe_stream_intf_tcdm tcdm_fifo_«portMap.get(port)» [0:0] ( .clk (clk_i) );
+			  «ENDFOR»		
+			  // Source modules (TCDM -> HWPE)
+			  «FOR input : inputMap.keySet»
+			  	hwpe_stream_source #(
+			  	  .DATA_WIDTH ( 32 ),
+			  	  .DECOUPLED  ( 1  )
+			  	) i_«input.name»_source (
+			  	  .clk_i              ( clk_i                  ),
+			  	  .rst_ni             ( rst_ni                 ),
+			  	  .test_mode_i        ( test_mode_i            ),
+			  	  .clear_i            ( clear_i                ),
+			  	  .tcdm               ( tcdm_fifo_«portMap.get(input)»	),
+			  	  .stream             ( «input.name»_prefifo.source),
+			  	  .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
+			  	  .flags_o            ( flags_o.«input.name»_source_flags ),
+			  	  .tcdm_fifo_ready_o  ( «input.name»_tcdm_fifo_ready      )
+			  	);
+			  «ENDFOR»
+			  // Sink modules (TCDM <- HWPE)
+			  «FOR output : outputMap.keySet»
+			  	hwpe_stream_sink #(
+			  	  .DATA_WIDTH ( 32 )
+			  	) i_«output.name»_sink (
+			  	  .clk_i       ( clk_i                ),
+			  	  .rst_ni      ( rst_ni               ),
+			  	  .test_mode_i ( test_mode_i          ),
+			  	  .clear_i     ( clear_i              ),
+			  	  .tcdm        ( tcdm_fifo_«portMap.get(output)»	),
+			  	  .stream      ( «output.name»_postfifo.sink      ),
+			  	  .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
+			  	  .flags_o     ( flags_o.«output.name»_sink_flags )
+			  	);
+			  «ENDFOR»
+			  // TCDM-side FIFOs (TCDM -> HWPE)
+			  «FOR input : inputMap.keySet»
+			  	hwpe_stream_tcdm_fifo_load #(
+			  	  .FIFO_DEPTH ( 4 )
+			  	) i_«input.name»_tcdm_fifo_load (
+			  	  .clk_i       ( clk_i             ),
+			  	  .rst_ni      ( rst_ni            ),
+			  	  .clear_i     ( clear_i           ),
+			  	  .flags_o     (                   ),
+			  	  .ready_i     ( «input.name»_tcdm_fifo_ready ),
+			  	  .tcdm_slave  ( tcdm_fifo_«portMap.get(input)»[0]    ),
+			  	  .tcdm_master ( tcdm      [«portMap.get(input)»]     )
+			  	);
+			  «ENDFOR»
+			  // TCDM-side FIFOs (TCDM <- HWPE)
+			  «FOR output : outputMap.keySet»
+			  	hwpe_stream_tcdm_fifo_store #(
+			  	  .FIFO_DEPTH ( 4 )
+			  	) i_«output.name»_tcdm_fifo_store (
+			  	  .clk_i       ( clk_i          ),
+			  	  .rst_ni      ( rst_ni         ),
+			  	  .clear_i     ( clear_i        ),
+			  	  .flags_o     (                ),
+			  	  .tcdm_slave  ( tcdm_fifo_«portMap.get(output)»[0] ),
+			  	  .tcdm_master ( tcdm       [«portMap.get(output)»] )
+			  	);
+			  «ENDFOR»
+			  // Datapath-side FIFOs (TCDM -> HWPE)
+			  «FOR input : inputMap.keySet»
+			  	hwpe_stream_fifo #(
+			  	  .DATA_WIDTH( 32 ),
+			  	  .FIFO_DEPTH( 2  ),
+			  	  .LATCH_FIFO( 0  )
+			  	) i_«input.name»_fifo (
+			  	  .clk_i   ( clk_i          ),
+			  	  .rst_ni  ( rst_ni         ),
+			  	  .clear_i ( clear_i        ),
+			  	  .push_i  ( «input.name»_prefifo.sink ),
+			  	  .pop_o   ( stream_if_«input.name»            ),
+			  	  .flags_o (                )
+			  	);
+			  «ENDFOR»
+			  // Datapath-side FIFOs (TCDM <- HWPE)
+			  «FOR output : outputMap.keySet»
+			  	hwpe_stream_fifo #(
+			  	  .DATA_WIDTH( 32 ),
+			  	  .FIFO_DEPTH( 2  ),
+			  	  .LATCH_FIFO( 0  )
+			  	) i_«output.name»_fifo (
+			  	  .clk_i   ( clk_i             ),
+			  	  .rst_ni  ( rst_ni            ),
+			  	  .clear_i ( clear_i           ),
+			  	  .push_i  ( stream_if_«output.name»               ),
+			  	  .pop_o   ( «output.name»_postfifo.source ),
+			  	  .flags_o (                   )
+			  	);
+			  	
+			  «ENDFOR»
+			  
+			  endmodule // multi_dataflow_streamer
+		  	'''
 	}
 	
 	def printMk(String hclPath) {
@@ -1584,190 +1581,190 @@ class PulpPrinter {
 	
 	def printPulpTop() {
 		'''	
-		«printHWPELicense(true ,"top")»
-		import multi_dataflow_package::*;
-		import hwpe_ctrl_package::*;
-		module multi_dataflow_top
-		#(
-		  parameter int unsigned N_CORES = 2,
-		  parameter int unsigned MP  = «portMap.keySet.size»,
-		  parameter int unsigned ID  = 10
-		)
-		(
-		  // Global signals
-		  input  logic          clk_i,
-		  input  logic          rst_ni,
-		  input  logic          test_mode_i,
-		  // Events
-		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
-		  // TCDM master ports
-		  hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
-		  // Peripheral slave port
-		  hwpe_ctrl_intf_periph.slave                   periph
-		);
-		  // Signals
-		  logic enable, clear;
-		  logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
-		  ctrl_streamer_t  streamer_ctrl;
-		  flags_streamer_t streamer_flags;
-		  ctrl_engine_t    engine_ctrl;
-		  flags_engine_t   engine_flags;
-		  // Streamer interfaces
-		«FOR port: portMap.keySet»  
-		  hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «port.name» ( .clk (clk_i) );
-		«ENDFOR»  
-		  // HWPE engine wrapper
-		  multi_dataflow_engine i_engine (
-		    .clk_i            ( clk_i          ),
-		    .rst_ni           ( rst_ni         ),
-		    .test_mode_i      ( test_mode_i    ),
-    		«FOR port: inputMap.keySet»  
-	        .«port.name»_i              ( «port.name».sink       ),
-    		«ENDFOR»  
-    		«FOR port: outputMap.keySet»  
-	        .«port.name»_o              ( «port.name».source       ),
-    		«ENDFOR»  
-		    .ctrl_i           ( engine_ctrl    ),
-		    .flags_o          ( engine_flags   )
-		  );
-		  // HWPE streamer wrapper
-		  multi_dataflow_streamer #(
-		    .MP ( MP )
-		  ) i_streamer (
-		    .clk_i            ( clk_i          ),
-		    .rst_ni           ( rst_ni         ),
-		    .test_mode_i      ( test_mode_i    ),
-		    .enable_i         ( enable         ),
-		    .clear_i          ( clear          ),
-      		«FOR port: inputMap.keySet»  
-  	        .«port.name»_o              ( «port.name».source       ),
-      		«ENDFOR»  
-      		«FOR port: outputMap.keySet»  
-  	        .«port.name»_i              ( «port.name».sink       ),
-      		«ENDFOR»  		  
-		    .tcdm             ( tcdm           ),
-		    .ctrl_i           ( streamer_ctrl  ),
-		    .flags_o          ( streamer_flags )
-		  );
-		  // HWPE ctrl wrapper
-		  multi_dataflow_ctrl #(
-		    .N_CORES   ( 2  ),
-		    .N_CONTEXT ( 2  ),
-		    .N_IO_REGS ( 16 ),
-		    .ID ( ID )
-		  ) i_ctrl (
-		    .clk_i            ( clk_i          ),
-		    .rst_ni           ( rst_ni         ),
-		    .test_mode_i      ( test_mode_i    ),
-		    .clear_o          ( clear          ),
-		    .evt_o            ( evt_o          ),
-		    .ctrl_streamer_o  ( streamer_ctrl  ),
-		    .flags_streamer_i ( streamer_flags ),
-		    .ctrl_engine_o    ( engine_ctrl    ),
-		    .flags_engine_i   ( engine_flags   ),
-		    .periph           ( periph         )
-		  );
-		  assign enable = 1'b1;
-		endmodule
-		    
+			«printHWPELicense(true ,"top")»
+			import multi_dataflow_package::*;
+			import hwpe_ctrl_package::*;
+			module multi_dataflow_top
+			#(
+			  parameter int unsigned N_CORES = 2,
+			  parameter int unsigned MP  = «portMap.keySet.size»,
+			  parameter int unsigned ID  = 10
+			)
+			(
+			  // Global signals
+			  input  logic          clk_i,
+			  input  logic          rst_ni,
+			  input  logic          test_mode_i,
+			  // Events
+			  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+			  // TCDM master ports
+			  hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
+			  // Peripheral slave port
+			  hwpe_ctrl_intf_periph.slave                   periph
+			);
+			  // Signals
+			  logic enable, clear;
+			  logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
+			  ctrl_streamer_t  streamer_ctrl;
+			  flags_streamer_t streamer_flags;
+			  ctrl_engine_t    engine_ctrl;
+			  flags_engine_t   engine_flags;
+			  // Streamer interfaces
+			«FOR port : portMap.keySet»  
+				hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «port.name» ( .clk (clk_i) );
+			«ENDFOR»  
+			  // HWPE engine wrapper
+			  multi_dataflow_engine i_engine (
+			  .clk_i            ( clk_i          ),
+			  .rst_ni           ( rst_ni         ),
+			  .test_mode_i      ( test_mode_i    ),
+			  «FOR port : inputMap.keySet»  
+			  	.«port.name»_i              ( «port.name».sink       ),
+			  «ENDFOR»  
+			  «FOR port : outputMap.keySet»  
+			  	.«port.name»_o              ( «port.name».source       ),
+			  «ENDFOR»  
+			  .ctrl_i           ( engine_ctrl    ),
+			  .flags_o          ( engine_flags   )
+			  );
+			  // HWPE streamer wrapper
+			  multi_dataflow_streamer #(
+			    .MP ( MP )
+			  ) i_streamer (
+			    .clk_i            ( clk_i          ),
+			    .rst_ni           ( rst_ni         ),
+			    .test_mode_i      ( test_mode_i    ),
+			    .enable_i         ( enable         ),
+			    .clear_i          ( clear          ),
+			    		«FOR port : inputMap.keySet»  
+			    			.«port.name»_o              ( «port.name».source       ),
+			    		«ENDFOR»  
+			    		«FOR port : outputMap.keySet»  
+			    			.«port.name»_i              ( «port.name».sink       ),
+			    		«ENDFOR»  		  
+			    .tcdm             ( tcdm           ),
+			    .ctrl_i           ( streamer_ctrl  ),
+			    .flags_o          ( streamer_flags )
+			  );
+			  // HWPE ctrl wrapper
+			  multi_dataflow_ctrl #(
+			    .N_CORES   ( 2  ),
+			    .N_CONTEXT ( 2  ),
+			    .N_IO_REGS ( 16 ),
+			    .ID ( ID )
+			  ) i_ctrl (
+			    .clk_i            ( clk_i          ),
+			    .rst_ni           ( rst_ni         ),
+			    .test_mode_i      ( test_mode_i    ),
+			    .clear_o          ( clear          ),
+			    .evt_o            ( evt_o          ),
+			    .ctrl_streamer_o  ( streamer_ctrl  ),
+			    .flags_streamer_i ( streamer_flags ),
+			    .ctrl_engine_o    ( engine_ctrl    ),
+			    .flags_engine_i   ( engine_flags   ),
+			    .periph           ( periph         )
+			  );
+			  assign enable = 1'b1;
+			endmodule
+			    
 		'''
 	}	
 	
 	def printEngine() {
 		'''	
-		«printHWPELicense(true ,"engine")»
-		import multi_dataflow_package::*;
-		module multi_dataflow_engine (
-		  // Global signals
-		  input  logic          clk_i,
-		  input  logic          rst_ni,
-		  input  logic          test_mode_i,
-		  // Sink ports
-		  «FOR port: inputMap.keySet»  
-          hwpe_stream_intf_stream.sink    «port.name»_i,
-		  «ENDFOR»  
-		  // Source ports
-		  «FOR port: outputMap.keySet»  
-          hwpe_stream_intf_stream.source  «port.name»_o,
-		  «ENDFOR»  		  
-		  // Control channel
-		  input  ctrl_engine_t            ctrl_i,
-		  output flags_engine_t           flags_o
-		);
-		  // multi_dataflow control
-		  logic clear;
-		  logic done, idle, ready;
-		  assign clear = ctrl_i.clear;
-		  assign flags_o.done = done;
-		  assign flags_o.idle = idle;
-		  always_ff @(posedge clk_i or negedge rst_ni)
-		  begin: fsm_ready
-		    if(~rst_ni)
-		      flags_o.ready = 1'b0;
-		    else if(~(ready | idle))
-		      flags_o.ready = 1'b0;
-		    else
-		      flags_o.ready = 1'b1;
-		  end
-		  // IN/OUT synchronization
-		  logic unsigned [$clog2(CNT_LEN):0] cnt_in;
-		  logic unsigned [$clog2(CNT_LEN):0] cnt_out;
-		  always_ff @(posedge clk_i or negedge rst_ni)
-		  begin: engine_cnt_in
-		    if((~rst_ni) | clear)
-		      cnt_in = 32'b0;
-		    else if((a_i.valid)&(a_i.ready))
-		      cnt_in = cnt_in + 1;
-		    else
-		      cnt_in = cnt_in;
-		  end
-		  always_ff @(posedge clk_i or negedge rst_ni or posedge done)
-		  begin: engine_cnt_out
-		    if((~rst_ni) | clear)
-		      cnt_out = 32'b0;
-		    else if((done)&(cnt_in>cnt_out))
-		      cnt_out = cnt_out + 1;
-		    else
-		      cnt_out = cnt_out;
-		  end
-		  assign flags_o.cnt = cnt_out;
-		  // Engine
-		  generate
-		  begin: multi_dataflow_gen
-		    multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
-		          // Global signals
-		          .ap_clk             ( clk_i            ),
-		          .ap_rst_n           ( rst_ni           ),
-		          // Input data (to-hwpe)
-          		  «FOR port: inputMap.keySet»  
-      	          .«port.name»_i              ( «port.name».sink       ),
-          		  «ENDFOR»  
-  		            // Output data (from-hwpe)
-          		  «FOR port: outputMap.keySet»  
-      	          .«port.name»_o              ( «port.name».source       ),
-          		  «ENDFOR»  	  
-		          // Algorithm parameters
-        		  «FOR param: network.parameters» 
-		          .«param.name»        (  ctrl_i.«param.name»      ),
-		          «ENDFOR»  
-		          // Control signals
-		          .ap_start           ( ctrl_i.start     ),
-		          .ap_done            ( done             ),
-		          .ap_idle            ( idle             ),
-		          .ap_ready           ( ready            )
-		    );
-		  end
-		  endgenerate
-		  // At the moment output strobe is always '1
-		  // All bytes of output streams are written
-		  // to TCDM
-		  always_comb
-		  begin
-		    «FOR port: outputMap.keySet»  
-            «port.name»_o.strb = '1;
-		    «ENDFOR»  	
-		  end
-		endmodule
+			«printHWPELicense(true ,"engine")»
+			import multi_dataflow_package::*;
+			module multi_dataflow_engine (
+			  // Global signals
+			  input  logic          clk_i,
+			  input  logic          rst_ni,
+			  input  logic          test_mode_i,
+			  // Sink ports
+			  «FOR port : inputMap.keySet»  
+			  	hwpe_stream_intf_stream.sink    «port.name»_i,
+			  «ENDFOR»  
+			  // Source ports
+			  «FOR port : outputMap.keySet»  
+			  	hwpe_stream_intf_stream.source  «port.name»_o,
+			  «ENDFOR»  		  
+			  // Control channel
+			  input  ctrl_engine_t            ctrl_i,
+			  output flags_engine_t           flags_o
+			);
+			  // multi_dataflow control
+			  logic clear;
+			  logic done, idle, ready;
+			  assign clear = ctrl_i.clear;
+			  assign flags_o.done = done;
+			  assign flags_o.idle = idle;
+			  always_ff @(posedge clk_i or negedge rst_ni)
+			  begin: fsm_ready
+			    if(~rst_ni)
+			      flags_o.ready = 1'b0;
+			    else if(~(ready | idle))
+			      flags_o.ready = 1'b0;
+			    else
+			      flags_o.ready = 1'b1;
+			  end
+			  // IN/OUT synchronization
+			  logic unsigned [$clog2(CNT_LEN):0] cnt_in;
+			  logic unsigned [$clog2(CNT_LEN):0] cnt_out;
+			  always_ff @(posedge clk_i or negedge rst_ni)
+			  begin: engine_cnt_in
+			    if((~rst_ni) | clear)
+			      cnt_in = 32'b0;
+			    else if((a_i.valid)&(a_i.ready))
+			      cnt_in = cnt_in + 1;
+			    else
+			      cnt_in = cnt_in;
+			  end
+			  always_ff @(posedge clk_i or negedge rst_ni or posedge done)
+			  begin: engine_cnt_out
+			    if((~rst_ni) | clear)
+			      cnt_out = 32'b0;
+			    else if((done)&(cnt_in>cnt_out))
+			      cnt_out = cnt_out + 1;
+			    else
+			      cnt_out = cnt_out;
+			  end
+			  assign flags_o.cnt = cnt_out;
+			  // Engine
+			  generate
+			  begin: multi_dataflow_gen
+			    multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
+			          // Global signals
+			          .ap_clk             ( clk_i            ),
+			          .ap_rst_n           ( rst_ni           ),
+			          // Input data (to-hwpe)
+			            «FOR port : inputMap.keySet»  
+			            	.«port.name»_i              ( «port.name».sink       ),
+			            «ENDFOR»  
+			            // Output data (from-hwpe)
+			            «FOR port : outputMap.keySet»  
+			            	.«port.name»_o              ( «port.name».source       ),
+			            «ENDFOR»  	  
+			          // Algorithm parameters
+			          «FOR param : network.parameters» 
+			          	.«param.name»        (  ctrl_i.«param.name»      ),
+			          «ENDFOR»  
+			          // Control signals
+			          .ap_start           ( ctrl_i.start     ),
+			          .ap_done            ( done             ),
+			          .ap_idle            ( idle             ),
+			          .ap_ready           ( ready            )
+			    );
+			  end
+			  endgenerate
+			  // At the moment output strobe is always '1
+			  // All bytes of output streams are written
+			  // to TCDM
+			  always_comb
+			  begin
+			    «FOR port : outputMap.keySet»  
+			    	«port.name»_o.strb = '1;
+			    «ENDFOR»  	
+			  end
+			endmodule
 		'''
 	}	
 	
@@ -3172,376 +3169,375 @@ class PulpPrinter {
 		var counterReg = 0;
 		var counterOffset = 64;
 		'''
-		/*
-		 * Control and generic configuration register layout
-		 * ================================================================================
-		 *  # reg |  offset  |  bits   |   bitmask    ||  content
-		 * -------+----------+---------+--------------++-----------------------------------
-		 *     0  |  0x0000  |  31: 0  |  0xffffffff  ||  TRIGGER
-		 *     1  |  0x0004  |  31: 0  |  0xffffffff  ||  ACQUIRE
-		 *     2  |  0x0008  |  31: 0  |  0xffffffff  ||  EVT_ENABLE
-		 *     3  |  0x000c  |  31: 0  |  0xffffffff  ||  STATUS
-		 *     4  |  0x0010  |  31: 0  |  0xffffffff  ||  RUNNING_JOB
-		 *     5  |  0x0014  |  31: 0  |  0xffffffff  ||  SOFT_CLEAR
-		 *   6-7  |          |         |              ||  Reserved
-		 *     8  |  0x0020  |  31: 0  |  0xffffffff  ||  BYTECODE0 [31:0]
-		 *     9  |  0x0024  |  31: 0  |  0xffffffff  ||  BYTECODE1 [63:32]
-		 *    10  |  0x0028  |  31: 0  |  0xffffffff  ||  BYTECODE2 [95:64]
-		 *    11  |  0x002c  |  31: 0  |  0xffffffff  ||  BYTECODE3 [127:96]
-		 *    12  |  0x0030  |  31: 0  |  0xffffffff  ||  BYTECODE4 [159:128]
-		 *    13  |  0x0034  |  31:16  |  0xffff0000  ||  LOOPS0    [15:0]
-		 *        |          |  15: 0  |  0x0000ffff  ||  BYTECODE5 [175:160]
-		 *    14  |  0x0038  |  31: 0  |  0xffffffff  ||  LOOPS1    [47:16]
-		 *    15  |          |  31: 0  |  0xffffffff  ||  Reserved
-		 * ================================================================================
-		 *
-		 * Job-dependent registers layout
-		 * ================================================================================
-		 *  # reg |  offset  |  bits   |   bitmask    ||  content
-		 * -------+----------+---------+--------------++-----------------------------------
- 		  «FOR port: inputMap.keySet»  
-           *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
- 		  «ENDFOR»  
- 		  «FOR port: outputMap.keySet»  
-           *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
- 		  «ENDFOR»  
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  NB_ITER
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  LEN_ITER
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31:16  |  0xffff0000  ||  SHIFT
-		 *        |          |   0: 0  |  0x00000001  ||  SIMPLEMUL
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE2
-		 «FOR param: network.parameters»
-		 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «param.name.toUpperCase»
-		 «ENDFOR»
-		 *
-		 * ================================================================================
-		 *
-		 */
+			/*
+			 * Control and generic configuration register layout
+			 * ================================================================================
+			 *  # reg |  offset  |  bits   |   bitmask    ||  content
+			 * -------+----------+---------+--------------++-----------------------------------
+			 *     0  |  0x0000  |  31: 0  |  0xffffffff  ||  TRIGGER
+			 *     1  |  0x0004  |  31: 0  |  0xffffffff  ||  ACQUIRE
+			 *     2  |  0x0008  |  31: 0  |  0xffffffff  ||  EVT_ENABLE
+			 *     3  |  0x000c  |  31: 0  |  0xffffffff  ||  STATUS
+			 *     4  |  0x0010  |  31: 0  |  0xffffffff  ||  RUNNING_JOB
+			 *     5  |  0x0014  |  31: 0  |  0xffffffff  ||  SOFT_CLEAR
+			 *   6-7  |          |         |              ||  Reserved
+			 *     8  |  0x0020  |  31: 0  |  0xffffffff  ||  BYTECODE0 [31:0]
+			 *     9  |  0x0024  |  31: 0  |  0xffffffff  ||  BYTECODE1 [63:32]
+			 *    10  |  0x0028  |  31: 0  |  0xffffffff  ||  BYTECODE2 [95:64]
+			 *    11  |  0x002c  |  31: 0  |  0xffffffff  ||  BYTECODE3 [127:96]
+			 *    12  |  0x0030  |  31: 0  |  0xffffffff  ||  BYTECODE4 [159:128]
+			 *    13  |  0x0034  |  31:16  |  0xffff0000  ||  LOOPS0    [15:0]
+			 *        |          |  15: 0  |  0x0000ffff  ||  BYTECODE5 [175:160]
+			 *    14  |  0x0038  |  31: 0  |  0xffffffff  ||  LOOPS1    [47:16]
+			 *    15  |          |  31: 0  |  0xffffffff  ||  Reserved
+			 * ================================================================================
+			 *
+			 * Job-dependent registers layout
+			 * ================================================================================
+			 *  # reg |  offset  |  bits   |   bitmask    ||  content
+			 * -------+----------+---------+--------------++-----------------------------------
+			   «FOR port : inputMap.keySet»  
+			   	*     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
+			   «ENDFOR»  
+			   «FOR port : outputMap.keySet»  
+			   	*     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
+			   «ENDFOR»  
+			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  NB_ITER
+			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  LEN_ITER
+			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31:16  |  0xffff0000  ||  SHIFT
+			 *        |          |   0: 0  |  0x00000001  ||  SIMPLEMUL
+			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE
+			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE2
+			 «FOR param : network.parameters»
+			 	*     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «param.name.toUpperCase»
+			 «ENDFOR»
+			 *
+			 * ================================================================================
+			 *
+			 */
 		'''
 	}
 	
 	def printRiscvArchiHwpe() {
-		
-		var counterOffset2 = 64;		
+
+		var counterOffset2 = 64;
 		'''	
-		«printRiscvHeader()»
-		#ifndef __ARCHI_HWPE_H__
-		#define __ARCHI_HWPE_H__
-		«printRiscvRegs»
-		#define ARCHI_CL_EVT_ACC0 0
-		#define ARCHI_CL_EVT_ACC1 1
-		#define ARCHI_HWPE_ADDR_BASE 0x1b201000
-		#define __builtin_bitinsert(a,b,c,d) (a | (((b << (32-c)) >> (32-c)) << d))
-		// flag regs
-		#define HWPE_TRIGGER          0x00
-		#define HWPE_ACQUIRE          0x04
-		#define HWPE_FINISHED         0x08
-		#define HWPE_STATUS           0x0c
-		#define HWPE_RUNNING_JOB      0x10
-		#define HWPE_SOFT_CLEAR       0x14
-		// Microcode-processor regs
-		#define HWPE_BYTECODE         0x20
-		#define HWPE_BYTECODE0_OFFS        0x00
-		#define HWPE_BYTECODE1_OFFS        0x04
-		#define HWPE_BYTECODE2_OFFS        0x08
-		#define HWPE_BYTECODE3_OFFS        0x0c
-		#define HWPE_BYTECODE4_OFFS        0x10
-		#define HWPE_BYTECODE5_LOOPS0_OFFS 0x14
-		#define HWPE_LOOPS1_OFFS           0x18
-		// TCDM address regs
-	    «FOR port: inputMap.keySet»  
-        #define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-	    «ENDFOR»  
-	    «FOR port: outputMap.keySet»  
-        #define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-        «ENDFOR»  
-		// standard regs
-		#define HWPE_NB_ITER          0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-		#define HWPE_LEN_ITER         0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-		#define HWPE_SHIFT_SIMPLEMUL  0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-		#define HWPE_VECTSTRIDE       0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-		#define HWPE_VECTSTRIDE2      0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-		// custom regs
-		«FOR param: network.parameters»
-        #define HWPE_«param.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-        «ENDFOR»
-		#endif
+			«printRiscvHeader()»
+			#ifndef __ARCHI_HWPE_H__
+			#define __ARCHI_HWPE_H__
+			«printRiscvRegs»
+			#define ARCHI_CL_EVT_ACC0 0
+			#define ARCHI_CL_EVT_ACC1 1
+			#define ARCHI_HWPE_ADDR_BASE 0x1b201000
+			#define __builtin_bitinsert(a,b,c,d) (a | (((b << (32-c)) >> (32-c)) << d))
+			// flag regs
+			#define HWPE_TRIGGER          0x00
+			#define HWPE_ACQUIRE          0x04
+			#define HWPE_FINISHED         0x08
+			#define HWPE_STATUS           0x0c
+			#define HWPE_RUNNING_JOB      0x10
+			#define HWPE_SOFT_CLEAR       0x14
+			// Microcode-processor regs
+			#define HWPE_BYTECODE         0x20
+			#define HWPE_BYTECODE0_OFFS        0x00
+			#define HWPE_BYTECODE1_OFFS        0x04
+			#define HWPE_BYTECODE2_OFFS        0x08
+			#define HWPE_BYTECODE3_OFFS        0x0c
+			#define HWPE_BYTECODE4_OFFS        0x10
+			#define HWPE_BYTECODE5_LOOPS0_OFFS 0x14
+			#define HWPE_LOOPS1_OFFS           0x18
+			// TCDM address regs
+			   «FOR port : inputMap.keySet»  
+			   	#define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			   «ENDFOR»  
+			   «FOR port : outputMap.keySet»  
+			   	#define HWPE_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			   «ENDFOR»  
+			// standard regs
+			#define HWPE_NB_ITER          0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			#define HWPE_LEN_ITER         0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			#define HWPE_SHIFT_SIMPLEMUL  0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			#define HWPE_VECTSTRIDE       0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			#define HWPE_VECTSTRIDE2      0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			// custom regs
+			«FOR param : network.parameters»
+				#define HWPE_«param.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			      «ENDFOR»
+			#endif
 		'''
 	}	
 	
 	def printRiscvHalHwpe() {
-			
+
 		'''	
-		«printRiscvHeader()»
-		#ifndef __HAL_HWPE_H__
-		#define __HAL_HWPE_H__
-		«printRiscvRegs()»
-		/* LOW-LEVEL HAL */
-		#define HWPE_ADDR_BASE ARCHI_FC_HWPE_ADDR
-		#define HWPE_ADDR_SPACE 0x00000100
-		// For all the following functions we use __builtin_pulp_OffsetedWrite and __builtin_pulp_OffsetedRead
-		// instead of classic load/store because otherwise the compiler is not able to correctly factorize
-		// the HWPE base in case several accesses are done, ending up with twice more code
-		#define HWPE_WRITE(value, offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset) = value
-		#define HWPE_READ(offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset)
-		static inline void hwpe_bytecode_set(unsigned int offs, unsigned int value) {
-		  HWPE_WRITE(value, HWPE_BYTECODE+offs);
-		}
-		// basic hal
-		static inline void hwpe_trigger_job() {
-		  HWPE_WRITE(0, HWPE_TRIGGER);
-		}
-		static inline int hwpe_acquire_job() {
-		  return HWPE_READ(HWPE_ACQUIRE);
-		}
-		static inline unsigned int hwpe_get_status() {
-		  return HWPE_READ(HWPE_STATUS);
-		}
-		static inline void hwpe_soft_clear() {
-		  volatile int i;
-		  HWPE_WRITE(0, HWPE_SOFT_CLEAR);
-		}
-		static inline void hwpe_cg_enable() {
-		  return;
-		}
-		static inline void hwpe_cg_disable() {
-		  return;
-		}
-		// TCDM address regs
-	    «FOR port: inputMap.keySet»  
-		static inline void hwpe_«port.name»_addr_set(int32_t value) {
-		  HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
-		}
-		«ENDFOR»  
-	    «FOR port: outputMap.keySet»  
-		static inline void hwpe_«port.name»_addr_set(int32_t value) {
-		  HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
-		}
-		«ENDFOR»  
-		// standard hal
-		static inline void hwpe_nb_iter_set(unsigned int value) {
-		  HWPE_WRITE(value, HWPE_NB_ITER);
-		}
-		static inline void hwpe_len_iter_set(unsigned int value) {
-		  HWPE_WRITE(value, HWPE_LEN_ITER);
-		}
-		static inline void hwpe_shift_simplemul_set(unsigned int value) {
-		  HWPE_WRITE(value, HWPE_SHIFT_SIMPLEMUL);
-		}
-		static inline void hwpe_vectstride_set(unsigned int value) {
-		  HWPE_WRITE(value, HWPE_VECTSTRIDE);
-		}
-		static inline void hwpe_vectstride2_set(unsigned int value) {
-		  HWPE_WRITE(value, HWPE_VECTSTRIDE2);
-		}
-		static inline unsigned int hwpe_shift_simplemul_value(
-		  unsigned short shift,
-		  unsigned       simplemul
-		) {
-		  unsigned int res = 0;
-		#if defined(__riscv__) && !defined(RV_ISA_RV32)
-		  res = __builtin_bitinsert(0,   shift,     16, 16);
-		  res = __builtin_bitinsert(res, simplemul,  8,  0);
-		#else
-		  res |= ((shift     & 0xffff) << 16) |
-		         ((simplemul & 0xff));
-		#endif
-		  return res;
-		}
-		// custom hal
-		«FOR param: network.parameters»
-		static inline void hwpe_«param.name.toLowerCase»_set(int32_t value) {
-		  HWPE_WRITE(value, HWPE_«param.name.toUpperCase» );
-		}
-		«ENDFOR»
-		#endif /* __HAL_HWPE_H__ */
+			«printRiscvHeader()»
+			#ifndef __HAL_HWPE_H__
+			#define __HAL_HWPE_H__
+			«printRiscvRegs()»
+			/* LOW-LEVEL HAL */
+			#define HWPE_ADDR_BASE ARCHI_FC_HWPE_ADDR
+			#define HWPE_ADDR_SPACE 0x00000100
+			// For all the following functions we use __builtin_pulp_OffsetedWrite and __builtin_pulp_OffsetedRead
+			// instead of classic load/store because otherwise the compiler is not able to correctly factorize
+			// the HWPE base in case several accesses are done, ending up with twice more code
+			#define HWPE_WRITE(value, offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset) = value
+			#define HWPE_READ(offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset)
+			static inline void hwpe_bytecode_set(unsigned int offs, unsigned int value) {
+			  HWPE_WRITE(value, HWPE_BYTECODE+offs);
+			}
+			// basic hal
+			static inline void hwpe_trigger_job() {
+			  HWPE_WRITE(0, HWPE_TRIGGER);
+			}
+			static inline int hwpe_acquire_job() {
+			  return HWPE_READ(HWPE_ACQUIRE);
+			}
+			static inline unsigned int hwpe_get_status() {
+			  return HWPE_READ(HWPE_STATUS);
+			}
+			static inline void hwpe_soft_clear() {
+			  volatile int i;
+			  HWPE_WRITE(0, HWPE_SOFT_CLEAR);
+			}
+			static inline void hwpe_cg_enable() {
+			  return;
+			}
+			static inline void hwpe_cg_disable() {
+			  return;
+			}
+			// TCDM address regs
+			   «FOR port : inputMap.keySet»  
+			   static inline void hwpe_«port.name»_addr_set(int32_t value) {
+			     HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
+			   }
+			«ENDFOR»  
+			   «FOR port : outputMap.keySet»  
+			   static inline void hwpe_«port.name»_addr_set(int32_t value) {
+			     HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
+			   }
+			«ENDFOR»  
+			// standard hal
+			static inline void hwpe_nb_iter_set(unsigned int value) {
+			  HWPE_WRITE(value, HWPE_NB_ITER);
+			}
+			static inline void hwpe_len_iter_set(unsigned int value) {
+			  HWPE_WRITE(value, HWPE_LEN_ITER);
+			}
+			static inline void hwpe_shift_simplemul_set(unsigned int value) {
+			  HWPE_WRITE(value, HWPE_SHIFT_SIMPLEMUL);
+			}
+			static inline void hwpe_vectstride_set(unsigned int value) {
+			  HWPE_WRITE(value, HWPE_VECTSTRIDE);
+			}
+			static inline void hwpe_vectstride2_set(unsigned int value) {
+			  HWPE_WRITE(value, HWPE_VECTSTRIDE2);
+			}
+			static inline unsigned int hwpe_shift_simplemul_value(
+			  unsigned short shift,
+			  unsigned       simplemul
+			) {
+			  unsigned int res = 0;
+			#if defined(__riscv__) && !defined(RV_ISA_RV32)
+			  res = __builtin_bitinsert(0,   shift,     16, 16);
+			  res = __builtin_bitinsert(res, simplemul,  8,  0);
+			#else
+			  res |= ((shift     & 0xffff) << 16) |
+			         ((simplemul & 0xff));
+			#endif
+			  return res;
+			}
+			// custom hal
+			«FOR param : network.parameters»
+				static inline void hwpe_«param.name.toLowerCase»_set(int32_t value) {
+				  HWPE_WRITE(value, HWPE_«param.name.toUpperCase» );
+				}
+			«ENDFOR»
+			#endif /* __HAL_HWPE_H__ */
 		'''
 	}	
 	
 	def printRiscvTestHwpe() {
 		var counterStim = 1;
 		var counterOutput = 1;
-			
+
 		'''	
-		
-		/*
-		 * Copyright (C) 2019 ETH Zurich and University of Bologna
-		 *
-		 * Licensed under the Apache License, Version 2.0 (the "License");
-		 * you may not use this file except in compliance with the License.
-		 * You may obtain a copy of the License at
-		 *
-		 *     http://www.apache.org/licenses/LICENSE-2.0
-		 *
-		 * Unless required by applicable law or agreed to in writing, software
-		 * distributed under the License is distributed on an "AS IS" BASIS,
-		 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-		 * See the License for the specific language governing permissions and
-		 * limitations under the License.
-		 */
-		/*
-		 *
-		 * Authors:     Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
-		 *
-		 */
-		/* Libraries inclusion */
-		#include <omp.h>
-		#include <stdlib.h>
-		#include <stdio.h>
-		#include <stdbool.h>
-		#include <stdint.h>
-		#include "inc/hwpe_lib/archi_hwpe.h"
-		#include "inc/hwpe_lib/hal_hwpe.h"
-		#include "inc/hero_lib/hero_memory_map.h"
-		#include "inc/hero_lib/pulp_fc.h"
-		#include "inc/test_lib/test_hwpe.h"
-		/* Stimuli */
-		#include "inc/stim/stim_def.h"
-		#include "inc/stim/stim_input.h"
-		#include "inc/stim/reg_values.h"
-		#include "inc/stim/results.h"
-		/* Defines */
-		#include "inc/test_lib/defines.h"
-		/* HWPE test */
-		int multi_dataflow(uint32_t stim_dim, uint32_t stripe_len) {
-		  /* Init */
-		  omp_set_num_threads(1);
-		  volatile int errors = 0;
-		  int i,j,k,cnt;
-		  int offload_id_tmp, offload_id;
-		  const unsigned stim_dim_local   = hero_tryread((unsigned int *)&stim_dim);
-		  const unsigned stripe_len_local = hero_tryread((unsigned int *)&stripe_len);
-		  const unsigned num_unfiltered = stim_dim_local;
-		  const unsigned num_stripe     = num_unfiltered / stripe_len_local;
-		  /* L2 init - Input stimuli */
-	      «FOR port: inputMap.keySet»  
-		    «port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
-		  «ENDFOR»  
-	      «FOR port: inputMap.keySet»  
-		    memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
-		  «ENDFOR»
-  	      «FOR port: inputMap.keySet»  
-  		    «port.name»_l2 = stim_«counterStim++»;
-  		  «ENDFOR»
-		  /* L2 init - Output result */
-  	      «FOR port: outputMap.keySet»  
-  		    «port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
-  		  «ENDFOR»  
-  	      «FOR port: outputMap.keySet»  
-  		    memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
-  		  «ENDFOR»
-		  #if DB
-		  #else
-		    /* L1 init - Input stimuli */
-	        «FOR port: inputMap.keySet»  
-		      «port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
-		    «ENDFOR»  
-	        «FOR port: inputMap.keySet»  
-		      memset((void *)«port.name»_l1, 0, (size_t)(stripe_len_local));
-		    «ENDFOR»
-		    /* L1 init - Output result */
-	        «FOR port: outputMap.keySet»  
-		      «port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
-		    «ENDFOR»  
-	        «FOR port: outputMap.keySet»  
-		      memset((void *)«port.name»_l1, 0, (size_t)(num_unfiltered));
-		    «ENDFOR»
-		  #endif
-		  #if DB
-		  #else
-		    hwpe_cg_enable();
-		    /* Processing loops */
-		    for (i = 0; i < (num_stripe); i++){
-		      while((offload_id_tmp = hwpe_acquire_job()) < 0)
-		      /* Micro-code processor */
-		      // Set up bytecode
-		      hwpe_bytecode_set(HWPE_LOOPS1_OFFS,           0x00000000);
-		      hwpe_bytecode_set(HWPE_BYTECODE5_LOOPS0_OFFS, 0x00040000);
-		      hwpe_bytecode_set(HWPE_BYTECODE4_OFFS,        0x00000000);
-		      hwpe_bytecode_set(HWPE_BYTECODE3_OFFS,        0x00000000);
-		      hwpe_bytecode_set(HWPE_BYTECODE2_OFFS,        0x00000000);
-		      hwpe_bytecode_set(HWPE_BYTECODE1_OFFS,        0x000008cd);
-		      hwpe_bytecode_set(HWPE_BYTECODE0_OFFS,        0x11a12c05);
-		      // Ucode parameters
-		      hwpe_nb_iter_set(1);
-		      hwpe_vectstride_set(sizeof(«inputMap.keySet.get(0).name»_l1)*4);
-		      /* Job-dependent programming */
-  	  	      «FOR port: inputMap.keySet»  
-  	  		    «port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
-    		  «ENDFOR»  
-  	  	      «FOR port: outputMap.keySet»  
-  	  		    «port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
-    		  «ENDFOR»  
-		      // Stripe -> TCDM
-	  	      «FOR port: inputMap.keySet»  
-	  		    hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«port.type»)*stripe_len_local);
-      		  «ENDFOR»  
-		      // Set TCDM address reg values
-	  	      «FOR port: inputMap.keySet»  
-	  		    hwpe_«port.name»_addr_set( «port.name»_l1 );
-    		  «ENDFOR»  
-  	  	      «FOR port: outputMap.keySet»  
-  	  		    hwpe_«port.name»_addr_set( «port.name»_l1 );
-      		  «ENDFOR»  
-		      hwpe_len_iter_set(stripe_len_local-1);
-		      // Set custom reg values
-	  	      «FOR param: network.parameters»  
-	  		    hwpe_«param.name.toLowerCase»_set( /* Value of «param.name.toUpperCase» */ );
-    		  «ENDFOR»  
-		      hwpe_trigger_job();
-		      printf("Start of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
-		      // Handle interrupt
-		      int u=1;
-		      while(u){
-		        if (HWPE_READ(HWPE_FINISHED))
-		          u=0;
-		      }
-		      printf("End of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
-		      // Stripe -> L2
-	  	      «FOR port: outputMap.keySet»  
-	  		    hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«port.type»)*stripe_len_local);
-    		  «ENDFOR»  
-		      hwpe_soft_clear();
-		    }
-		    hwpe_cg_disable();
-		    /* Free L1 memory */
-  	        «FOR port: inputMap.keySet»  
-  		      hero_l1free(«port.name»_l1);
-		    «ENDFOR»  
-  	        «FOR port: outputMap.keySet»  
-  		      hero_l1free(«port.name»_l1);
-  		    «ENDFOR»  
-		  #endif
-		  /* Error check */
-    	  «FOR port: outputMap.keySet»  
-	        for(i=0;i<num_unfiltered;i++){
-		      printf("multi_dataflow -> #%d is %x (%d)\n\n", i, *(«port.name»_l2+i), *(res_«counterOutput»+i));
-		      if(*(«port.name»_l2+i) != res_«counterOutput++»[i]) errors++;
-		    }
-	      «ENDFOR»  
-		  /* Free L2 memory */
-          «FOR port: inputMap.keySet»  
-	        free(«port.name»_l2);
-    	  «ENDFOR»  
-          «FOR port: outputMap.keySet»  
-	        free(«port.name»_l2);
-	      «ENDFOR»  
-		  /* Return errors */
-		  *(int *) 0x80000000 = errors;
-		  printf("errors: %d\n", errors);
-		  printf("end\n");
-		  return errors;
-		}
-		int main() {
-		  /* Dimension of stimuli array */
-		  uint32_t stim_dim   = STIM_DIM;
-		  /* Length of single stimuli stripe */
-		  uint32_t stripe_len = STRIPE_LEN;
-		  while(!multi_dataflow(stim_dim, stripe_len))
-		  return 0;
-		}
-		'''
+			
+			/*
+			 * Copyright (C) 2019 ETH Zurich and University of Bologna
+			 *
+			 * Licensed under the Apache License, Version 2.0 (the "License");
+			 * you may not use this file except in compliance with the License.
+			 * You may obtain a copy of the License at
+			 *
+			 *     http://www.apache.org/licenses/LICENSE-2.0
+			 *
+			 * Unless required by applicable law or agreed to in writing, software
+			 * distributed under the License is distributed on an "AS IS" BASIS,
+			 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+			 * See the License for the specific language governing permissions and
+			 * limitations under the License.
+			 */
+			/*
+			 *
+			 * Authors:     Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
+			 *
+			 */
+			/* Libraries inclusion */
+			#include <omp.h>
+			#include <stdlib.h>
+			#include <stdio.h>
+			#include <stdbool.h>
+			#include <stdint.h>
+			#include "inc/hwpe_lib/archi_hwpe.h"
+			#include "inc/hwpe_lib/hal_hwpe.h"
+			#include "inc/hero_lib/hero_memory_map.h"
+			#include "inc/hero_lib/pulp_fc.h"
+			#include "inc/test_lib/test_hwpe.h"
+			/* Stimuli */
+			#include "inc/stim/stim_def.h"
+			#include "inc/stim/stim_input.h"
+			#include "inc/stim/reg_values.h"
+			#include "inc/stim/results.h"
+			/* Defines */
+			#include "inc/test_lib/defines.h"
+			/* HWPE test */
+			int multi_dataflow(uint32_t stim_dim, uint32_t stripe_len) {
+			  /* Init */
+			  omp_set_num_threads(1);
+			  volatile int errors = 0;
+			  int i,j,k,cnt;
+			  int offload_id_tmp, offload_id;
+			  const unsigned stim_dim_local   = hero_tryread((unsigned int *)&stim_dim);
+			  const unsigned stripe_len_local = hero_tryread((unsigned int *)&stripe_len);
+			  const unsigned num_unfiltered = stim_dim_local;
+			  const unsigned num_stripe     = num_unfiltered / stripe_len_local;
+			  /* L2 init - Input stimuli */
+			     «FOR port : inputMap.keySet»  
+			  	«port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+			  «ENDFOR»  
+			  «FOR port : inputMap.keySet»  
+			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
+			  «ENDFOR»
+			  «FOR port : inputMap.keySet»  
+			  	«port.name»_l2 = stim_«counterStim++»;
+			  «ENDFOR»
+			  /* L2 init - Output result */
+			       «FOR port : outputMap.keySet»  
+			  	«port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+			  «ENDFOR»  
+			  «FOR port : outputMap.keySet»  
+			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
+			  «ENDFOR»
+			  #if DB
+			  #else
+			    /* L1 init - Input stimuli */
+			       «FOR port : inputMap.keySet»  
+			    	«port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+			    «ENDFOR»  
+			    «FOR port : inputMap.keySet»  
+			    	memset((void *)«port.name»_l1, 0, (size_t)(stripe_len_local));
+			    «ENDFOR»
+			    /* L1 init - Output result */
+			       «FOR port : outputMap.keySet»  
+			    	«port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+			    «ENDFOR»  
+			    «FOR port : outputMap.keySet»  
+			    	memset((void *)«port.name»_l1, 0, (size_t)(num_unfiltered));
+			    «ENDFOR»
+			  #endif
+			  #if DB
+			  #else
+			    hwpe_cg_enable();
+			    /* Processing loops */
+			    for (i = 0; i < (num_stripe); i++){
+			      while((offload_id_tmp = hwpe_acquire_job()) < 0)
+			      /* Micro-code processor */
+			      // Set up bytecode
+			      hwpe_bytecode_set(HWPE_LOOPS1_OFFS,           0x00000000);
+			      hwpe_bytecode_set(HWPE_BYTECODE5_LOOPS0_OFFS, 0x00040000);
+			      hwpe_bytecode_set(HWPE_BYTECODE4_OFFS,        0x00000000);
+			      hwpe_bytecode_set(HWPE_BYTECODE3_OFFS,        0x00000000);
+			      hwpe_bytecode_set(HWPE_BYTECODE2_OFFS,        0x00000000);
+			      hwpe_bytecode_set(HWPE_BYTECODE1_OFFS,        0x000008cd);
+			      hwpe_bytecode_set(HWPE_BYTECODE0_OFFS,        0x11a12c05);
+			      // Ucode parameters
+			      hwpe_nb_iter_set(1);
+			      hwpe_vectstride_set(sizeof(«inputMap.keySet.get(0).name»_l1)*4);
+			      /* Job-dependent programming */
+			          «FOR port : inputMap.keySet»  
+			      	«port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+			      «ENDFOR»  
+			      «FOR port : outputMap.keySet»  
+			      	«port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+			      «ENDFOR»  
+			      // Stripe -> TCDM
+			        «FOR port : inputMap.keySet»  
+			        hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«port.type»)*stripe_len_local);
+			      	«ENDFOR»  
+			      	// Set TCDM address reg values
+			      	  «FOR port : inputMap.keySet»  
+			      	  hwpe_«port.name»_addr_set( «port.name»_l1 );
+			      	«ENDFOR»  
+			      	«FOR port : outputMap.keySet»  
+			      		hwpe_«port.name»_addr_set( «port.name»_l1 );
+			      	«ENDFOR»  
+			      	hwpe_len_iter_set(stripe_len_local-1);
+			      	// Set custom reg values
+			      	  «FOR param : network.parameters»  
+			      	  hwpe_«param.name.toLowerCase»_set( /* Value of «param.name.toUpperCase» */ );
+			      	«ENDFOR»  
+			      	hwpe_trigger_job();
+			      	printf("Start of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
+			      	// Handle interrupt
+			      	int u=1;
+			      	while(u){
+			      	  if (HWPE_READ(HWPE_FINISHED))
+			      	    u=0;
+			      	}
+			      	printf("End of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
+			      	// Stripe -> L2
+			      	  «FOR port : outputMap.keySet»  
+			      	  hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«port.type»)*stripe_len_local);
+			      	«ENDFOR»  
+			      	hwpe_soft_clear();
+			    	}
+			    	hwpe_cg_disable();
+			    	/* Free L1 memory */
+			    	     «FOR port : inputMap.keySet»  			    	     	hero_l1free(«port.name»_l1);
+			    	«ENDFOR»  
+			    	«FOR port : outputMap.keySet»  
+			    		hero_l1free(«port.name»_l1);
+			    	«ENDFOR»  
+			  	#endif
+			  	/* Error check */
+			  		  «FOR port : outputMap.keySet»  
+			  		  	for(i=0;i<num_unfiltered;i++){
+			  		  	  printf("multi_dataflow -> #%d is %x (%d)\n\n", i, *(«port.name»_l2+i), *(res_«counterOutput»+i));
+			  		  	  if(*(«port.name»_l2+i) != res_«counterOutput++»[i]) errors++;
+			  		  	}
+			  		«ENDFOR»  
+			  		/* Free L2 memory */
+			  		      «FOR port : inputMap.keySet»  
+			  		      free(«port.name»_l2);
+			  		«ENDFOR»  
+			  		«FOR port : outputMap.keySet»  
+			  			free(«port.name»_l2);
+			  		«ENDFOR»  
+			  		/* Return errors */
+			  		*(int *) 0x80000000 = errors;
+			  		printf("errors: %d\n", errors);
+			  		printf("end\n");
+			  		return errors;
+					}
+					int main() {
+					  /* Dimension of stimuli array */
+					  uint32_t stim_dim   = STIM_DIM;
+					  /* Length of single stimuli stripe */
+					  uint32_t stripe_len = STRIPE_LEN;
+					  while(!multi_dataflow(stim_dim, stripe_len))
+					  return 0;
+					}
+				'''
 	}	
 	
 }
