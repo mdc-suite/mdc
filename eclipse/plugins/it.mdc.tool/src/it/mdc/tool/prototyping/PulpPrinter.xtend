@@ -827,7 +827,7 @@ class PulpPrinter {
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.line_length = ctrl_i.len;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_stride = '0;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_length = 1;
-		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[PORT_«input.name»_ADDR] + (flags_ucode_i.offs[PORT_«input.name»_UCODE_OFFS]);
+		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«input.name»_ADDR] + (flags_ucode_i.offs[UCODE_«input.name»_OFFS]);
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.feat_roll   = '0;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.loop_outer  = '0;
 		    ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = '0;
@@ -844,7 +844,7 @@ class PulpPrinter {
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.line_length =  ctrl_i.len;
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_stride = '0;
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_length = 1;
-		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[PORT_«output.name»_ADDR] + (flags_ucode_i.offs[PORT_«output.name»_UCODE_OFFS]);
+		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.base_addr   = reg_file_i.hwpe_params[REG_«output.name»_ADDR] + (flags_ucode_i.offs[UCODE_«output.name»_OFFS]);
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.feat_roll   = '0;
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.loop_outer  = '0;
 		    ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = '0;
@@ -1089,7 +1089,7 @@ class PulpPrinter {
 		  /* Registers */
 		  // TCDM addresses
 		  «FOR port : portMap.keySet»
-		  parameter int unsigned PORT_«port.name»_ADDR              = «counterReg++»;
+		  parameter int unsigned REG_«port.name»_ADDR              = «counterReg++»;
 		  «ENDFOR»
 		  
 		  // Standard registers
@@ -1109,7 +1109,7 @@ class PulpPrinter {
 		  
 		  // microcode offset indeces -- this should be aligned to the microcode compiler of course!
 		  «FOR port : portMap.keySet»
-		  parameter int unsigned PORT_«port.name»_UCODE_OFFS              = «portMap.get(port)»;
+		  parameter int unsigned UCODE_«port.name»_OFFS              = «portMap.get(port)»;
 		  «ENDFOR»
 		  
 		  // microcode mnemonics -- this should be aligned to the microcode compiler of course!
@@ -1764,7 +1764,7 @@ class PulpPrinter {
 		  always_comb
 		  begin
 		    «FOR port: outputMap.keySet»  
-            .«port.name»_o.strb = '1;
+            «port.name»_o.strb = '1;
 		    «ENDFOR»  	
 		  end
 		endmodule
