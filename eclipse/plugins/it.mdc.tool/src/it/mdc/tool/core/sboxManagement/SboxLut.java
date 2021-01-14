@@ -2,7 +2,10 @@ package it.mdc.tool.core.sboxManagement;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Instance;
@@ -44,7 +47,7 @@ public class SboxLut{
 	 */
 	public SboxLut(Instance sboxInstance){
 		this.sboxInstance = sboxInstance;
-		lutMap = new HashMap<Network, Map<Integer,Boolean>>();
+		lutMap = new LinkedHashMap<Network, Map<Integer,Boolean>>();
 	}
 	
 	/**
@@ -284,6 +287,13 @@ public class SboxLut{
 			result += "\n\tNetwork: " + nextNet + " values: " + lutMap.get(nextNet);
 		}
 		return result;
+	}
+	
+	/**
+	 * Get network by name
+	 */
+	public Network getNetworkByName(String netName) {
+		return lutMap.keySet().stream().filter(net -> net.getSimpleName().equals(netName)).collect(Collectors.toList()).get(0);
 	}
 
 }

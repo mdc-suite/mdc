@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,7 @@ import net.sf.orcc.df.Port;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.OrccLogger;
 
@@ -621,6 +623,44 @@ public class MoreanoMerger extends Merger {
 			} else {	
 				// merge the current dataflow network
 				mergeNetwork();
+				
+				///<li> merge network variables (static parameters)
+				Boolean mergeThisVar = true;
+				List<Var> mergingVars = new ArrayList<Var>();
+				for(Var currVar : currentDataflowNetwork.getVariables()) {
+					for(Var mergedVar : multiDataflowNetwork.getVariables()) {
+						if(currVar.getName().equals(mergedVar.getName())) {
+							mergeThisVar = false;
+							break;
+						}
+					}
+					if(mergeThisVar) {
+						mergingVars.add(currVar);
+					}
+					mergeThisVar = true;	
+				}
+				for(Var parm : mergingVars) {
+					multiDataflowNetwork.getVariables().add(parm);
+				}
+				
+				///<li> merge network parameters (dynamic parameters)
+				Boolean mergeThisParm = true;
+				List<Var> mergingParms = new ArrayList<Var>();
+				for(Var currParm : currentDataflowNetwork.getParameters()) {
+					for(Var mergedParm : multiDataflowNetwork.getParameters()) {
+						if(currParm.getName().equals(mergedParm.getName())) {
+							mergeThisParm = false;
+							break;
+						}
+					}
+					if(mergeThisParm) {
+						mergingParms.add(currParm);
+					}
+					mergeThisParm = true;	
+				}
+				for(Var parm : mergingParms) {
+					multiDataflowNetwork.getParameters().add(parm);
+				}
 				
 				// clear compatibility graph
 				compatibilityGraph = DfgFactory.eINSTANCE.createDfgGraph();
@@ -1404,7 +1444,7 @@ public class MoreanoMerger extends Merger {
 	 */
 	public Map<String, Set<String>> getNetworksClkInstances() {
 		
-		Map<String, Set<String>> networksClkInstances = new HashMap<String, Set<String>>();
+		Map<String, Set<String>> networksClkInstances = new LinkedHashMap<String, Set<String>>();
 		
 		for(String network : networkVertexMap.keySet()) {
 			Set<String> clkInstances = new HashSet<String>();

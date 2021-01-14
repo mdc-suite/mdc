@@ -43,7 +43,9 @@ class ConfigPrinter {
 	}
 	
 	def computeNets() {
-		networks.addAll(luts.get(0).getNetworks());
+		for(Network net:configManager.getNetworkList()){
+			networks.add(luts.get(0).getNetworkByName(net.simpleName));
+		}
 	}
 	
 	def printBody() {

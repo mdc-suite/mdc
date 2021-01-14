@@ -6,8 +6,10 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +82,8 @@ public class ConfigManager {
 	public ConfigManager(String outPath, String rvcCalOutputFolder) {
 		this.outPath = outPath;
 		this.rvcCalOutputFolder = rvcCalOutputFolder;
-		configMap = new HashMap<Integer,String>();
+		this.networks = new ArrayList<Network>();
+		configMap = new LinkedHashMap<Integer,String>();
 		count=1;
 	}
 	
@@ -549,6 +552,16 @@ public class ConfigManager {
 	 */
 	public void setNetworkList(List<Network> inputNetworks) {
 		this.networks = inputNetworks;
+		for(Network net:this.networks) {
+			configMap.put(configMap.size() + 1,net.getSimpleName());
+		}
+	}
+	
+	/**
+	 * Get the list of networks (ordered)
+	 */
+	public List<Network> getNetworkList(){
+		return this.networks;
 	}
 	
 	///<i> Go back to it.mdc.tool.core.MDCBackend.compile(). </i> </ul>		

@@ -15,6 +15,7 @@ import java.util.List
 import it.mdc.tool.core.platformComposer.ProtocolManager
 import it.mdc.tool.core.sboxManagement.SboxLut
 import java.io.File
+import java.util.LinkedHashMap
 
 /**
  * Pulp HWPE Wrapper Printer 
@@ -89,9 +90,9 @@ class PulpPrinter {
 		var index=0;
 		var size=0;
 		
-		inputMap = new HashMap<Port,Integer>();
-		outputMap = new HashMap<Port,Integer>();
-		portMap = new HashMap<Port,Integer>();
+		inputMap = new LinkedHashMap<Port,Integer>();
+		outputMap = new LinkedHashMap<Port,Integer>();
+		portMap = new LinkedHashMap<Port,Integer>();
 		
 		for(Port input : network.getInputs()) {
 			inputMap.put(input,index);

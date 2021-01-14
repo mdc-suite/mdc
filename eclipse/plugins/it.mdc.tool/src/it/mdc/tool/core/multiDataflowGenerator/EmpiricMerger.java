@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +26,7 @@ import it.mdc.tool.core.sboxManagement.*;
 import net.sf.orcc.graph.visit.BFS;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.IrFactory;
+import net.sf.orcc.ir.Var;
 import net.sf.orcc.ir.util.ExpressionEvaluator;
 import net.sf.orcc.ir.util.IrUtil;
 import net.sf.orcc.util.Attribute;
@@ -140,7 +142,7 @@ public class EmpiricMerger extends Merger {
 		sboxActorManager = new SboxActorManager();
 		//sboxLutManager = new SboxLutManager();
 		actorManager = new ActorManager();
-		networksInstances = new HashMap<String,Set<String>>();
+		networksInstances = new LinkedHashMap<String,Set<String>>();
 		//networkVertexMap = new HashMap<String,Map<String,String>>();
 	}
 
@@ -328,6 +330,44 @@ public class EmpiricMerger extends Merger {
 			
 			///<li> combine the current network			
 			mergeNetwork();
+			
+			///<li> merge network variables (static parameters)
+			Boolean mergeThisVar = true;
+			List<Var> mergingVars = new ArrayList<Var>();
+			for(Var currVar : currentNetwork.getVariables()) {
+				for(Var mergedVar : multiDataflow.getVariables()) {
+					if(currVar.getName().equals(mergedVar.getName())) {
+						mergeThisVar = false;
+						break;
+					}
+				}
+				if(mergeThisVar) {
+					mergingVars.add(currVar);
+				}
+				mergeThisVar = true;	
+			}
+			for(Var parm : mergingVars) {
+				multiDataflow.getVariables().add(parm);
+			}
+			
+			///<li> merge network parameters (dynamic parameters)
+			Boolean mergeThisParm = true;
+			List<Var> mergingParms = new ArrayList<Var>();
+			for(Var currParm : currentNetwork.getParameters()) {
+				for(Var mergedParm : multiDataflow.getParameters()) {
+					if(currParm.getName().equals(mergedParm.getName())) {
+						mergeThisParm = false;
+						break;
+					}
+				}
+				if(mergeThisParm) {
+					mergingParms.add(currParm);
+				}
+				mergeThisParm = true;	
+			}
+			for(Var parm : mergingParms) {
+				multiDataflow.getParameters().add(parm);
+			}
 			
 			///<li> add current network to the already combined networks </ol>
 			mergedNetworks.add(currentNetwork);						
