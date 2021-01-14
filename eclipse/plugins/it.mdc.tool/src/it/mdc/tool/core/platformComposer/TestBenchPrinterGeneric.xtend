@@ -188,7 +188,7 @@ class TestBenchPrinterGeneric {
 	def printDUT(List<SboxLut> luts) {
 		
 		'''
-		multi_dataflow «IF !network.variables.empty»
+		multi_dataflow «IF !network.variables.empty» # (
 			«FOR netVar : network.variables SEPARATOR ","»
 			.«netVar.name»(«netVar.name»)
 			«ENDFOR»
