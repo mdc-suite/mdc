@@ -488,16 +488,16 @@ class PulpPrinter {
 						.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 					«ENDFOR»
 				«ENDFOR»
+				// Algorithm parameters
+				   «FOR param : network.parameters» 
+				   	.«param.name»        (  «param.name»      ),
+				   «ENDFOR»  
 				«FOR clockSignal : getClockSysSignals()»
 					.«clockSignal»(clk_i)«IF !(getResetSysSignals().empty && this.luts.empty)»,«ENDIF»
 				«ENDFOR»
 				«FOR resetSignal : getResetSysSignals().keySet»
 					.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
 				«ENDFOR»
-				// Algorithm parameters
-				   «FOR param : network.parameters» 
-				   	.«param.name»        (  «param.name»      ),
-				   «ENDFOR»  
 				   «/* // Control signals
             .ap_start           ( ap_start     ),
             .ap_done            ( ap_done             ),
