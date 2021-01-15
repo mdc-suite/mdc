@@ -420,7 +420,7 @@ public abstract class PlatformComposer {
 		try {
 		copier.copy(makefile, hwpeMultiDataflowRiscV);
 		} catch (IOException e) {
-			OrccLogger.severeln("The Malefile could not have been copied: " + e.getMessage());
+			OrccLogger.severeln("The Makefile could not have been copied: " + e.getMessage());
 		}
 		// output/deps/pulp_cluster
 		File pulp_cluster = new File(deps + File.separator + "pulp_cluster");
@@ -446,6 +446,29 @@ public abstract class PlatformComposer {
 		if (!test.exists()) {
 			test.mkdirs();
 		}
+	}
+	
+	/**
+	 * Moves the multiDataflow file to the corresponding location
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	
+	public void moveMultiDataflowFile(Map<String, Object> options) {
+		FileCopier copier = new FileCopier();
+
+		File multiDataflowFileOrigin = new File(hdlPath + File.separator + network.getSimpleName() + ".v");
+		File multiDataflowFileDestination = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+				File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev" + File.separator + network.getSimpleName() + ".v");
+		try {
+			copier.copy(multiDataflowFileOrigin, multiDataflowFileDestination);
+		} catch (IOException e) {
+			OrccLogger.severeln("The multi-dataflow.v could not have been copied: " + e.getMessage());
+		}
+		
+		copier.delete(multiDataflowFileOrigin);
+		
 	}
 	
 	/**
@@ -1512,6 +1535,7 @@ public abstract class PlatformComposer {
 	 * @return
 	 */
 	abstract protected boolean printNetwork(List<SboxLut> luts, Map<String,Object> options);
+
 
 	
 }

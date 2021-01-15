@@ -743,6 +743,7 @@ public class MDCBackend extends AbstractBackend {
 			
 			if(!genCopr && enPulp){
 				hdlWriter.generatePulpStaticFolders(hwpeWrapperGeneratorPath, outputPath);
+				hdlWriter.moveMultiDataflowFile(getOptions());
 				hdlWriter.generatePulpWrapper(luts,networkVertexMap,getOptions());
 			}
 			
