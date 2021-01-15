@@ -3413,7 +3413,7 @@ class PulpPrinter {
 			  const unsigned num_stripe     = num_unfiltered / stripe_len_local;
 			  /* L2 init - Input stimuli */
 			     «FOR port : inputMap.keySet»  
-			  	«port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *)malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*num_unfiltered);
 			  «ENDFOR»  
 			  «FOR port : inputMap.keySet»  
 			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
@@ -3423,7 +3423,7 @@ class PulpPrinter {
 			  «ENDFOR»
 			  /* L2 init - Output result */
 			       «FOR port : outputMap.keySet»  
-			  	«port.type» * «port.name»_l2 = («port.type» *)malloc(sizeof(«port.type»)*num_unfiltered);
+			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *)malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*num_unfiltered);
 			  «ENDFOR»  
 			  «FOR port : outputMap.keySet»  
 			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
@@ -3432,14 +3432,14 @@ class PulpPrinter {
 			  #else
 			    /* L1 init - Input stimuli */
 			       «FOR port : inputMap.keySet»  
-			    	«port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+			    	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 = hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			    «ENDFOR»  
 			    «FOR port : inputMap.keySet»  
 			    	memset((void *)«port.name»_l1, 0, (size_t)(stripe_len_local));
 			    «ENDFOR»
 			    /* L1 init - Output result */
 			       «FOR port : outputMap.keySet»  
-			    	«port.type» * «port.name»_l1 = hero_l1malloc(sizeof(«port.type»)*stripe_len_local);
+			    	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 = hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			    «ENDFOR»  
 			    «FOR port : outputMap.keySet»  
 			    	memset((void *)«port.name»_l1, 0, (size_t)(num_unfiltered));
@@ -3465,14 +3465,14 @@ class PulpPrinter {
 			      hwpe_vectstride_set(sizeof(«inputMap.keySet.get(0).name»_l1)*4);
 			      /* Job-dependent programming */
 			          «FOR port : inputMap.keySet»  
-			      	«port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+			      	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * curr_«port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local);
 			      «ENDFOR»  
 			      «FOR port : outputMap.keySet»  
-			      	«port.type» * curr_«port.name»_l2 = («port.type» *) («port.name»_l2 + i*stripe_len_local);
+			      	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * curr_«port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local);
 			      «ENDFOR»  
 			      // Stripe -> TCDM
 			        «FOR port : inputMap.keySet»  
-			        hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«port.type»)*stripe_len_local);
+			        hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			      	«ENDFOR»  
 			      	// Set TCDM address reg values
 			      	  «FOR port : inputMap.keySet»  
@@ -3497,7 +3497,7 @@ class PulpPrinter {
 			      	printf("End of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
 			      	// Stripe -> L2
 			      	  «FOR port : outputMap.keySet»  
-			      	  hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«port.type»)*stripe_len_local);
+			      	  hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			      	«ENDFOR»  
 			      	hwpe_soft_clear();
 			    	}
