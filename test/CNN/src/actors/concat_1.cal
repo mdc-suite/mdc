@@ -1,0 +1,10 @@
+package actors;
+
+actor concat_1()
+  	int(size=16) input_0_V_V,
+  	int(size=16) input_1_V_V,
+  	int(size=16) input_2_V_V,
+  	int(size=16) input_3_V_V
+	==> 
+	int(size=16) output_V_V :
+end

@@ -1,0 +1,7 @@
+package actors;
+
+actor line_buffer_9()
+	int(size=16) input_V_V
+	==>
+  	int(size=16) output_V_V :
+end

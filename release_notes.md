@@ -1,5 +1,13 @@
 # MDC Release notes
 
+## Release version 0.0.3
+2021.01.19
+
+### New features
+- Added new CNN project to the available applications under test folder.
+### Changes
+- Vivado HLS protocol has been updated according to the latest modification on the corresponding HCL.
+
 ## Release version 0.0.2
 2021.01.14
 

@@ -1,0 +1,10 @@
+package actors;
+
+actor batch_1()
+	int(size=16) input_V_V
+	==>
+  	int(size=16) output_0_V_V,
+  	int(size=16) output_1_V_V,
+  	int(size=16) output_2_V_V,
+  	int(size=16) output_3_V_V :
+end
