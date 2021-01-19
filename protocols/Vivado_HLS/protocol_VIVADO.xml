@@ -1,12 +1,12 @@
 <protocol>
 	<sys_signals>
 		<signal id="0" net_port="ap_clk" size="1" kind="input" is_clock=""></signal>
-		<signal id="1" net_port="ap_rst" size="1" kind="input" is_reset=""></signal>
+		<signal id="1" net_port="ap_rst_n" size="1" kind="input" is_resetn=""></signal>
 	</sys_signals>
 	<actor>
 		<sys_signals>
 			<signal id="0" port="ap_clk" size="1" net_port="ap_clk"></signal>
-			<signal id="1" port="ap_rst" size="1" net_port="ap_rst"></signal>
+			<signal id="1" port="ap_rst_n" size="1" net_port="ap_rst_n"></signal>
 		</sys_signals>
 		<comm_signals>
 			<signal id="0" port="dout" channel="data" size="variable" kind="input" dir="direct"></signal>
@@ -21,10 +21,11 @@
 		<name>fifo_gen</name>
 		<sys_signals>
 			<signal id="0" port="clk" size="1" net_port="ap_clk"></signal>
-			<signal id="1" port="rst" size="1" net_port="ap_rst"></signal>
+			<signal id="1" port="ap_rst_n" size="1" net_port="ap_rst_n"></signal>
 		</sys_signals>
 		<comm_parameters>
-			<parameter id="1" name="width" value="variable"></parameter>
+			<parameter id="0" name="width" value="variable"></parameter>
+			<parameter id="1" name="depth" value="bufferSize"></parameter>
 		</comm_parameters>
 		<comm_signals>
 			<signal id="0" port="din" channel="data" size="variable" kind="input" dir="direct"></signal>
