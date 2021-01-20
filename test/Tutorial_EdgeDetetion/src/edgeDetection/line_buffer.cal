@@ -1,7 +1,0 @@
-package edgeDetection;
-
-actor line_buffer()
-  uint(size=6) real_size,uint(size=6) ext_size,uint(size=8) in_pel
-   ==>
-  uint(size=8) out_pel
-: end

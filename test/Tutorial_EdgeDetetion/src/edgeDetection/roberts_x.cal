@@ -1,7 +1,0 @@
-package edgeDetection;
-
-actor roberts_x()
-  uint(size=8) pel00,uint(size=8) pel01,uint(size=8) pel10,uint(size=8) pel11
-   ==>
-  int(size=14) out_pel
-: end
