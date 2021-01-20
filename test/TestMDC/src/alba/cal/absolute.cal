@@ -1,5 +1,0 @@
-package alba.cal;
-
-actor absolute(int DATA_SIZE=32) int(size=DATA_SIZE) in1 ==> int(size=DATA_SIZE) out :
-
-end
