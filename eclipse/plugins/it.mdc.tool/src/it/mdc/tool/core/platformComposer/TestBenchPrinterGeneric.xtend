@@ -26,22 +26,7 @@ class TestBenchPrinterGeneric {
 	var ProtocolManager protocolManager;
 	
 	var ExpressionEvaluator evaluator;
-			
-	def String printSysSigDimension(String module, String sysSigId) {
-		if (protocolManager.getSysSigSize(module,sysSigId) != 1) {
-			return "[" + (protocolManager.getSysSigSize(module,sysSigId)-1) + " : 0] " 
-		} else {
-			return ""
-		}
-	}
 	
-	def String printCommSigDimension(String module, Actor actor, String commSigId, Port port) {
-		if (protocolManager.getCommSigSize(module,actor,commSigId,port) != 1) {
-			return "[" + (protocolManager.getCommSigSize(module,actor,commSigId,port)-1) + " : 0] " 
-		} else {
-			return ""
-		}
-	}
 		
 	def String printNetSysSigKind(String sysSigId){
 		if (protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.KIND).equals("input"))
@@ -127,7 +112,7 @@ class TestBenchPrinterGeneric {
 		«FOR input : network.inputs»
 		«FOR commSigId : protocolManager.getFirstModCommSignals().keySet»
 		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
-		«printModCommSigKind(protocolManager.getFirstMod(),commSigId)» «printCommSigDimension(protocolManager.getFirstMod(),null,commSigId,input)»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»;
+		«printModCommSigKind(protocolManager.getFirstMod(),commSigId)» «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),null,commSigId,input)»«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»;
 		«ENDIF»
 		«ENDFOR»
 		«FOR config : configMap.keySet»
@@ -139,7 +124,7 @@ class TestBenchPrinterGeneric {
 		«FOR output : network.outputs»
 		«FOR commSigId :protocolManager.getLastModCommSignals().keySet»
 		«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)»
-		«printModCommSigKind(protocolManager.getLastMod(),commSigId)» «printCommSigDimension(protocolManager.getLastMod(),null,commSigId,output)»«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»;
+		«printModCommSigKind(protocolManager.getLastMod(),commSigId)» «protocolManager.getCommSigPrintRange(protocolManager.getLastMod(),null,commSigId,output)»«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»;
 		«ENDIF»
 		«ENDFOR»
 		«FOR config : configMap.keySet»
@@ -157,7 +142,7 @@ class TestBenchPrinterGeneric {
 		«ENDIF»	
 		
 		«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
-		«printNetSysSigKind(sysSigId)» «printSysSigDimension(null,sysSigId)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»;
+		«printNetSysSigKind(sysSigId)» «protocolManager.getSysSigPrintRange(null,sysSigId)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»;
 		«ENDFOR»	
 		'''
 	}
@@ -196,7 +181,7 @@ class TestBenchPrinterGeneric {
 			«FOR input : network.inputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 			«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
-			.«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»),
+			.«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»(«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»),
 			«ENDIF»
 			«ENDFOR»
 			
@@ -204,7 +189,7 @@ class TestBenchPrinterGeneric {
 			«FOR output : network.outputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
 			«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)»
-			.«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)»),
+			.«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»(«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»),
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»	
@@ -273,9 +258,9 @@ class TestBenchPrinterGeneric {
 			«FOR input : network.inputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 			«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
-			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» = 0;
 			«ELSE»
-			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
@@ -283,7 +268,7 @@ class TestBenchPrinterGeneric {
 			«FOR output : network.outputs»
 			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getLastMod()).keySet»
 			«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
-			«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
@@ -312,7 +297,7 @@ class TestBenchPrinterGeneric {
 			«FOR output : network.outputs»
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
 			«IF protocolManager.isOutputSideReverse(protocolManager.getLastMod(),commSigId)»
-			«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)» = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
@@ -330,9 +315,9 @@ class TestBenchPrinterGeneric {
 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 			«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
 			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+			«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» = 0;
 			«ELSE»
-			«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+			«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
@@ -358,16 +343,16 @@ class TestBenchPrinterGeneric {
 	 				#10
 		 			«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 		 			«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("full")»
-		 			if(«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
+		 			if(«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»)
 		 			begin
 					«ENDIF»
 					«ENDFOR»
 						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
 						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_«configMap.get(config)»_file_data[«input.name»_i];
+						«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» = «input.name»_«configMap.get(config)»_file_data[«input.name»_i];
 						«ELSE»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
+						«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»;
 						«ENDIF»
 						«ENDIF»
 						«ENDFOR»
@@ -378,9 +363,9 @@ class TestBenchPrinterGeneric {
 						«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 						«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
 						«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+						«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» = 0;
 						«ELSE»
-						«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+						«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 						«ENDIF»
 						«ENDIF»
 						«ENDFOR»						
@@ -390,9 +375,9 @@ class TestBenchPrinterGeneric {
 				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getFirstMod()).keySet»
 				«IF protocolManager.isInputSideDirect(protocolManager.getFirstMod(),commSigId)»
 				«IF protocolManager.getMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)» = 0;
+				«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)» = 0;
 				«ELSE»
-				«protocolManager.getSigName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
+				«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»  = 1'b«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»1«ELSE»0«ENDIF»;
 				«ENDIF»
 				«ENDIF»
 				«ENDFOR»						
@@ -413,13 +398,13 @@ class TestBenchPrinterGeneric {
 			if(ID == «config»)
 				begin
 				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
-				«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)«ENDIF»
+				«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("push")»if(«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)» == «IF protocolManager.isNegMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»0«ELSE»1«ENDIF»)«ENDIF»
 				«ENDFOR»
 				«FOR commSigId : protocolManager.getModCommSignals.get(protocolManager.getLastMod()).keySet»
 				«IF protocolManager.isOutputSideDirect(protocolManager.getLastMod(),commSigId)»
 				«IF protocolManager.getMatchingWrapMapping(protocolManager.getLastModCommSignals().get(commSigId).get(ProtocolManager.CH)).equals("data")»	begin	
-					if(«protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)» != «output.name»_«configMap.get(config)»_file_data[«output.name»_i])
-						$display("Error for config %d on output %d: obtained %d, expected %d", «config», «output.name»_i, «protocolManager.getSigName(protocolManager.getLastMod(),commSigId,output)», «output.name»_«configMap.get(config)»_file_data[«output.name»_i]);
+					if(«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)» != «output.name»_«configMap.get(config)»_file_data[«output.name»_i])
+						$display("Error for config %d on output %d: obtained %d, expected %d", «config», «output.name»_i, «protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)», «output.name»_«configMap.get(config)»_file_data[«output.name»_i]);
 					«output.name»_i = «output.name»_i + 1;
 					end
 				«ENDIF»

@@ -20,7 +20,6 @@ import it.mdc.tool.core.sboxManagement.SboxLut
 import net.sf.orcc.ir.util.ExpressionEvaluator
 import net.sf.orcc.ir.Var
 import java.util.ArrayList
-import net.sf.orcc.df.Instance
 import net.sf.orcc.ir.Expression
 import net.sf.orcc.util.OrccLogger
 
@@ -33,60 +32,10 @@ import net.sf.orcc.util.OrccLogger
  */
 class NetworkPrinterGeneric {
 	
-	private ExpressionEvaluator evaluator;
-	
-	private Map<String,Map<String,String>> netSysSignals;
-	private Map<String,String> modNames;
-	private Map<String,Map<String,Map<String,String>>> modSysSignals;
-	private Map<String,Map<String,Map<String,String>>> modCommSignals;
-	private Map<String,Map<String,Map<String,String>>> modCommParms;	
-	
-	private static final String ACTOR = "actor";
-	private static final String PRED = "predecessor";
-	private static final String SUCC = "successor";
-
-	private static final String NAME = "name";
-
-	private static final String NETP = "net_port";
-	private static final String ACTP = "port";
-	private static final String CH = "channel";
-	private static final String KIND = "kind";
-	private static final String CLOCK = "is_clock";
-	private static final String DIR = "dir";
-	private static final String BROAD = "broadcast";
-	private static final String SIZE = "size";
-	private static final String VAL = "value";
-	private static final String FILTER = "filter";
-	
-	//TODO finish parameters management (dynamic and/or static)		
-	private static final int STATIC = 0;
-	private static final int DYNAMIC = 1;
-	private int param_mode = DYNAMIC;
-		
+	var ExpressionEvaluator evaluator;
 	
 	var Network network;
 	
-	var Boolean lastParm = false;
-	
-	var Boolean enableClockGating;
-	
-	var Boolean enablePowerGating;
-	
-	var Map<String,Object> options
-	
-	var Map<String,Set<String>> logicRegions;
-	
-	var Map<String,Set<String>> netRegions;
-		
-	var Set<String> powerSets;
-	
-	var Map<String,Integer> powerSetsIndex;
-	
-	var Map<String,Boolean> logicRegionsSeqMap;
-	
-	
-	
-	var String DEFAULT_CLOCK_DOMAIN = "CLK";
 	/**
 	 * Map which contains the Clock Domain of a port
 	 */
@@ -110,11 +59,35 @@ class NetworkPrinterGeneric {
 	/**
 	 * Contains a Map which indicates the index of the given clock
 	 */
-
 	var Map<String, Integer> clockDomainsIndex;
 	
 
+	
+	var ProtocolManager protocolManager;
+	
+	/**********************************************************/
+	var Boolean lastParm = false;
+	
+	var Boolean enableClockGating;
+	
+	var Boolean enablePowerGating;
+	
+	var Map<String,Object> options
+	
+	var Map<String,Set<String>> logicRegions;
+	
+	var Map<String,Set<String>> netRegions;
+	
+	var Set<String> powerSets;
+	
+	var Map<String,Integer> powerSetsIndex;
+	
+	var Map<String,Boolean> logicRegionsSeqMap;
+	
 	var Map<Connection, List<Integer>> connectionsClockDomain;
+	
+	var String DEFAULT_CLOCK_DOMAIN = "CLK";
+	/**********************************************************/
 	
 	/**
 	 * Count the fanout of the actor's output port
@@ -144,7 +117,19 @@ class NetworkPrinterGeneric {
 			}
 		}
 	}
-	
+		
+	/**
+	 * return the list of combinatorial ports (does not associate a "valid" signal to the port signals)
+	 */
+	/*def computeCombPorts(List<Port> ports) {
+		var combInputs = new ArrayList<Port>();
+		for(Port input : ports) {
+			if(input.isNative()) {
+				combInputs.add(input);
+			}
+		}
+		return combInputs;
+	}*/
 	
 	def computeNetworkInputPortFanout(Network network) {
 		for (Port port : network.getInputs()) {
@@ -158,14 +143,6 @@ class NetworkPrinterGeneric {
 			}
 		}
 	}
-	
-	/**
-	 * Returns the Map which indicates the index of the given clock
-	 */
-	def Map<String, Integer> getClockDomainIndex(){ //deve diventare getLogicRegionIndex
-		return clockDomainsIndex; //deve diventare logicRegionIndex
-	}
-	
 	/**
 	 * Create the map which indicates the index of each clock
 	 */	
@@ -265,23 +242,499 @@ class NetworkPrinterGeneric {
 			}
 		}*/
 	}
+		
+	/**
+	 * return the list of sequential ports (associates a "valid" signal to the port signals)
+	 */	
+	/*def computeSeqPorts(List<Port> ports) {
+		var combInputs = new ArrayList<Port>();
+		for(Port input : ports) {
+			if(!input.isNative()) {
+				combInputs.add(input);
+			}
+		}
+		return combInputs;
+	}*/
+		
+	/**
+	 * Return the simple name of an actor.
+	 */
+	def getActorName(Actor actor) {
+		
+		var String[] splitName = actor.getName().split("_");
+		var String result = "";
+		
+		result = splitName.get(0);
+		
+		if(splitName.size > 2)
+			for(int i : 1 .. splitName.size-2) {
+				result = result + "_" + splitName.get(i);
+			}
+		
+		return result;		
+	}
 	
+	/**
+	 * TODO
+	 */
+	def List<Var> getActorStaticParms(Actor actor) {
+		var List<Var> result = new ArrayList<Var>;
+		for(actVar : actor.parameters) {
+			if (getMatchingVariable(actVar) !== null) {
+				result.add(actVar)
+			}
+		}
+		for(actVar : actor.parameters) {
+			if (getMatchingVariable(actVar) === null && getMatchingParameter(actVar) === null) {
+				result.add(actVar)
+			}
+		}
+		return result
+	}
+	
+	/**
+	 * TODO
+	 */
+	def List<Var> getActorDynamicParms(Actor actor) {
+		var List<Var> result = new ArrayList<Var>;
+		for(actVar : actor.parameters) {
+			if (getMatchingParameter(actVar) !== null) {
+				result.add(actVar)
+			}
+		}
+		return result
+	}
+	
+	def Integer getBufferSizeIntegerValue(Connection connection) {
+		if(connection.hasAttribute("bufferSize")) {
+			if(connection.getAttribute("bufferSize").getContainedValue() !== null) {
+				evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getContainedValue() as Expression);
+			} else { 
+				if (connection.getAttribute("bufferSize").getReferencedValue() !== null) {
+					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getReferencedValue() as Expression);
+				} else {
+			//		OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
+					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getObjectValue() as Expression);
+				}
+			}
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Returns the Map which indicates the index of the given clock
+	 */
+	def Map<String, Integer> getClockDomainIndex(){ //deve diventare getLogicRegionIndex
+		return clockDomainsIndex; //deve diventare logicRegionIndex
+	}
+	
+	/**
+	 * TODO
+	 */
+	def Var getMatchingParameter(Var actVar) {
+		for(Var netVar : network.parameters) {
+			if(actVar.name.equals(netVar.name))
+				return netVar
+		}
+		return null
+	}
+	
+	/**
+	 * TODO
+	 */
+	def Var getMatchingVariable(Var actVar) {
+		for(Var netVar : network.variables) {
+			if(actVar.name.equals(netVar.name))
+				return netVar
+		}
+		return null
+	}
+	
+	def String getParameterValue(String module, Actor actor, Port port, String commParId) {
+		if (protocolManager.modCommParms.get(module).get(commParId).get(ProtocolManager.VAL).equals("variable")) {
+			port.type.sizeInBits.toString
+		} else if (protocolManager.modCommParms.get(module).get(commParId).get(ProtocolManager.VAL).equals("bufferSize")) {
+			if (actor.incomingPortMap.containsKey(port)) {
+				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
+					(getBufferSizeIntegerValue(actor.incomingPortMap.get(port))).toString
+				} else {
+					//TODO return default value
+				//	OrccLogger.traceln("default buffersize");
+					"64"
+				}
+			} else if (actor.outgoingPortMap.containsKey(port)) {
+				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
+					(getBufferSizeIntegerValue(actor.outgoingPortMap.get(port).get(0))).toString
+				} else {
+					//TODO return default value
+			//		OrccLogger.traceln("default buffersize");
+					"64"
+				}
+			}
+		} else if (protocolManager.modCommParms.get(module).get(commParId).get(ProtocolManager.VAL).equals("broadcast")) {
+			if (actor.outgoingPortMap.get(port).get(0).hasAttribute("broadcast")) {
+				actor.outgoingPortMap.get(port).size.toString
+			} else {
+				"1"
+			}
+		} else{
+			protocolManager.modCommParms.get(module).get(commParId).get(ProtocolManager.VAL)
+		}
+	}
+	
+	/**
+	 * return the simple name of a SBox
+	 */
+	def getSboxActorName(Actor actor) {
+		
+		var String result;
+		
+		if(actor.getAttribute("type").getStringValue().equals("1x2")) {
+			/*if(actor.getInput("in1").getType().isBool()) {
+				result = "Sbox1x2bool";
+			} else if(actor.getInput("in1").getType().isInt()) {
+				result = "Sbox1x2int";
+			} else if(actor.getInput("in1").getType().isFloat()) {
+				result = "Sbox1x2float";
+			} else {
+				result = "Sbox1x2";
+			}*/
+			result = "sbox1x2";
+		} else {
+			/*if(actor.getInput("in1").getType().isBool()) {
+				result = "Sbox2x1bool";
+			} else if(actor.getInput("in1").getType().isInt()) {
+				result = "Sbox2x1int";
+			} else if(actor.getInput("in1").getType().isFloat()) {
+				result = "Sbox2x1float";
+			} else {
+				result = "Sbox2x1";
+			}*/ 
+			result = "sbox2x1";
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * return the selector ID for the given SBox
+	 */
+	def String getSboxSelID(Actor actor) {
+		return (actor.getSimpleName().split("_")).get(1);
+	}
+	
+	/**
+	 * return the SBox size
+	 */
+	def String getSboxSize(Actor actor) {
+		return String.valueOf(actor.getInputs().get(0).getType().getSizeInBits());
+	}
+	
+	/**
+	 * return the SBox type (1x2 or 2x1)
+	 */
+	def String getSboxType(Actor actor) {
+		return actor.getAttribute("type").getStringValue();
+	}
+	
+	def String getSourceSignal(Connection connection, String succ, String targetChannel) {
+		
+		var String prefix = ""
+		var String suffix = ""
+		
+		if (connection.source instanceof Actor) {
+			if(!(connection.source as Actor).hasAttribute("sbox")) {
+				if(protocolManager.getModName(succ) != "") {
+					prefix = protocolManager.getModName(succ)
+				}	
+			}
+		}
+		
+		if (connection.hasAttribute("broadcast")) {
+			for (commSigId : protocolManager.modCommSignals.get(succ).keySet) {
+				if ( protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH).equals(targetChannel) ) {
+					if ( protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.SIZE).equals("broadcast") ) {
+						if (connection.sourcePort === null) {
+							suffix = "[" + (connection.source as Port).outgoing.indexOf(connection) + "]"
+						} else {
+							suffix = "[" + (connection.source as Actor).outgoingPortMap.get(connection.sourcePort).indexOf(connection) + "]"
+						}
+						
+					}
+				}	
+			}
+		}
+		
+		
+		
+		if (connection.sourcePort === null) {
+			for (commSigId : protocolManager.modCommSignals.get(succ).keySet) {
+				var String suffix2 = "";
+				if(!protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH).equals("")) {
+					suffix2 = "_" + protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH);	
+				}
+				if ( protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH).equals(targetChannel) ) {
+					return prefix + connection.source.label + suffix2 + suffix
+				}
+			}
+		} else {
+			for (commSigId : protocolManager.modCommSignals.get(succ).keySet) {
+				var String suffix2 = "";
+				if(!protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH).equals("")) {
+					suffix2 = "_" + protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH);	
+				}
+				if ( protocolManager.modCommSignals.get(succ).get(commSigId).get(ProtocolManager.CH).equals(targetChannel) ) {
+					return prefix + connection.source.label + "_" + connection.sourcePort.label + suffix2 + suffix
+				}
+			}
+		}
+	}
+	
+	def String getTargetSignal(Connection connection, String pred, String commSigId) {
+		
+		var String prefix = ""
+		if (connection.target instanceof Actor) {
+			if(!(connection.target as Actor).hasAttribute("sbox")) {
+				if(protocolManager.getModName(pred) != "") {
+					prefix = protocolManager.getModName(pred)
+				}	
+			}
+		}
+		
+		var String suffix = "";
+		if(!protocolManager.modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH).equals("")) {
+			suffix = "_" + protocolManager.modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH);	
+		}
+		
+		if (connection.targetPort === null) {
+			
+			return prefix + connection.target.label + suffix
+		} else {
+			return prefix + connection.target.label + "_" + connection.targetPort.label + suffix
+		}
+	}	
+	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+	
+	
+	
+	/**
+	 * Print actors instantiation in top module.
+	 */	
+	def printActors(Map<String,Set<String>> clockSets) {
+	 	
+		// WARNING: qui serve un controllo in più, dopo le modifiche instanceClockDomain avrà solo attori relativi a domini di CG, quindi quel get.(actor) potrebbe essere null
+		// TODO a seconda delle modifiche che verranno fatte durante CERBERO il parametri potrebbero dover essere manipolati in maniera differente
+		'''
+		«FOR actor : network.getChildren().filter(typeof(Actor))»
+		«IF !actor.hasAttribute("sbox")»
+		«IF protocolManager.modNames.containsKey(ProtocolManager.PRED)»
+		«FOR input : actor.inputs»
+		// «protocolManager.modNames.get(ProtocolManager.PRED)»_«actor.simpleName»_«input.label»
+		«protocolManager.modNames.get(ProtocolManager.PRED)» «IF protocolManager.modCommParms.containsKey(ProtocolManager.PRED)»#(
+		«FOR commParId : protocolManager.modCommParms.get(ProtocolManager.PRED).keySet SEPARATOR ","»	.«protocolManager.modCommParms.get(ProtocolManager.PRED).get(commParId).get(ProtocolManager.NAME)»(«getParameterValue(ProtocolManager.PRED,actor,input,commParId)»)
+		«ENDFOR»
+		) «ENDIF»«protocolManager.modNames.get(ProtocolManager.PRED)»_«actor.simpleName»_«input.label»(
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.PRED).keySet»
+			«IF protocolManager.isInputSide(ProtocolManager.PRED,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.PRED).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.PRED)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.PRED,commSigId,input)»),«ENDIF»
+			«IF protocolManager.isOutputSide(ProtocolManager.PRED,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.PRED).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»),«ENDIF»
+			«ENDFOR»
+			
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.modSysSignals.get(ProtocolManager.PRED).keySet SEPARATOR ","»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.PRED).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
+			.«protocolManager.modSysSignals.get(ProtocolManager.PRED).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.PRED).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
+ 			«ELSE»
+			.«protocolManager.modSysSignals.get(ProtocolManager.PRED).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.PRED).get(sysSigId).get(ProtocolManager.NETP)»)
+			«ENDIF»
+			«ENDFOR»
+		);
+		«ENDFOR»
+		«ENDIF»
+		
+		// actor «actor.simpleName»
+		«getActorName(actor)» «IF !getActorStaticParms(actor).empty»#(
+			// Parameter(s)
+		«FOR parm : getActorStaticParms(actor) SEPARATOR ","»
+			«printActorStaticParm(parm,actor.parameters.size)»
+		«ENDFOR»
+		)
+		«ENDIF»
+		actor_«actor.simpleName» (
+			// Input Signal(s)
+			«FOR input : actor.inputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorInputCommSignals(actor) SEPARATOR ","»
+			.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»)
+			«ENDFOR»
+			«ENDFOR»
+			«IF !protocolManager.getActorOutputCommSignals(actor).empty»,«ENDIF»
+			
+			// Output Signal(s)
+			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorOutputCommSignals(actor) SEPARATOR ","»
+			.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»)
+			«ENDFOR»
+			«ENDFOR»
+			«IF !getActorDynamicParms(actor).empty»,
+			
+			// Dynamic Parameter(s)
+			«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
+			«printActorDynamicParm(parm,actor.parameters.size)»
+			«ENDFOR»
+			«ENDIF»
+			«IF !protocolManager.getActorSysSignals(actor).empty»,«ENDIF»
+			
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.getActorSysSignals(actor) SEPARATOR ","»	
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
+«««			«IF modSysSignals.get(ACTOR).get(sysSigId).get(ACTP).equals(CLOCK) && (enableClockGating || enablePowerGating)»
+			.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
+			«ELSE»
+			.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»)
+			«ENDIF»
+			«ENDFOR»
+		);
+		
+		«ELSE»		
+		
+		// actor «actor.simpleName»
+		«getSboxActorName(actor)» #(
+			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)
+		)
+		«actor.simpleName» (
+			// Input Signal(s)
+			«FOR input : actor.inputs»
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
+			«««todo put actp instead of ch
+			«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId) && !input.label.equals("sel")».«input.label»«protocolManager.getChannelPrintSuffix(protocolManager.getFirstMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»),«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Output Signal(s)
+			«FOR output : actor.outputs»
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getLastMod()).keySet»
+			«««todo put actp instead of ch
+			«IF protocolManager.isOutputSide(protocolManager.getLastMod(),commSigId)».«output.label»«protocolManager.getChannelPrintSuffix(protocolManager.getLastMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»),«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Selector
+			.sel(sel[«actor.simpleName.split("_").get(1)»])	
+		);
+		«ENDIF»	
+		
+		«IF !actor.hasAttribute("sbox")»
+		«IF protocolManager.modNames.containsKey(ProtocolManager.SUCC)»
+		«FOR output : actor.outputs»
+		// «protocolManager.modNames.get(ProtocolManager.SUCC)»_«actor.simpleName»_«output.label»
+		«protocolManager.modNames.get(ProtocolManager.SUCC)»  «IF protocolManager.modCommParms.containsKey(ProtocolManager.PRED)»#(
+		«FOR commParId : protocolManager.modCommParms.get(ProtocolManager.SUCC).keySet SEPARATOR ","»	.«protocolManager.modCommParms.get(ProtocolManager.SUCC).get(commParId).get(ProtocolManager.NAME)»(«getParameterValue(ProtocolManager.SUCC,actor,output,commParId)»)
+		«ENDFOR»
+		) «ENDIF»«protocolManager.modNames.get(ProtocolManager.SUCC)»_«actor.simpleName»_«output.label»(
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
+			«IF protocolManager.isInputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»),«ENDIF»
+			«IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,output)»),«ENDIF»
+			«ENDFOR»
+			
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.modSysSignals.get(ProtocolManager.SUCC).keySet SEPARATOR ","»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
+			.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
+			«ELSE»
+			.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»)
+			«ENDIF»
+			«ENDFOR»
+		);
+		«ENDFOR»
+		«ENDIF»
+		«ENDIF»
+		«ENDFOR»
+		'''
+	}
+	
+	/**
+	 * TODO
+	 */
+	def printActorDynamicParm(Var parm, int size) {
+		
+		var String result = "";
+		var String value = "";
+		for(Var netParm : network.parameters) {
+			if(netParm.name.equals(parm.name)) {
+				value = netParm.name;
+			}
+		}
+		if(value.equals("")) {
+			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
+		}
+		result = "." + parm.name + "(" + value + ")";
+		
+		return result;
+		
+	}
+	
+	/**
+	 * TODO
+	 */
+	def printActorStaticParm(Var parm, int size) {
+		
+		var String result = "";
+		var String value = "";
+		for(Var netParm : network.variables) {
+			if(netParm.name.equals(parm.name)) {
+				value = netParm.name;
+			}
+		}
+		if(value.equals("")) {
+			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
+		}
+		result = "." + parm.name + "(" + value + ")";
+		
+		return result;
+		
+	}
 
 	/**
-	 * Print the header of the Verilog file
+	 * print assignments to connect instances.
 	 */
-	def headerComments(){
-		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		var date = new Date();
+	def printAssignments() {
+		
 		'''
-		// ----------------------------------------------------------------------------
-		//
-		// Multi-Dataflow Composer tool - Platform Composer
-		// Multi-Dataflow Network module 
-		// Date: «dateFormat.format(date)»
-		//
-		// ----------------------------------------------------------------------------
-		'''	
+		// Module(s) Assignments
+		«FOR connection : network.connections»
+		«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
+		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
+		«IF protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.KIND).equals("input")»
+		assign «getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)» = «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))»;
+		«ELSE»
+		«IF connection.hasAttribute("broadcast")»
+		«IF connection.source instanceof Actor»
+		«IF !connection.sourcePort.hasAttribute("printed")»
+		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =
+		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " ||"»
+		«getTargetSignal(broadConn,protocolManager.getFirstMod(),commSigId)» 
+		«ENDFOR»;
+		«connection.sourcePort.setAttribute("printed","")»
+		«ENDIF»
+		«ELSE»
+		«IF !connection.source.hasAttribute("printed")»
+		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
+		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " ||"»
+		«getTargetSignal(broadConn as Connection,protocolManager.getFirstMod(),commSigId)» 
+		«ENDFOR»;
+		«connection.source.setAttribute("printed","")»
+		«ENDIF»
+		«ENDIF»
+		«ELSE»
+		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» = «getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)»;
+		«ENDIF»
+		«ENDIF»
+		«ENDIF»
+		«ENDFOR»
+		
+		«ENDFOR»
+		'''
 	}
 	
 	/**
@@ -330,9 +783,9 @@ class NetworkPrinterGeneric {
 		'''
 		// Enable Generator
 		enable_generator en_gen_0 (
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.clock_in(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
+			«FOR sysSigId : protocolManager.netSysSignals.keySet SEPARATOR ","»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK)»
+			.clock_in(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ENDIF»
 			«ENDFOR»
 			.clocks_en(clocks_en),					
 			.ID(ID)
@@ -353,306 +806,31 @@ class NetworkPrinterGeneric {
 		clock_gating_cell cgc_«powerSetsIndex.get(lr)» (
 			.ck_gated(ck_gated_«clockDomainsIndex.get(lr)»),
 			.en(clocks_en[«powerSetsIndex.get(lr)»]),
-			«FOR sysSigId : netSysSignals.keySet»
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
+			«FOR sysSigId : protocolManager.netSysSignals.keySet»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK)»
+			.clk(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ENDIF»
 			«ENDFOR»
 		);
 		«ENDIF»
 		«ENDFOR»
 		'''
 	}
-	
-	/**
-	 * Print the logic necessary to manage the power gating technique: power controller and clock gating cells
-	 */
-	def printPowerController(){
-		'''
-		//Power Controller
-		PowerController powerController_0(
-			// Input Signal(s)
-			.ID(ID),
-			.reference_count(reference_count),
-		
-			// Output Signal(s)			
-			«FOR lr: powerSets»
-			.sw_ack«clockDomainsIndex.get(lr)»(sw_ack«clockDomainsIndex.get(lr)»),
-			.status«clockDomainsIndex.get(lr)»(status«clockDomainsIndex.get(lr)»),
-			.iso_en«clockDomainsIndex.get(lr)»(iso_en«clockDomainsIndex.get(lr)»),
-			«IF logicRegionsSeqMap.get(lr)»
-			.rtn_en«clockDomainsIndex.get(lr)»(rtn_en«clockDomainsIndex.get(lr)»),
-			.en_cg«clockDomainsIndex.get(lr)»(en_cg«clockDomainsIndex.get(lr)»),
-			«ENDIF»
-			.pw_switch_en«clockDomainsIndex.get(lr)»(pw_switch_en«clockDomainsIndex.get(lr)»),			
-			
-			«ENDFOR»
-			// System Signal(s)
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ELSE»
-			««« TODO: necessary to bring inside the info about the reset activity (low or high)
-			.rst(!«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
-			«ENDFOR»
-		);
-		
-		
-		/*fake_switches are inserted for behavioural and post synthesis simulation 
-		and verification (when real switches have not been insterted yet.
-		Remove these fake switches before synthesis and implementation!
-		*/
-		«FOR lr: powerSets»
-		fake_switch fake_sw_«clockDomainsIndex.get(lr)» (
-			.nsleep_in(pw_switch_en«clockDomainsIndex.get(lr)»),
-			.nsleep_out(sw_ack«clockDomainsIndex.get(lr)»),
-			// System Signal(s)
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.aclk(«netSysSignals.get(sysSigId).get(NETP)»)«ELSE»
-			.aresetn(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
-			«ENDFOR»
-				);
-		«ENDFOR»
-		
-		
-		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
-		// Clock Gating Cell «clockDomainsIndex.get(lr)»
-		clock_gating_cell cgc_«clockDomainsIndex.get(lr)» (
-			.ck_gated(ck_gated_«clockDomainsIndex.get(lr)»),
-			.en(en_cg«clockDomainsIndex.get(lr)»),
-			«FOR sysSigId : netSysSignals.keySet»
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK)»
-			.clk(«netSysSignals.get(sysSigId).get(NETP)»)«ENDIF»
-			«ENDFOR»
-		);
-		«ENDIF»
-		«ENDFOR»
-		'''
-	}
-	
-	/**
-	 * return the list of combinatorial ports (does not associate a "valid" signal to the port signals)
-	 */
-	def computeCombPorts(List<Port> ports) {
-		var combInputs = new ArrayList<Port>();
-		for(Port input : ports) {
-			if(input.isNative()) {
-				combInputs.add(input);
-			}
-		}
-		return combInputs;
-	}
-	
-	/**
-	 * return the list of sequential ports (associates a "valid" signal to the port signals)
-	 */	
-	def computeSeqPorts(List<Port> ports) {
-		var combInputs = new ArrayList<Port>();
-		for(Port input : ports) {
-			if(!input.isNative()) {
-				combInputs.add(input);
-			}
-		}
-		return combInputs;
-	}
-	
-	/**
-	 * TODO \todo add description
-	 */
-	def printParm(Var parm, int size) {
-		
-		var String result = "";
-
-		result = "." + parm.name + "(" + (evaluator.evaluateAsInteger(parm.initialValue)) + ")";
-		
-		if(idParm == size-1) {
-			idParm = 0; 
-			lastParm = true;
-		} else {
-			idParm = idParm + 1;
-		}
-		if(!lastParm) {
-			result = result + ","
-		} else {
-			lastParm = false;
-			idParm = 0;
-		}
-		return result;
-		
-	}
 
 	/**
-	 * For each connection,
-	 * if the connection has already been printed, remove
-	 * the "printed" attribute from its source port or vertex.
-	 * 
-	 * TODO \todo to check. There is a similar function in PlatformComposer.removeAllPrintFlags()
-	 * Do we need both?
-	 */	
-	def removeAllPrintFlags() {
-		
-		for(Connection connection : network.getConnections())
-			if(connection.sourcePort == null) {
-				if(connection.source.hasAttribute("printed")) {
-					connection.source.removeAttribute("printed");	
-				}
-			} else {
-				if(connection.sourcePort.hasAttribute("printed")) {
-					connection.sourcePort.removeAttribute("printed");	
-				}
-			}	
-	}	
-	
-	/**
-	 * Return the simple name of an actor.
+	 * Print the header of the Verilog file
 	 */
-	def getActorName(Actor actor) {
-		
-		var String[] splitName = actor.getName().split("_");
-		var String result = "";
-		
-		result = splitName.get(0);
-		
-		if(splitName.size > 2)
-			for(int i : 1 .. splitName.size-2) {
-				result = result + "_" + splitName.get(i);
-			}
-		
-		return result;		
-	}
-	
-	/**
-	 * return the simple name of a SBox
-	 */
-	def getSboxActorName(Actor actor) {
-		
-		var String result;
-		
-		if(actor.getAttribute("type").getStringValue().equals("1x2")) {
-			/*if(actor.getInput("in1").getType().isBool()) {
-				result = "Sbox1x2bool";
-			} else if(actor.getInput("in1").getType().isInt()) {
-				result = "Sbox1x2int";
-			} else if(actor.getInput("in1").getType().isFloat()) {
-				result = "Sbox1x2float";
-			} else {
-				result = "Sbox1x2";
-			}*/
-			result = "sbox1x2";
-		} else {
-			/*if(actor.getInput("in1").getType().isBool()) {
-				result = "Sbox2x1bool";
-			} else if(actor.getInput("in1").getType().isInt()) {
-				result = "Sbox2x1int";
-			} else if(actor.getInput("in1").getType().isFloat()) {
-				result = "Sbox2x1float";
-			} else {
-				result = "Sbox2x1";
-			}*/ 
-			result = "sbox2x1";
-		}
-		
-		return result;
-	}
-	
-	
-	
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-	
-	def String getModName(String module) {
-		if (modNames.containsKey(module)) {
-			return modNames.get(module) + "_"
-		} else {
-			return ""
-		}
-	}
-	
-	def int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
-		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable")) {
-			return port.type.sizeInBits
-		} else if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("broadcast")) {
-			if (actor != null) {
-			 	if (actor.outgoingPortMap.containsKey(port)) {
-					if (actor.outgoingPortMap.get(port).get(0).hasAttribute("broadcast")) {
-						actor.outgoingPortMap.get(port).size
-					} else {
-						1
-					}
-				} else {
-					1
-				}
-			} else if (port != null) {
-				if(port.outgoing.size != 0) {
-					if ((port.outgoing.get(0) as Connection).hasAttribute("broadcast")) {
-						port.outgoing.size
-					} else {
-						1
-					}
-				
-				} else {
-					1
-				}
-			} else {
-				1
-			}
-		} else {	
-			return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(SIZE))
-		}
-	}
-	
-	def int getSysSigSize(String module, String commSigId) {
-		if(module == null) {
-			return Integer.parseInt(netSysSignals.get(commSigId).get(SIZE))
-		} else {
-			return Integer.parseInt(modSysSignals.get(module).get(commSigId).get(SIZE))
-		}
-	}
-	
-	def String getSigName(String module, String commSigId, Port port) {
-		if (!modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
-			return port.label + "_" + modCommSignals.get(module).get(commSigId).get(CH)
-		} else {
-			return port.label
-		}
-	}
-	
-	def String getSysSigDimension(String module, String sysSigId) {
-		if (getSysSigSize(module,sysSigId) != 1) {
-			return "[" + (getSysSigSize(module,sysSigId)-1) + " : 0] " 
-		} else {
-			return ""
-		}
-	}
-	
-	def String getCommSigDimension(String module, Actor actor, String commSigId, Port port) {
-		if (getCommSigSize(module,actor,commSigId,port) != 1) {
-			return "[" + (getCommSigSize(module,actor,commSigId,port)-1) + " : 0] " 
-		} else {
-			return ""
-		}
-	}
-	
-	def boolean isInputSide(String module, String commSigId) {
-		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
-			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
-			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
-			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
-			return true		
-		} else {
-			return false
-		}
-	}
-	
-	def boolean isOutputSide(String module, String commSigId) {
-		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
-			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
-			|| (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
-			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
-			return true		
-		} else {
-			return false
-		}
+	def printHeaderComments(){
+		var dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		var date = new Date();
+		'''
+		// ----------------------------------------------------------------------------
+		//
+		// Multi-Dataflow Composer tool - Platform Composer
+		// Multi-Dataflow Network module 
+		// Date: «dateFormat.format(date)»
+		//
+		// ----------------------------------------------------------------------------
+		'''	
 	}
 	
 	/**
@@ -660,19 +838,6 @@ class NetworkPrinterGeneric {
 	 */
 	def printInterface(List<SboxLut> luts) {
 		
-		var String pred;
-		var String succ;
-		if (modNames.containsKey(PRED)) {
-			pred = PRED;
-		} else {
-			pred = ACTOR;	
-	 	}
-		if (modNames.containsKey(SUCC)) {
-			succ = SUCC;
-		} else {
-			succ = ACTOR;	
-	 	}
-	 	
 		'''
 		module multi_dataflow «IF !network.variables.empty»#(
 			// Static Parameter(s)
@@ -682,18 +847,18 @@ class NetworkPrinterGeneric {
 		) «ENDIF»(
 			// Input(s)
 			«FOR input : network.inputs»
-			«FOR commSigId : modCommSignals.get(pred).keySet»
-			«IF isInputSide(pred,commSigId)»
-			«modCommSignals.get(pred).get(commSigId).get(KIND)» «getCommSigDimension(pred,null,commSigId,input)»«getSigName(pred,commSigId,input)»,
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.firstMod).keySet»
+			«IF protocolManager.isInputSide(protocolManager.firstMod,commSigId)»
+			«protocolManager.modCommSignals.get(protocolManager.firstMod).get(commSigId).get(ProtocolManager.KIND)» «protocolManager.getCommSigPrintRange(protocolManager.firstMod,null,commSigId,input)»«protocolManager.getSigPrintName(protocolManager.firstMod,commSigId,input)»,
 			«ENDIF»
 			«ENDFOR»
 			
 			// Output(s)
 			«ENDFOR»
 			«FOR output : network.outputs»
-			«FOR commSigId : modCommSignals.get(succ).keySet»
-			«IF isOutputSide(succ,commSigId)»
-			«modCommSignals.get(succ).get(commSigId).get(KIND)»  «getCommSigDimension(succ,null,commSigId,output)»«getSigName(succ,commSigId,output)»,
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.lastMod).keySet»
+			«IF protocolManager.isOutputSide(protocolManager.lastMod,commSigId)»
+			«protocolManager.modCommSignals.get(protocolManager.lastMod).get(commSigId).get(ProtocolManager.KIND)»  «protocolManager.getCommSigPrintRange(protocolManager.lastMod,null,commSigId,output)»«protocolManager.getSigPrintName(protocolManager.lastMod,commSigId,output)»,
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»	
@@ -719,8 +884,8 @@ class NetworkPrinterGeneric {
 			«ENDIF»			
 			
 			// System Signal(s)		
-			«FOR sysSigId : netSysSignals.keySet SEPARATOR ","»
-			«netSysSignals.get(sysSigId).get(KIND)» «getSysSigDimension(null,sysSigId)»«netSysSignals.get(sysSigId).get(NETP)»
+			«FOR sysSigId : protocolManager.netSysSignals.keySet SEPARATOR ","»
+			«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.KIND)» «protocolManager.getSysSigPrintRange(null,sysSigId)»«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»
 			«ENDFOR»
 		);	
 		'''
@@ -730,20 +895,7 @@ class NetworkPrinterGeneric {
 	 * print top module internal signals
 	 */
 	def printInternalSignals(List<SboxLut> luts) {
-		
-		var String pred;
-		var String succ;
-		if (modNames.containsKey(PRED)) {
-			pred = PRED;
-		} else {
-			pred = ACTOR;	
-	 	}
-		if (modNames.containsKey(SUCC)) {
-			succ = SUCC;
-		} else {
-			succ = ACTOR;	
-	 	}
-		
+	
 		'''	
 		«IF !luts.empty»
 		// Sboxes Config Wire(s)
@@ -777,29 +929,29 @@ class NetworkPrinterGeneric {
 		// actor «actor.simpleName»
 		«IF !actor.hasAttribute("sbox")»
 			«FOR input : actor.inputs»
-			«IF modNames.containsKey(PRED)»
-			«FOR commSigId : modCommSignals.get(PRED).keySet»
-			«IF isInputSide(PRED,commSigId)»
-			wire «getCommSigDimension(PRED,actor,commSigId,input)»«getModName(PRED)»«actor.label»_«getSigName(PRED,commSigId,input)»;
+			«IF protocolManager.modNames.containsKey(ProtocolManager.PRED)»
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.PRED).keySet»
+			«IF protocolManager.isInputSide(ProtocolManager.PRED,commSigId)»
+			wire «protocolManager.getCommSigPrintRange(ProtocolManager.PRED,actor,commSigId,input)»«protocolManager.getModName(ProtocolManager.PRED)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.PRED,commSigId,input)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDIF»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isInputSide(ACTOR,commSigId)»
-			wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»;
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+			«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)»
+			wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,input)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			«FOR output : actor.outputs»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isOutputSide(ACTOR,commSigId)»
-			wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»;
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+			«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)»
+			wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,output)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»;
 			«ENDIF»
 			«ENDFOR»
-			«IF modNames.containsKey(SUCC)»
-			«FOR commSigId : modCommSignals.get(SUCC).keySet»
-			«IF isOutputSide(SUCC,commSigId)»
-			wire «getCommSigDimension(SUCC,actor,commSigId,output)»«getModName(SUCC)»«actor.label»_«getSigName(SUCC,commSigId,output)»;
+			«IF protocolManager.modNames.containsKey(ProtocolManager.SUCC)»
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
+			«IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)»
+			wire «protocolManager.getCommSigPrintRange(ProtocolManager.SUCC,actor,commSigId,output)»«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,output)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDIF»
@@ -820,16 +972,16 @@ class NetworkPrinterGeneric {
 «««			«ENDFOR»
 «««			«ENDFOR»
 			«FOR input : actor.inputs»
-			«FOR commSigId : modCommSignals.get(pred).keySet»
-			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")»
-			 wire «getCommSigDimension(ACTOR,actor,commSigId,input)»«getModName(ACTOR)»«actor.label»_«getSigName(pred,commSigId,input)»;
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.firstMod).keySet»
+			«IF protocolManager.isInputSide(protocolManager.firstMod,commSigId) && !input.label.equals("sel")»
+			 wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,input)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(protocolManager.firstMod,commSigId,input)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
 			«FOR output : actor.outputs»
-			«FOR commSigId : modCommSignals.get(ACTOR).keySet»
-			«IF isOutputSide(succ,commSigId)»
-			 wire «getCommSigDimension(ACTOR,actor,commSigId,output)»«getModName(ACTOR)»«actor.label»_«getSigName(succ,commSigId,output)»;
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+			«IF protocolManager.isOutputSide(protocolManager.lastMod,commSigId)»
+			 wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,output)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(protocolManager.lastMod,commSigId,output)»;
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»
@@ -837,515 +989,103 @@ class NetworkPrinterGeneric {
 		«ENDFOR»
 		'''
 	}
+	
+	/**
+	 * Print the logic necessary to manage the power gating technique: power controller and clock gating cells
+	 */
+	def printPowerController(){
+		'''
+		//Power Controller
+		PowerController powerController_0(
+			// Input Signal(s)
+			.ID(ID),
+			.reference_count(reference_count),
 		
-	def Integer getBufferSizeIntegerValue(Connection connection) {
-		if(connection.hasAttribute("bufferSize")) {
-			if(connection.getAttribute("bufferSize").getContainedValue() != null) {
-				evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getContainedValue() as Expression);
-			} else { 
-				if (connection.getAttribute("bufferSize").getReferencedValue() != null) {
-					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getReferencedValue() as Expression);
-				} else {
-			//		OrccLogger.debugln("CCC " + connection + "   " + connection.getAttributes());
-					return evaluator.evaluateAsInteger(connection.getAttribute("bufferSize").getObjectValue() as Expression);
-				}
-			}
-		} else {
-			return null;
-		}
-	}
-	
-	
-	def String getParameterValue(String module, Actor actor, Port port, String commParId) {
-		if (modCommParms.get(module).get(commParId).get(VAL).equals("variable")) {
-			port.type.sizeInBits.toString
-		} else if (modCommParms.get(module).get(commParId).get(VAL).equals("bufferSize")) {
-			if (actor.incomingPortMap.containsKey(port)) {
-				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
-					(getBufferSizeIntegerValue(actor.incomingPortMap.get(port))).toString
-				} else {
-					//TODO return default value
-				//	OrccLogger.traceln("default buffersize");
-					"64"
-				}
-			} else if (actor.outgoingPortMap.containsKey(port)) {
-				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
-					(getBufferSizeIntegerValue(actor.outgoingPortMap.get(port).get(0))).toString
-				} else {
-					//TODO return default value
-			//		OrccLogger.traceln("default buffersize");
-					"64"
-				}
-			}
-		} else if (modCommParms.get(module).get(commParId).get(VAL).equals("broadcast")) {
-			if (actor.outgoingPortMap.get(port).get(0).hasAttribute("broadcast")) {
-				actor.outgoingPortMap.get(port).size.toString
-			} else {
-				"1"
-			}
-		} else{
-			modCommParms.get(module).get(commParId).get(VAL)
-		}
-	}
-	
-	def String getActorPortSignal(String commSigId, Port port) {
-		if(modCommSignals.get(ACTOR).get(commSigId).get(ACTP).equals("")) {
-			port.label	
-		} else {
-			port.label + "_" + modCommSignals.get(ACTOR).get(commSigId).get(ACTP)
-		}
-	}
-	
-	def String getChannelSuffix(String module, String commSigId) {
-		if(modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
-			""
-		} else {
-			"_" + modCommSignals.get(module).get(commSigId).get(CH)
-		}
+			// Output Signal(s)			
+			«FOR lr: powerSets»
+			.sw_ack«clockDomainsIndex.get(lr)»(sw_ack«clockDomainsIndex.get(lr)»),
+			.status«clockDomainsIndex.get(lr)»(status«clockDomainsIndex.get(lr)»),
+			.iso_en«clockDomainsIndex.get(lr)»(iso_en«clockDomainsIndex.get(lr)»),
+			«IF logicRegionsSeqMap.get(lr)»
+			.rtn_en«clockDomainsIndex.get(lr)»(rtn_en«clockDomainsIndex.get(lr)»),
+			.en_cg«clockDomainsIndex.get(lr)»(en_cg«clockDomainsIndex.get(lr)»),
+			«ENDIF»
+			.pw_switch_en«clockDomainsIndex.get(lr)»(pw_switch_en«clockDomainsIndex.get(lr)»),			
+			
+			«ENDFOR»
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.netSysSignals.keySet SEPARATOR ","»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK)»
+			.clk(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ELSE»
+			««« TODO: necessary to bring inside the info about the reset activity (low or high)
+			.rst(!«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ENDIF»
+			«ENDFOR»
+		);
+		
+		
+		/*fake_switches are inserted for behavioural and post synthesis simulation 
+		and verification (when real switches have not been insterted yet.
+		Remove these fake switches before synthesis and implementation!
+		*/
+		«FOR lr: powerSets»
+		fake_switch fake_sw_«clockDomainsIndex.get(lr)» (
+			.nsleep_in(pw_switch_en«clockDomainsIndex.get(lr)»),
+			.nsleep_out(sw_ack«clockDomainsIndex.get(lr)»),
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.netSysSignals.keySet SEPARATOR ","»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK)»
+			.aclk(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ELSE»
+			.aresetn(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ENDIF»
+			«ENDFOR»
+				);
+		«ENDFOR»
+		
+		
+		«FOR lr: powerSets» «IF logicRegionsSeqMap.get(lr)»
+		// Clock Gating Cell «clockDomainsIndex.get(lr)»
+		clock_gating_cell cgc_«clockDomainsIndex.get(lr)» (
+			.ck_gated(ck_gated_«clockDomainsIndex.get(lr)»),
+			.en(en_cg«clockDomainsIndex.get(lr)»),
+			«FOR sysSigId : protocolManager.netSysSignals.keySet»
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK)»
+			.clk(«protocolManager.netSysSignals.get(sysSigId).get(ProtocolManager.NETP)»)«ENDIF»
+			«ENDFOR»
+		);
+		«ENDIF»
+		«ENDFOR»
+		'''
 	}
 	
 	/**
-	 * TODO
+	 * Print parameter within parameter list
+	 * 
+	 * @parm
+	 * 				involved variable
+	 * @size
+	 * 				overall number of parameters
+	 * @return		
+	 * 				parameter to be printed within list
 	 */
-	def printActorStaticParm(Var parm, int size) {
+	def printParm(Var parm, int size) {
 		
 		var String result = "";
-		var String value = "";
-		for(Var netParm : network.variables) {
-			if(netParm.name.equals(parm.name)) {
-				value = netParm.name;
-			}
-		}
-		if(value.equals("")) {
-			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
-		}
-		result = "." + parm.name + "(" + value + ")";
+
+		result = "." + parm.name + "(" + (evaluator.evaluateAsInteger(parm.initialValue)) + ")";
 		
+		if(idParm == size-1) {
+			idParm = 0; 
+			lastParm = true;
+		} else {
+			idParm = idParm + 1;
+		}
+		if(!lastParm) {
+			result = result + ","
+		} else {
+			lastParm = false;
+			idParm = 0;
+		}
 		return result;
 		
-	}
-	
-	/**
-	 * TODO
-	 */
-	def printActorDynamicParm(Var parm, int size) {
-		
-		var String result = "";
-		var String value = "";
-		for(Var netParm : network.parameters) {
-			if(netParm.name.equals(parm.name)) {
-				value = netParm.name;
-			}
-		}
-		if(value.equals("")) {
-			value = evaluator.evaluateAsInteger(parm.initialValue).toString;
-		}
-		result = "." + parm.name + "(" + value + ")";
-		
-		return result;
-		
-	}
-	
-	/**
-	 * TODO
-	 */
-	def Var getMatchingVariable(Var actVar) {
-		for(Var netVar : network.variables) {
-			if(actVar.name.equals(netVar.name))
-				return netVar
-		}
-		return null
-	}
-	
-	/**
-	 * TODO
-	 */
-	def Var getMatchingParameter(Var actVar) {
-		for(Var netVar : network.parameters) {
-			if(actVar.name.equals(netVar.name))
-				return netVar
-		}
-		return null
-	}
-	
-	/**
-	 * TODO
-	 */
-	def List<Var> getActorStaticParms(Actor actor) {
-		var List<Var> result = new ArrayList<Var>;
-		for(actVar : actor.parameters) {
-			if (getMatchingVariable(actVar) !== null) {
-				result.add(actVar)
-			}
-		}
-		for(actVar : actor.parameters) {
-			if (getMatchingVariable(actVar) === null && getMatchingParameter(actVar) === null) {
-				result.add(actVar)
-			}
-		}
-		return result
-	}
-	
-	/**
-	 * TODO
-	 */
-	def List<Var> getActorDynamicParms(Actor actor) {
-		var List<Var> result = new ArrayList<Var>;
-		for(actVar : actor.parameters) {
-			if (getMatchingParameter(actVar) !== null) {
-				result.add(actVar)
-			}
-		}
-		return result
-	}
-	
-	/**
-	 * Print actors instantiation in top module.
-	 */	
-	def printActors(Map<String,Set<String>> clockSets) {
-		
-		var String pred;
-		var String succ;
-		if (modNames.containsKey(PRED)) {
-			pred = PRED;
-		} else {
-			pred = ACTOR;	
-	 	}
-		if (modNames.containsKey(SUCC)) {
-			succ = SUCC;
-		} else {
-			succ = ACTOR;	
-	 	}
-	 	
-		// WARNING: qui serve un controllo in più, dopo le modifiche instanceClockDomain avrà solo attori relativi a domini di CG, quindi quel get.(actor) potrebbe essere null
-		// TODO a seconda delle modifiche che verranno fatte durante CERBERO il parametri potrebbero dover essere manipolati in maniera differente
-		'''
-		«FOR actor : network.getChildren().filter(typeof(Actor))»
-		«IF !actor.hasAttribute("sbox")»
-		«IF modNames.containsKey(PRED)»
-		«FOR input : actor.inputs»
-		// «modNames.get(PRED)»_«actor.simpleName»_«input.label»
-		«modNames.get(PRED)» «IF modCommParms.containsKey(PRED)»#(
-		«FOR commParId : modCommParms.get(PRED).keySet SEPARATOR ","»	.«modCommParms.get(PRED).get(commParId).get(NAME)»(«getParameterValue(PRED,actor,input,commParId)»)
-		«ENDFOR»
-		) «ENDIF»«modNames.get(PRED)»_«actor.simpleName»_«input.label»(
-			«FOR commSigId : modCommSignals.get(PRED).keySet»
-			«IF isInputSide(PRED,commSigId)».«modCommSignals.get(PRED).get(commSigId).get(ACTP)»(«getModName(PRED)»«actor.label»_«getSigName(PRED,commSigId,input)»),«ENDIF»
-			«IF isOutputSide(PRED,commSigId)».«modCommSignals.get(PRED).get(commSigId).get(ACTP)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»),«ENDIF»
-			«ENDFOR»
-			
-			// System Signal(s)
-			«FOR sysSigId : modSysSignals.get(PRED).keySet SEPARATOR ","»
-			«IF modSysSignals.get(PRED).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
-			.«modSysSignals.get(PRED).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(PRED).get(sysSigId).get(NETP)»«ENDIF»)
- 			«ELSE»
-			.«modSysSignals.get(PRED).get(sysSigId).get(ACTP)»(«modSysSignals.get(PRED).get(sysSigId).get(NETP)»)
-			«ENDIF»
-			«ENDFOR»
-		);
-		«ENDFOR»
-		«ENDIF»
-		
-		// actor «actor.simpleName»
-		«getActorName(actor)» «IF !getActorStaticParms(actor).empty»#(
-			// Parameter(s)
-		«FOR parm : getActorStaticParms(actor) SEPARATOR ","»
-			«printActorStaticParm(parm,actor.parameters.size)»
-		«ENDFOR»
-		)
-		«ENDIF»
-		actor_«actor.simpleName» (
-			// Input Signal(s)
-			«FOR input : actor.inputs SEPARATOR ","»«FOR commSigId : getActorInputCommSignals(actor) SEPARATOR ","»
-			.«getActorPortSignal(commSigId,input)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,input)»)
-			«ENDFOR»
-			«ENDFOR»
-			«IF !getActorOutputCommSignals(actor).empty»,«ENDIF»
-			
-			// Output Signal(s)
-			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : getActorOutputCommSignals(actor) SEPARATOR ","»
-			.«getActorPortSignal(commSigId,output)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»)
-			«ENDFOR»
-			«ENDFOR»
-			«IF !getActorDynamicParms(actor).empty»,
-			
-			// Dynamic Parameter(s)
-			«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
-			«printActorDynamicParm(parm,actor.parameters.size)»
-			«ENDFOR»
-			«ENDIF»
-			«IF !getActorSysSignals(actor).empty»,«ENDIF»
-			
-			// System Signal(s)
-			«FOR sysSigId : getActorSysSignals(actor) SEPARATOR ","»	
-			«IF modSysSignals.get(ACTOR).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
-«««			«IF modSysSignals.get(ACTOR).get(sysSigId).get(ACTP).equals(CLOCK) && (enableClockGating || enablePowerGating)»
-			.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»«ENDIF»)
-			«ELSE»
-			.«modSysSignals.get(ACTOR).get(sysSigId).get(ACTP)»(«modSysSignals.get(ACTOR).get(sysSigId).get(NETP)»)
-			«ENDIF»
-			«ENDFOR»
-		);
-		
-		«ELSE»		
-		
-		// actor «actor.simpleName»
-		«getSboxActorName(actor)» #(
-			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)
-		)
-		«actor.simpleName» (
-			// Input Signal(s)
-			«FOR input : actor.inputs»
-			«FOR commSigId : modCommSignals.get(pred).keySet»
-			«««todo put actp instead of ch
-			«IF isInputSide(pred,commSigId) && !input.label.equals("sel")».«input.label»«getChannelSuffix(pred,commSigId)»(«actor.label»_«getSigName(pred,commSigId,input)»),«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
-			
-			// Output Signal(s)
-			«FOR output : actor.outputs»
-			«FOR commSigId : modCommSignals.get(succ).keySet»
-			«««todo put actp instead of ch
-			«IF isOutputSide(succ,commSigId)».«output.label»«getChannelSuffix(succ,commSigId)»(«actor.label»_«getSigName(succ,commSigId,output)»),«ENDIF»
-			«ENDFOR»
-			«ENDFOR»
-			
-			// Selector
-			.sel(sel[«actor.simpleName.split("_").get(1)»])	
-		);
-		«ENDIF»	
-		
-		«IF !actor.hasAttribute("sbox")»
-		«IF modNames.containsKey(SUCC)»
-		«FOR output : actor.outputs»
-		// «modNames.get(SUCC)»_«actor.simpleName»_«output.label»
-		«modNames.get(SUCC)»  «IF modCommParms.containsKey(PRED)»#(
-		«FOR commParId : modCommParms.get(SUCC).keySet SEPARATOR ","»	.«modCommParms.get(SUCC).get(commParId).get(NAME)»(«getParameterValue(SUCC,actor,output,commParId)»)
-		«ENDFOR»
-		) «ENDIF»«modNames.get(SUCC)»_«actor.simpleName»_«output.label»(
-			«FOR commSigId : modCommSignals.get(SUCC).keySet»
-			«IF isInputSide(SUCC,commSigId)».«modCommSignals.get(SUCC).get(commSigId).get(ACTP)»(«getModName(ACTOR)»«actor.label»_«getSigName(ACTOR,commSigId,output)»),«ENDIF»
-			«IF isOutputSide(SUCC,commSigId)».«modCommSignals.get(SUCC).get(commSigId).get(ACTP)»(«getModName(SUCC)»«actor.label»_«getSigName(SUCC,commSigId,output)»),«ENDIF»
-			«ENDFOR»
-			
-			// System Signal(s)
-			«FOR sysSigId : modSysSignals.get(SUCC).keySet SEPARATOR ","»
-			«IF modSysSignals.get(SUCC).get(sysSigId).containsKey(CLOCK) && (enableClockGating || enablePowerGating)»
-			.«modSysSignals.get(SUCC).get(sysSigId).get(ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«modSysSignals.get(SUCC).get(sysSigId).get(NETP)»«ENDIF»)
-			«ELSE»
-			.«modSysSignals.get(SUCC).get(sysSigId).get(ACTP)»(«modSysSignals.get(SUCC).get(sysSigId).get(NETP)»)
-			«ENDIF»
-			«ENDFOR»
-		);
-		«ENDFOR»
-		«ENDIF»
-		«ENDIF»
-		«ENDFOR»
-		'''
-	}
-	
-	def List<String> getActorSysSignals(Actor actor) {
-		var List<String> actorSysSignalsId = new ArrayList<String>();
-		for(String sysSigId : modSysSignals.get(ACTOR).keySet) {
-			if(modSysSignals.get(ACTOR).get(sysSigId).containsKey(FILTER)) {
-				if(actor.hasAttribute(modSysSignals.get(ACTOR).get(sysSigId).get(FILTER))) {
-					actorSysSignalsId.add(sysSigId);
-				}
-			} else {
-				actorSysSignalsId.add(sysSigId);
-			}
-		}
-		return actorSysSignalsId
-	}
-
-	def List<String> getActorCommSignals(Actor actor) {
-		var List<String> actorCommSignalsId = new ArrayList<String>();
-		for(String commSigId : modCommSignals.get(ACTOR).keySet) {
-			if(modCommSignals.get(ACTOR).get(commSigId).containsKey(FILTER)) {
-				if(actor.hasAttribute(modCommSignals.get(ACTOR).get(commSigId).get(FILTER))) {
-					actorCommSignalsId.add(commSigId);
-				}
-			} else {
-				actorCommSignalsId.add(commSigId);
-			}
-		}
-		return actorCommSignalsId
-	}
-	
-	
-	def List<String> getActorInputCommSignals(Actor actor) {
-		var List<String> actorInputCommSignalsId = new ArrayList<String>();
-		for(String commSigId : getActorCommSignals(actor)) {
-			if(isInputSide(ACTOR,commSigId)) {
-				actorInputCommSignalsId.add(commSigId);
-			}
-		}
-		return actorInputCommSignalsId
-	}
-	
-	def List<String> getActorOutputCommSignals(Actor actor) {
-		var List<String> actorOutputCommSignalsId = new ArrayList<String>();
-		for(String commSigId : getActorCommSignals(actor)) {
-			if(isOutputSide(ACTOR,commSigId)) {
-				actorOutputCommSignalsId.add(commSigId);
-			}
-		}
-		return actorOutputCommSignalsId
-	}
-	
-	def String getTargetSignal(Connection connection, String pred, String commSigId) {
-		
-		var String prefix = ""
-		if (connection.target instanceof Actor) {
-			if(!(connection.target as Actor).hasAttribute("sbox")) {
-				if(getModName(pred) != "") {
-					prefix = getModName(pred)
-				}	
-			}
-		}
-		
-		var String suffix = "";
-		if(!modCommSignals.get(pred).get(commSigId).get(CH).equals("")) {
-			suffix = "_" + modCommSignals.get(pred).get(commSigId).get(CH);	
-		}
-		
-		if (connection.targetPort == null) {
-			
-			return prefix + connection.target.label + suffix
-		} else {
-			return prefix + connection.target.label + "_" + connection.targetPort.label + suffix
-		}
-	}
-	
-	def String getSourceSignal(Connection connection, String succ, String targetChannel) {
-		
-		var String prefix = ""
-		var String suffix = ""
-		
-		if (connection.source instanceof Actor) {
-			if(!(connection.source as Actor).hasAttribute("sbox")) {
-				if(getModName(succ) != "") {
-					prefix = getModName(succ)
-				}	
-			}
-		}
-		
-		if (connection.hasAttribute("broadcast")) {
-			for (commSigId : modCommSignals.get(succ).keySet) {
-				if ( modCommSignals.get(succ).get(commSigId).get(CH).equals(targetChannel) ) {
-					if ( modCommSignals.get(succ).get(commSigId).get(SIZE).equals("broadcast") ) {
-						if (connection.sourcePort == null) {
-							suffix = "[" + (connection.source as Port).outgoing.indexOf(connection) + "]"
-						} else {
-							suffix = "[" + (connection.source as Actor).outgoingPortMap.get(connection.sourcePort).indexOf(connection) + "]"
-						}
-						
-					}
-				}	
-			}
-		}
-		
-		
-		
-		if (connection.sourcePort == null) {
-			for (commSigId : modCommSignals.get(succ).keySet) {
-				var String suffix2 = "";
-				if(!modCommSignals.get(succ).get(commSigId).get(CH).equals("")) {
-					suffix2 = "_" + modCommSignals.get(succ).get(commSigId).get(CH);	
-				}
-				if ( modCommSignals.get(succ).get(commSigId).get(CH).equals(targetChannel) ) {
-					return prefix + connection.source.label + suffix2 + suffix
-				}
-			}
-		} else {
-			for (commSigId : modCommSignals.get(succ).keySet) {
-				var String suffix2 = "";
-				if(!modCommSignals.get(succ).get(commSigId).get(CH).equals("")) {
-					suffix2 = "_" + modCommSignals.get(succ).get(commSigId).get(CH);	
-				}
-				if ( modCommSignals.get(succ).get(commSigId).get(CH).equals(targetChannel) ) {
-					return prefix + connection.source.label + "_" + connection.sourcePort.label + suffix2 + suffix
-				}
-			}
-		}
-	}
-
-	/**
-	 * print assignments to connect instances.
-	 */
-	def printAssignments() {
-		
-		removeAllPrintFlags();
-		var String pred;
-		var String succ;
-		if (modNames.containsKey(PRED)) {
-			pred = PRED;
-		} else {
-			pred = ACTOR;	
-	 	}
-		if (modNames.containsKey(SUCC)) {
-			succ = SUCC;
-		} else {
-			succ = ACTOR;	
-	 	}
-		
-		'''
-		// Module(s) Assignments
-		«FOR connection : network.connections»
-		«FOR commSigId : modCommSignals.get(pred).keySet»
-		«IF isInputSide(pred,commSigId)»
-		«IF modCommSignals.get(pred).get(commSigId).get(KIND).equals("input")»
-		assign «getTargetSignal(connection,pred,commSigId)» = «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))»;
-		«ELSE»
-		«IF connection.hasAttribute("broadcast")»
-		«IF connection.source instanceof Actor»
-		«IF !connection.sourcePort.hasAttribute("printed")»
-		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» =
-		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " ||"»
-		«getTargetSignal(broadConn,pred,commSigId)» 
-		«ENDFOR»;
-		«connection.sourcePort.setAttribute("printed","")»
-		«ENDIF»
-		«ELSE»
-		«IF !connection.source.hasAttribute("printed")»
-		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» =		
-		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " ||"»
-		«getTargetSignal(broadConn as Connection,pred,commSigId)» 
-		«ENDFOR»;
-		«connection.source.setAttribute("printed","")»
-		«ENDIF»
-		«ENDIF»
-		«ELSE»
-		assign «getSourceSignal(connection,succ,modCommSignals.get(pred).get(commSigId).get(CH))» = «getTargetSignal(connection,pred,commSigId)»;
-		«ENDIF»
-		«ENDIF»
-		«ENDIF»
-		«ENDFOR»
-		
-		«ENDFOR»
-		'''
-	}
-	
-	
-	/**
-	 * return the SBox size
-	 */
-	def String getSboxSize(Actor actor) {
-		return String.valueOf(actor.getInputs().get(0).getType().getSizeInBits());
-	}
-	
-	/**
-	 * return the SBox type (1x2 or 2x1)
-	 */
-	def String getSboxType(Actor actor) {
-		return actor.getAttribute("type").getStringValue();
-	}
-	
-	/**
-	 * return the selector ID for the given SBox
-	 */
-	def String getSboxSelID(Actor actor) {
-		return (actor.getSimpleName().split("_")).get(1);
 	}
 	
 	/**
@@ -1370,26 +1110,16 @@ class NetworkPrinterGeneric {
 		 Map<String,Set<String>> clockSets, 
 		 boolean enableClockGating,
 		 boolean enablePowerGating,
-		 Map<String,Map<String,String>> netSysSignals,
-		 Map<String,String> modNames,
-		 Map<String,Map<String,Map<String,String>>> modSysSignals,
-		 Map<String,Map<String,Map<String,String>>> modCommSignals,
-		 Map<String,Map<String,Map<String,String>>> modCommParms,
 		 Map<String,Set<String>> logicRegions,
 		 Map<String,Set<String>> netRegions,
 		 Set<String> powerSets,
 		 Map<String,Integer> powerSetsIndex,
-		 Map<String,Boolean> logicRegionsSeqMap){
+		 Map<String,Boolean> logicRegionsSeqMap,
+		 ProtocolManager protocolManager){
 		 	
 		 
 		this.evaluator = new ExpressionEvaluator();
 		 	
-		this.netSysSignals = netSysSignals;
-		this.modNames = modNames;
-		this.modSysSignals = modSysSignals;
-		this.modCommSignals = modCommSignals;
-		this.modCommParms = modCommParms;
-
 		this.clockSignal = clockSignal;
 		
 		// Initialize members
@@ -1402,8 +1132,10 @@ class NetworkPrinterGeneric {
 		this.netRegions = netRegions;
 		this.powerSetsIndex = powerSetsIndex;
 		this.logicRegionsSeqMap = logicRegionsSeqMap;
+		this.protocolManager = protocolManager;
 		
-		// ignorare
+		
+		// to be ignored
 		networkPortFanout = new HashMap<Port, Integer>();
 		networkPortConnectionFanout = new HashMap<Connection, Integer>();		
 		portClockDomain = new HashMap<Port, String>();
@@ -1411,10 +1143,11 @@ class NetworkPrinterGeneric {
 		clockDomainsIndex = new HashMap<String, Integer>();
 		connectionsClockDomain = new HashMap<Connection,List<Integer>>();
 		
+		
 		computeNetworkClockDomains(network,clockSets);
 		
 		'''
-		«headerComments()»
+		«printHeaderComments()»
 «««		«printClockInformation()»
 
 		«printInterface(luts)»
@@ -1442,6 +1175,28 @@ class NetworkPrinterGeneric {
 		«printAssignments()»
 		endmodule
 		'''
+	}
+
+	/**
+	 * For each connection,
+	 * if the connection has already been printed, remove
+	 * the "printed" attribute from its source port or vertex.
+	 * 
+	 * TODO \todo to check. There is a similar function in PlatformComposer.removeAllPrintFlags()
+	 * Do we need both?
+	 */	
+	def removeAllPrintFlags() {
+		
+		for(Connection connection : network.getConnections())
+			if(connection.sourcePort === null) {
+				if(connection.source.hasAttribute("printed")) {
+					connection.source.removeAttribute("printed");	
+				}
+			} else {
+				if(connection.sourcePort.hasAttribute("printed")) {
+					connection.sourcePort.removeAttribute("printed");	
+				}
+			}	
 	}
 	
 }

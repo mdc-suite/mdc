@@ -305,9 +305,8 @@ public class NetworkPrinter extends PlatformComposer {
 		
 		NetworkPrinterGeneric printer  = new NetworkPrinterGeneric();
 		CharSequence sequence = printer.printNetwork(network,luts,logicRegions,
-				enableClockGating,enablePowerGating, 
-				netSysSignals,modNames,modSysSignals,modCommSignals,modCommParms,
-				logicRegions, netRegions, powerSets, powerSetsIndex, logicRegionsSeqMap);
+				enableClockGating,enablePowerGating,
+				logicRegions, netRegions, powerSets, powerSetsIndex, logicRegionsSeqMap, protocolManager);
 		logicRegionID = printer.getClockDomainIndex();
 		
 		try {
