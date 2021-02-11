@@ -357,6 +357,7 @@ class ScriptPrinter {
 			 foreach tcl_file [glob -dir $hdl_files_path *.tcl] {
 			     source $tcl_file
 			}
+		}
 		
 		set_property top $ip_name [current_fileset]
 		
