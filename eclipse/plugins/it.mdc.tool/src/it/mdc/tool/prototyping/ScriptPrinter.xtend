@@ -352,7 +352,13 @@ class ScriptPrinter {
 				import_file $dat_file
 			}
 		}
-
+		
+		if {[llength [glob -nocomplain -dir $hdl_files_path *.mem]] != 0} {
+			foreach mem_file [glob -dir $hdl_files_path *.mem] {
+				import_file $mem_file
+			}
+		}
+		
 		if {[llength [glob -nocomplain -dir $hdl_files_path *.tcl]] != 0} {
 			 foreach tcl_file [glob -dir $hdl_files_path *.tcl] {
 			     source $tcl_file
