@@ -68,6 +68,11 @@ public class Printer {
 	 */
 	public void printReport(Map<Network,Integer> inputNets, Network multiDataflowNet, String outPath, boolean genCopr, String coprType){
 		
+		File outDir = new File(outPath);
+		if (!outDir.exists()) {
+			outDir.mkdirs();
+		}
+		
 		int inputActorInsts = 0;
 		int outputActorInsts = 0;
 		int sboxActorInsts = 0;
