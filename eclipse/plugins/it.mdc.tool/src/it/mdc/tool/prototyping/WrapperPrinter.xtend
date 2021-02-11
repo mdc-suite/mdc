@@ -310,12 +310,16 @@ class WrapperPrinter {
 		
 		'''
 		// Parameters
-		«FOR port : portMap.keySet»// local memory «portMap.get(port)+1» («port.name»)
-		«IF coupling.equals("mm")»localparam SIZE_MEM_«portMap.get(port)+1» = 256;
+		«IF coupling.equals("mm")»«FOR port : portMap.keySet»// local memory «portMap.get(port)+1» («port.name»)
+		localparam SIZE_MEM_«portMap.get(port)+1» = 256;
 		localparam [15:0] BASE_ADDR_MEM_«portMap.get(port)+1» = «IF !(portMap.get(port) == 0)»SIZE_MEM_«portMap.get(port)» + BASE_ADDR_MEM_«portMap.get(port)»«ELSE»0«ENDIF»;
-		«ENDIF»
 		parameter SIZE_ADDR_«portMap.get(port)+1» = $clog2(SIZE_MEM_«portMap.get(port)+1»);
 		«ENDFOR»
+		«ELSE»
+		«FOR output : outputMap.keySet»// output counter «portMap.get(output)+1» («output.name») for tlast
+		parameter SIZE_COUNT_«portMap.get(output)+1» = 8;
+		«ENDFOR»
+		«ENDIF»
 		
 		// Wire(s) and Reg(s)
 		wire [31 : 0] slv_reg0;
@@ -1026,13 +1030,13 @@ class WrapperPrinter {
 		// Output Counter(s)
 		// ----------------------------------------------------------------------------
 		counter #(			
-			.SIZE(SIZE_ADDR_«portMap.get(output)+1») ) 
+			.SIZE(SIZE_COUNT_«portMap.get(output)+1») ) 
 		i_counter_«output.name» (
 			.aclk(s00_axi_aclk),
 			.aresetn(s00_axi_aresetn),
 			.clr(slv_reg0[2]),
 			.en(«output.getName()»_push),
-			.max(slv_reg«outputMap.get(output)+1»[SIZE_ADDR_«portMap.get(output)+1»-1:0]),
+			.max(slv_reg«outputMap.get(output)+1»[SIZE_COUNT_«portMap.get(output)+1»-1:0]),
 			.count(),
 			.last(m«getLongId(outputMap.get(output))»_axis_tlast)
 		);
