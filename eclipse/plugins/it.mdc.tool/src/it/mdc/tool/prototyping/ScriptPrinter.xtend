@@ -347,13 +347,13 @@ class ScriptPrinter {
 		        }
 		 «ENDFOR»
 		
-		if {[llength [glob -dir $hdl_files_path *.dat]] != 0} {
+		if {[llength [glob -nocomplain -dir $hdl_files_path *.dat]] != 0} {
 			foreach dat_file [glob -dir $hdl_files_path *.dat] {
 				import_file $dat_file
 			}
 		}
-		
-		if {[llength [glob -dir $hdl_files_path *.tcl]] != 0} {
+
+		if {[llength [glob -nocomplain -dir $hdl_files_path *.tcl]] != 0} {
 			 foreach tcl_file [glob -dir $hdl_files_path *.tcl] {
 			     source $tcl_file
 			}
