@@ -565,18 +565,20 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		actor_«actor.simpleName» (
 			// Input Signal(s)
-			«FOR input : actor.inputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorInputCommSignals(actor) SEPARATOR ","»
+			«FOR input : actor.inputs SEPARATOR ","»
+			«FOR commSigId : protocolManager.getActorInputCommSignals(actor) SEPARATOR ","»
 			.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»)
 			«ENDFOR»
 			«ENDFOR»
-			«IF !protocolManager.getActorOutputCommSignals(actor).empty»,«ENDIF»
+			«IF  !actor.inputs.empty && !protocolManager.getActorInputCommSignals(actor).empty && 
+					!actor.outputs.empty && !protocolManager.getActorOutputCommSignals(actor).empty»,«ENDIF»
 			
 			// Output Signal(s)
 			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorOutputCommSignals(actor) SEPARATOR ","»
 			.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»)
 			«ENDFOR»
 			«ENDFOR»
-			«IF !getActorDynamicParms(actor).empty»,
+			«IF !getActorDynamicParms(actor).empty && !actor.parameters.empty»,
 			
 			// Dynamic Parameter(s)
 			«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
