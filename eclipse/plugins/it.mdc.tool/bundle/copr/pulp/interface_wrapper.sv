@@ -56,6 +56,6 @@ module interface_wrapper_out
   assign out_ready = out.ready;
   assign out.valid = out_valid;
   assign out.data = out_data;
-  assign out.strb = out_strb;
+  //assign out.strb = out_strb;
 
 endmodule

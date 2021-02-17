@@ -363,11 +363,11 @@ class PulpPrinter {
 				input  logic                                  rst_ni,
 				   // Sink ports
 				   «FOR port : inputMap.keySet»  
-				   	hwpe_stream_intf_stream.sink    «port.name»_i,
+				   	hwpe_stream_intf_stream.sink    «port.name»,
 				   «ENDFOR»  
 				   // Source ports
 				   «FOR port : outputMap.keySet»  
-				   	hwpe_stream_intf_stream.source  «port.name»_o,
+				   	hwpe_stream_intf_stream.source  «port.name»,
 				   «ENDFOR»  	
 				   // Algorithm parameters
 				   «FOR param : network.parameters» 
@@ -394,7 +394,7 @@ class PulpPrinter {
 			.in_valid(stream_if_«input.name»_valid),
 			.in_ready(stream_if_«input.name»_ready),
 			.in_strb(stream_if_«input.name»_strb),
-			.in(stream_if_«input.name».sink)
+			.in(«input.name»)
 		);
 		«ENDFOR»
 		«FOR output : outputMap.keySet»// hwpe stream intf out «output.name»
@@ -403,7 +403,7 @@ class PulpPrinter {
 			.out_valid(stream_if_«output.name»_valid),
 			.out_ready(stream_if_«output.name»_ready),
 			.out_strb(stream_if_«output.name»_strb),
-			.out(stream_if_«output.name».source)
+			.out(«output.name»)
 		);
 		«ENDFOR»
 		
@@ -418,7 +418,6 @@ class PulpPrinter {
 		«FOR output : outputMap.keySet()»
 		assign stream_if_«output.name»_valid = «output.getName()»_push;
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
-		assign stream_if_«output.name»_strb = 4'b111;
 		assign «output.getName()»_full = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
 		// ----------------------------------------------------------------------------	
@@ -1054,20 +1053,23 @@ class PulpPrinter {
 			  - include_dirs:
 			      - rtl/hwpe-engine
 			    files:
-			        «FOR file : new File(hclPath).listFiles»
-			        	- rtl/hwpe-engine/engine_dev/«file.name»,
-			    «ENDFOR»
+			      «FOR file : new File(hclPath).listFiles»
+			      - rtl/hwpe-engine/engine_dev/«file.name»
+			      «ENDFOR»
+			      - rtl/hwpe-engine/engine_dev/multi_dataflow.v
+			      - rtl/hwpe-engine/engine_dev/interface_wrapper.sv
 			    «IF !luts.empty»
 			    	rtl/configurator.v\
 			    	rtl/sbox1x2.v\
 			    	rtl/sbox2x1.v\
 			    «ENDIF»
-			    - rtl/hwpe-engine/multi_dataflow_package.sv
-			    - rtl/hwpe-engine/multi_dataflow_fsm.sv
-			    - rtl/hwpe-engine/multi_dataflow_ctrl.sv
-			    - rtl/hwpe-engine/multi_dataflow_streamer.sv
-			    - rtl/hwpe-engine/multi_dataflow_engine.sv
-			    - rtl/hwpe-engine/multi_dataflow_top.sv
+			      - rtl/hwpe-engine/multi_dataflow_package.sv
+			      - rtl/hwpe-engine/multi_dataflow_fsm.sv
+			      - rtl/hwpe-engine/multi_dataflow_ctrl.sv
+			      - rtl/hwpe-engine/multi_dataflow_streamer.sv
+			      - rtl/hwpe-engine/multi_dataflow_reconf_datapath_top.sv
+			      - rtl/hwpe-engine/multi_dataflow_engine.sv
+			      - rtl/hwpe-engine/multi_dataflow_top.sv
 			  - include_dirs:
 			      - rtl/wrap
 			    files:
@@ -1098,7 +1100,7 @@ class PulpPrinter {
 			  
 			  // Custom register files
 			  «FOR netParm : this.network.parameters»
-			  	parameter int unsigned «netParm.name.toUpperCase»             = «counterReg++»;
+			  	parameter int unsigned REG_«netParm.name.toUpperCase»             = «counterReg++»;
 			  «ENDFOR»
 			  «IF !luts.empty»		  
 			  	parameter int unsigned CONFIG             = «counterReg++»;
@@ -1637,10 +1639,10 @@ class PulpPrinter {
 			    .enable_i         ( enable         ),
 			    .clear_i          ( clear          ),
 			    		«FOR port : inputMap.keySet»  
-			    			.«port.name»_o              ( «port.name».source       ),
+			    			.stream_if_«port.name»              ( «port.name».source       ),
 			    		«ENDFOR»  
 			    		«FOR port : outputMap.keySet»  
-			    			.«port.name»_i              ( «port.name».sink       ),
+			    			.stream_if_«port.name»              ( «port.name».sink       ),
 			    		«ENDFOR»  		  
 			    .tcdm             ( tcdm           ),
 			    .ctrl_i           ( streamer_ctrl  ),
@@ -1713,7 +1715,7 @@ class PulpPrinter {
 			  begin: engine_cnt_in
 			    if((~rst_ni) | clear)
 			      cnt_in = 32'b0;
-			    else if((a_i.valid)&(a_i.ready))
+			    else if(«FOR port : inputMap.keySet SEPARATOR " & "»  («port.name».valid)&(«port.name».ready)«ENDFOR» )
 			      cnt_in = cnt_in + 1;
 			    else
 			      cnt_in = cnt_in;
@@ -1733,15 +1735,15 @@ class PulpPrinter {
 			  begin: multi_dataflow_gen
 			    multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
 			          // Global signals
-			          .ap_clk             ( clk_i            ),
-			          .ap_rst_n           ( rst_ni           ),
+			          .clk_i             ( clk_i            ),
+			          .rst_ni           ( rst_ni           ),
 			          // Input data (to-hwpe)
 			            «FOR port : inputMap.keySet»  
-			            	.«port.name»_i              ( «port.name».sink       ),
+			            	.«port.name»              ( «port.name»_i	),
 			            «ENDFOR»  
 			            // Output data (from-hwpe)
 			            «FOR port : outputMap.keySet»  
-			            	.«port.name»_o              ( «port.name».source       ),
+			            	.«port.name»              ( «port.name»_o	),
 			            «ENDFOR»  	  
 			          // Algorithm parameters
 			          «FOR param : network.parameters» 
@@ -1829,26 +1831,26 @@ class PulpPrinter {
 		add wave -noupdate -group {HWPE_top[0]} -group {periph} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/periph_r_valid}
 		add wave -noupdate -group {HWPE_top[0]} -group {periph} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/periph_r_id}
 		add wave -noupdate -group {HWPE_top[0]} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/evt_o}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {global} -label {clk_i} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_clk}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {global} -label {rst_ni} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_rst_n}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {global} -label {clk_i} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/clk_i}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {global} -label {rst_ni} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/rst_ni}
 		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {flags_o} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/flags_o}
 		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {engine_flags} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/engine_flags}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {start} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_start}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {done} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_done}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {idle} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_idle}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/ap_ready}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {start} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/ap_start}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {done} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/ap_done}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {idle} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/ap_idle}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {control} -label {ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/ap_ready}
 		«FOR port: inputMap.keySet»
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» valid} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TVALID}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» data} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TDATA}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TREADY}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» valid} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_wr}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» data} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_data}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Input data} -label {«port.name» ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_full}
 		«ENDFOR»
 		«FOR param: network.parameters»
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Custom registers} -label {«param.name»} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«param.name»}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Custom registers} -label {«param.name»} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/«param.name»}
 		«ENDFOR»
 		«FOR port: outputMap.keySet»
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» valid} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TVALID}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» data} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TDATA}
-		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow/«port.name»_TREADY}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» valid} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_wr}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» data} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_data}
+		add wave -noupdate -group {HWPE_multi_dataflow_engine[0]} -group {Output data} -label {«port.name» ready} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_engine/multi_dataflow_gen/i_multi_dataflow_reconf_datapath_top/reconf_dpath/«port.name»_full}
 		«ENDFOR»
 		add wave -noupdate -group {HWPE_streamer[0]} -group {global} -label {clk_i} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_streamer/clk_i}
 		add wave -noupdate -group {HWPE_streamer[0]} -group {global} -label {rst_ni} {/pulp_tb/dut/gen_clusters[0]/gen_cluster_sync/i_cluster/i_ooc/i_bound/hwpe_gen/hwpe_wrap_i/i_hwpe_top_wrap/i_multi_dataflow_top/i_streamer/rst_ni}
