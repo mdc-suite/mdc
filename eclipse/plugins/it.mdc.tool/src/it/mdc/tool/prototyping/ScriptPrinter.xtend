@@ -27,6 +27,7 @@ class ScriptPrinter {
 	protected boolean enDma = false;
 	
 	//TODO boardpart refine input (not always a board is selected)
+	//TODO US support is only partial at the moment (OK for ARM, STREAM and DMA system)
 	String boardpart
 	String partname
 	String coupling
@@ -54,6 +55,14 @@ class ScriptPrinter {
 	
 	def isArm(){
 		if(processor.equals("ARM")) {
+			return true
+		} else {
+			return false
+		}
+	}
+	
+	def isUS() {
+		if(partname.contains("xczu")) {
 			return true
 		} else {
 			return false
@@ -108,10 +117,17 @@ class ScriptPrinter {
 		create_bd_design $bd_design
 		
 		«IF isArm»
-			# Zynq PS
-			create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
-			apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
-			connect_bd_net [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK0]
+			«IF isUS»
+				# Zynq PS US
+				create_bd_cell -type ip -vlnv xilinx.com:ip:zynq_ultra_ps_e:3.1 zynq_ultra_ps_e_0
+				apply_bd_automation -rule xilinx.com:bd_rule:zynq_ultra_ps_e -config {apply_board_preset "1" }  [get_bd_cells zynq_ultra_ps_e_0]
+				set_property -dict [list CONFIG.PSU__USE__M_AXI_GP1 {0}] [get_bd_cells zynq_ultra_ps_e_0]
+			«ELSE»
+				# Zynq PS
+				create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
+				apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
+				connect_bd_net [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK0]
+			«ENDIF»
 		«ELSE»
 			# MicroBlaze
 			create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:10.0 microblaze_0
@@ -126,7 +142,11 @@ class ScriptPrinter {
 		# accelerator IP
 		create_bd_cell -type ip -vlnv user.org:user:$ip_name:$ip_version $ip_name\_0
 		«IF isArm»
-			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+			«IF isUS»
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/zynq_ultra_ps_e_0/M_AXI_HPM0_FPD" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins s_accelerator_0/s00_axi]
+			«ELSE»		
+				apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
+			«ENDIF»
 		«ELSE»
 			apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/microblaze_0 (Periph)" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins $ip_name\_0/s00_axi]
 		«ENDIF»				
@@ -137,7 +157,11 @@ class ScriptPrinter {
 					# CDMA
 					create_bd_cell -type ip -vlnv xilinx.com:ip:axi_cdma:4.1 axi_cdma_0
 					set_property -dict [list CONFIG.C_INCLUDE_SG {0}] [get_bd_cells axi_cdma_0]
-					apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_cdma_0/S_AXI_LITE]
+					«IF isUS»
+						apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/zynq_ultra_ps_e_0/M_AXI_HPM0_FPD" intc_ip "/ps8_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_cdma_0/S_AXI_LITE]
+					«ELSE»
+						apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_cdma_0/S_AXI_LITE]
+					«ENDIF»
 					set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 {1}] [get_bd_cells processing_system7_0]
 					apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_cdma_0/M_AXI" intc_ip "New AXI Interconnect" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins mm_accelerator_0/s01_axi]
 					apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_cdma_0/M_AXI" intc_ip "/axi_mem_intercon" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins processing_system7_0/S_AXI_HP0]
@@ -166,13 +190,23 @@ class ScriptPrinter {
 			«FOR input : inputMap.keySet()»
 				# fifo_in «inputMap.get(input)»
 				«IF isArm»
-					connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
-					connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
+					«IF isUS»
+						connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
+						connect_bd_net [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
+					«ELSE»
+						connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk]
+						connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aresetn]
+					«ENDIF»
 					«IF enDma»
 						create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_in_«inputMap.get(input)»
 						connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«inputMap.get(input)»/M_AXIS] [get_bd_intf_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis]
-						connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
-						connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+						«IF isUS»
+							connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
+							connect_bd_net [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+						«ELSE»
+							connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aclk]
+							connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_in_«inputMap.get(input)»/s_axis_aresetn]
+						«ENDIF»
 					«ENDIF»
 				«ELSE»
 					connect_bd_net [get_bd_pins s_accelerator_0/s«getLongId(inputMap.get(input))»_axis_aclk] [get_bd_pins clk_wiz_1/clk_out1]
@@ -187,13 +221,23 @@ class ScriptPrinter {
 			«FOR output : outputMap.keySet()»
 				# fifo_out «inputMap.get(output)»
 				«IF isArm»
-					connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
-					connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]	
+					«IF isUS»
+						connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
+						connect_bd_net [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]
+					«ELSE»
+						connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk]
+						connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aresetn]
+					«ENDIF»
 					«IF enDma»
 						create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:1.1 axis_data_fifo_out_«outputMap.get(output)»
 						connect_bd_intf_net [get_bd_intf_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis] [get_bd_intf_pins axis_data_fifo_out_«outputMap.get(output)»/S_AXIS]
-						connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
-						connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+						«IF isUS»
+							connect_bd_net [get_bd_pins zynq_ultra_ps_e_0/pl_clk0] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
+							connect_bd_net [get_bd_pins rst_ps8_0_99M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+						«ELSE»
+							connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aclk]
+							connect_bd_net [get_bd_pins rst_ps7_0_100M/peripheral_aresetn] [get_bd_pins axis_data_fifo_out_«outputMap.get(output)»/s_axis_aresetn]
+						«ENDIF»
 					«ENDIF»
 				«ELSE»
 					connect_bd_net [get_bd_pins s_accelerator_0/m«getLongId(outputMap.get(output))»_axis_aclk] [get_bd_pins clk_wiz_1/clk_out1]
@@ -211,24 +255,33 @@ class ScriptPrinter {
 					«FOR i : 0..fifoNum-1»
 						# DMA «i»
 						create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_«i»
-						apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/S_AXI_LITE]
-						set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_include_stscntrl_strm {0}] [get_bd_cells axi_dma_«i»]
-						set_property -dict [list CONFIG.PCW_USE_S_AXI_HP«i» {1}] [get_bd_cells processing_system7_0]			
-						«IF i < inputMap.size»
-							connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS] [get_bd_intf_pins axi_dma_«i»/M_AXIS_MM2S]
-							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_dma_«i»/M_AXI_MM2S" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins processing_system7_0/S_AXI_HP«i»]
+						«IF isUS»
+							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/zynq_ultra_ps_e_0/M_AXI_HPM0_FPD" intc_ip "/ps8_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/S_AXI_LITE]
+							set_property -dict [list CONFIG.PSU__USE__S_AXI_GP«i+2» {1} CONFIG.PSU__SAXIGP«i+2»__DATA_WIDTH {32}] [get_bd_cells zynq_ultra_ps_e_0]
 						«ELSE»
-							set_property -dict [list CONFIG.c_include_mm2s {0} CONFIG.c_include_s2mm {1}] [get_bd_cells axi_dma_1]
-							connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS] [get_bd_intf_pins axi_dma_«i»/S_AXIS_S2MM]
-							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/processing_system7_0/S_AXI_HP«i»" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
+							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/processing_system7_0/M_AXI_GP0" intc_ip "/ps7_0_axi_periph" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/S_AXI_LITE]
+							set_property -dict [list CONFIG.PCW_USE_S_AXI_HP«i» {1}] [get_bd_cells processing_system7_0]
+						«ENDIF»
+						set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_include_stscntrl_strm {0}] [get_bd_cells axi_dma_«i»]
+						«IF i < inputMap.size»
+							connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS] [get_bd_intf_pins axi_dma_«i»/M_AXIS_MM2S]						
+							«IF isUS»
+								apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_dma_«i»/M_AXI_MM2S" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HP«i»_FPD]
+							«ELSE»
+								apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_dma_«i»/M_AXI_MM2S" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins processing_system7_0/S_AXI_HP«i»]
+							«ENDIF»
+						«ELSE»
+							set_property -dict [list CONFIG.c_include_mm2s {0}] [get_bd_cells axi_dma_«i»]
 						«ENDIF»
 						«IF i < outputMap.size»
 							connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_out_«i»/M_AXIS] [get_bd_intf_pins axi_dma_«i»/S_AXIS_S2MM]
-							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/processing_system7_0/S_AXI_HP«i»" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
+							«IF isUS»
+								apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/zynq_ultra_ps_e_0/S_AXI_HP«i»_FPD" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
+							«ELSE»
+								apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/processing_system7_0/S_AXI_HP«i»" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
+							«ENDIF»
 						«ELSE»
-							set_property -dict [list CONFIG.c_include_mm2s {1} CONFIG.c_include_s2mm {0}] [get_bd_cells axi_dma_«i»]
-							connect_bd_intf_net [get_bd_intf_pins axis_data_fifo_in_«i»/S_AXIS] [get_bd_intf_pins axi_dma_«i»/M_AXIS_MM2S]
-							apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Master "/axi_dma_«i»/M_AXI_MM2S" intc_ip "Auto" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins processing_system7_0/S_AXI_HP«i»]
+							set_property -dict [CONFIG.c_include_s2mm {0}] [get_bd_cells axi_dma_«i»]
 						«ENDIF»
 					«ENDFOR»
 				«ELSE»
