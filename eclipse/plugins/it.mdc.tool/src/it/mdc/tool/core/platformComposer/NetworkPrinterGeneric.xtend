@@ -21,7 +21,6 @@ import net.sf.orcc.ir.util.ExpressionEvaluator
 import net.sf.orcc.ir.Var
 import java.util.ArrayList
 import net.sf.orcc.ir.Expression
-import net.sf.orcc.util.OrccLogger
 
 /**
  * A Verilog FIFO-based Generic Protocol Network printer
@@ -244,7 +243,7 @@ class NetworkPrinterGeneric {
 	}
 		
 	/**
-	 * return the list of sequential ports (associates a "valid" signal to the port signals)
+	 * Return the list of sequential ports (associates a "valid" signal to the port signals)
 	 */	
 	/*def computeSeqPorts(List<Port> ports) {
 		var combInputs = new ArrayList<Port>();
@@ -275,7 +274,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * TODO
+	 * Return the list of actor static (design time) parameters
 	 */
 	def List<Var> getActorStaticParms(Actor actor) {
 		var List<Var> result = new ArrayList<Var>;
@@ -293,7 +292,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * TODO
+	 * Return the list of actor dynamic (run time) parameters
 	 */
 	def List<Var> getActorDynamicParms(Actor actor) {
 		var List<Var> result = new ArrayList<Var>;
@@ -305,6 +304,9 @@ class NetworkPrinterGeneric {
 		return result
 	}
 	
+	/**
+	 * Return the buffer (FIFO) size as integer
+	 */
 	def Integer getBufferSizeIntegerValue(Connection connection) {
 		if(connection.hasAttribute("bufferSize")) {
 			if(connection.getAttribute("bufferSize").getContainedValue() !== null) {
@@ -323,14 +325,14 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * Returns the Map which indicates the index of the given clock
+	 * Return the Map which indicates the index of the given clock
 	 */
 	def Map<String, Integer> getClockDomainIndex(){ //deve diventare getLogicRegionIndex
 		return clockDomainsIndex; //deve diventare logicRegionIndex
 	}
 	
 	/**
-	 * TODO
+	 * Return network parameter matching with the passed variable
 	 */
 	def Var getMatchingParameter(Var actVar) {
 		for(Var netVar : network.parameters) {
@@ -341,7 +343,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * TODO
+	 *  Return network variable matching with the passed variable
 	 */
 	def Var getMatchingVariable(Var actVar) {
 		for(Var netVar : network.variables) {
@@ -351,6 +353,9 @@ class NetworkPrinterGeneric {
 		return null
 	}
 	
+	/**
+	 *	Return the value of the parameter with the given ID for the given module, actor and port
+	 */
 	def String getParameterValue(String module, Actor actor, Port port, String commParId) {
 		if (protocolManager.modCommParms.get(module).get(commParId).get(ProtocolManager.VAL).equals("variable")) {
 			port.type.sizeInBits.toString
@@ -359,16 +364,12 @@ class NetworkPrinterGeneric {
 				if( actor.incomingPortMap.get(port).hasAttribute("bufferSize") ) {
 					(getBufferSizeIntegerValue(actor.incomingPortMap.get(port))).toString
 				} else {
-					//TODO return default value
-				//	OrccLogger.traceln("default buffersize");
 					"64"
 				}
 			} else if (actor.outgoingPortMap.containsKey(port)) {
 				if(actor.outgoingPortMap.get(port).get(0).hasAttribute("bufferSize")) {
 					(getBufferSizeIntegerValue(actor.outgoingPortMap.get(port).get(0))).toString
 				} else {
-					//TODO return default value
-			//		OrccLogger.traceln("default buffersize");
 					"64"
 				}
 			}
@@ -384,7 +385,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * return the simple name of a SBox
+	 * Return the simple name of a SBox
 	 */
 	def getSboxActorName(Actor actor) {
 		
@@ -418,21 +419,21 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * return the selector ID for the given SBox
+	 * Return the selector ID for the given SBox
 	 */
 	def String getSboxSelID(Actor actor) {
 		return (actor.getSimpleName().split("_")).get(1);
 	}
 	
 	/**
-	 * return the SBox size
+	 * Return the SBox size
 	 */
 	def String getSboxSize(Actor actor) {
 		return String.valueOf(actor.getInputs().get(0).getType().getSizeInBits());
 	}
 	
 	/**
-	 * return the SBox type (1x2 or 2x1)
+	 * Return the SBox type (1x2 or 2x1)
 	 */
 	def String getSboxType(Actor actor) {
 		return actor.getAttribute("type").getStringValue();
@@ -491,6 +492,9 @@ class NetworkPrinterGeneric {
 		}
 	}
 	
+	/**
+	 * Return the target signal for the given ID, connection and predecessor
+	 */
 	def String getTargetSignal(Connection connection, String pred, String commSigId) {
 		
 		var String prefix = ""
@@ -515,19 +519,13 @@ class NetworkPrinterGeneric {
 		}
 	}	
 	
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
-	
-	
-	
+
 	/**
 	 * Print actors instantiation in top module.
 	 */	
 	def printActors(Map<String,Set<String>> clockSets) {
 	 	
-		// WARNING: qui serve un controllo in più, dopo le modifiche instanceClockDomain avrà solo attori relativi a domini di CG, quindi quel get.(actor) potrebbe essere null
-		// TODO a seconda delle modifiche che verranno fatte durante CERBERO il parametri potrebbero dover essere manipolati in maniera differente
+		// @TODO here an additional control is needed since after modifications instanceClockDomain will contain only actors belonging to CG domains, then get(actor) could be null
 		'''
 		«FOR actor : network.getChildren().filter(typeof(Actor))»
 		«IF !actor.hasAttribute("sbox")»
@@ -656,7 +654,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * TODO
+	 * Print the given dynamic (run time) parameter of an actor
 	 */
 	def printActorDynamicParm(Var parm, int size) {
 		
@@ -677,7 +675,7 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * TODO
+	 * Print the given static (design time) parameter of an actor
 	 */
 	def printActorStaticParm(Var parm, int size) {
 		
@@ -698,7 +696,7 @@ class NetworkPrinterGeneric {
 	}
 
 	/**
-	 * print assignments to connect instances.
+	 * Print assignments to connect instances.
 	 */
 	def printAssignments() {
 		
@@ -1180,12 +1178,9 @@ class NetworkPrinterGeneric {
 	}
 
 	/**
-	 * For each connection,
-	 * if the connection has already been printed, remove
-	 * the "printed" attribute from its source port or vertex.
+	 * For each connection, if the connection has already been printed, remove the "printed" attribute from its source port or vertex.
 	 * 
-	 * TODO \todo to check. There is a similar function in PlatformComposer.removeAllPrintFlags()
-	 * Do we need both?
+	 * TODO there is a similar function in PlatformComposer.removeAllPrintFlags(): do we need both?
 	 */	
 	def removeAllPrintFlags() {
 		
