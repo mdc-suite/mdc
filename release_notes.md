@@ -5,6 +5,8 @@ xxxx.xx.xx
 
 ### New features
 - Added support for *.mem files in system generation
+- Added support for monitoring of FIFO signals (through "monitor_in" attribute on dataflow connections)
+- Added support for US+ in prototyping (tested for ARM, DMA, mm and stream)
 
 ### Changes
 - Fixed bug on report printer while selecting system generation 
