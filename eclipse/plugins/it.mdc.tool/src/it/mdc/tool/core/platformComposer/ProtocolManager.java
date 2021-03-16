@@ -374,6 +374,22 @@ public class ProtocolManager {
 	}
 	
 	/**
+	 * Return clock system signals
+	 * 
+	 * @return
+	 * 			list of clock sistem signals
+	 */
+	public ArrayList<String> getClockSysSignals(){
+		ArrayList<String> result = new ArrayList<String>();
+		for(String sysSigId : netSysSignals.keySet()) {
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)) {
+				result.add(netSysSignals.get(sysSigId).get(ProtocolManager.NETP));
+			}
+		}
+		return result;
+	}
+	
+	/**
 	 * Return the size of the communication signal
 	 * 
 	 * @param module 
@@ -444,6 +460,27 @@ public class ProtocolManager {
 	}
 	
 	/**
+	 * Return size in bits of the given port data channel
+	 * 
+	 * @param port
+	 * 				involved port
+	 * @return
+	 * 				size in bit of the port data channel
+	 */
+	public int getDataSize(Port port) {
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("data")) {
+				if(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
+					return port.getType().getSizeInBits();
+				} else {
+					return Integer.parseInt(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE));
+				}
+			}
+		}
+		return 1;
+	}
+	
+	/**
 	 * Return first module in the protocol chain (predecessor, if any, or actor)
 	 * 
 	 * @return
@@ -489,6 +526,21 @@ public class ProtocolManager {
 		}
 		return result;
 	} 
+	
+	/**
+	 * Return ID of the wrapper full channel
+	 * 
+	 * @return
+	 * 			full channel ID
+	 */
+	public String getFullChannelWrapCommSignalID() {
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("full")) {
+				return wrapCommSignals.get(commSigId).get(ProtocolManager.CH);
+			}		
+		}
+		return null;
+	}
 	
 	/**
 	 * Return last module in the protocol chain (successor, if any, or actor)
@@ -634,6 +686,24 @@ public class ProtocolManager {
 	}
 	
 	/**
+	 * Return reset system signals
+	 * 
+	 * @return
+	 * 			map of reset system signals
+	 */
+	public Map<String,String> getResetSysSignals(){
+		HashMap<String,String> result = new HashMap<String,String>();
+		for(String sysSigId : netSysSignals.keySet()) {
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"HIGH");
+			} else if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"LOW");
+			}
+		}
+		return result;
+	}
+	
+	/**
 	 * Return whole signal name to be printed (port name + communication signal name)
 	 * 
 	 * @param module
@@ -687,6 +757,42 @@ public class ProtocolManager {
 		} else {
 			return Integer.parseInt(modSysSignals.get(module).get(sysSigId).get(SIZE));
 		}
+	}
+	
+	/**
+	 * Return the target signal for the given communication signal, connection and predecessor
+	 * 
+	 * @param connection
+	 * 				involved connection
+	 * @param pred
+	 * 				predecessor
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				target signal
+	 */
+	public String getTargetSignal(Connection connection, String pred, String commSigId) {
+		
+		String prefix = "";
+		if (connection.getTarget() instanceof Actor) {
+			if(!(connection.getTarget().getAdapter(Actor.class)).hasAttribute("sbox")) {
+				if(getModName(pred) != "") {
+					prefix = getModName(pred);
+				}	
+			}
+		}
+
+		String suffix = "";
+		if(!modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH).equals("")) {
+			suffix = "_" + modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH);	
+		}
+		
+		if (connection.getTargetPort() == null) {
+			
+			return prefix + connection.getTarget().getLabel() + suffix;
+		} else {
+			return prefix + connection.getTarget().getLabel() + "_" + connection.getTargetPort().getLabel() + suffix;
+		}	
 	}
 
 	/**

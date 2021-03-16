@@ -21,6 +21,7 @@ import net.sf.orcc.ir.util.ExpressionEvaluator
 import net.sf.orcc.ir.Var
 import java.util.ArrayList
 import net.sf.orcc.ir.Expression
+import net.sf.orcc.util.OrccLogger
 
 /**
  * A Verilog FIFO-based Generic Protocol Network printer
@@ -490,33 +491,6 @@ class NetworkPrinterGeneric {
 				}
 			}
 		}
-	}
-	
-	/**
-	 * Return the target signal for the given ID, connection and predecessor
-	 */
-	def String getTargetSignal(Connection connection, String pred, String commSigId) {
-		
-		var String prefix = ""
-		if (connection.target instanceof Actor) {
-			if(!(connection.target as Actor).hasAttribute("sbox")) {
-				if(protocolManager.getModName(pred) != "") {
-					prefix = protocolManager.getModName(pred)
-				}	
-			}
-		}
-		
-		var String suffix = "";
-		if(!protocolManager.modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH).equals("")) {
-			suffix = "_" + protocolManager.modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH);	
-		}
-		
-		if (connection.targetPort === null) {
-			
-			return prefix + connection.target.label + suffix
-		} else {
-			return prefix + connection.target.label + "_" + connection.targetPort.label + suffix
-		}
 	}	
 	
 
@@ -706,14 +680,14 @@ class NetworkPrinterGeneric {
 		«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
 		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
 		«IF protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.KIND).equals("input")»
-		assign «getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)» = «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))»;
+		assign «protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)» = «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))»;
 		«ELSE»
 		«IF connection.hasAttribute("broadcast")»
 		«IF connection.source instanceof Actor»
 		«IF !connection.sourcePort.hasAttribute("printed")»
 		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =
 		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " ||"»
-		«getTargetSignal(broadConn,protocolManager.getFirstMod(),commSigId)» 
+		«protocolManager.getTargetSignal(broadConn,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
 		«connection.sourcePort.setAttribute("printed","")»
 		«ENDIF»
@@ -721,13 +695,13 @@ class NetworkPrinterGeneric {
 		«IF !connection.source.hasAttribute("printed")»
 		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
 		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " ||"»
-		«getTargetSignal(broadConn as Connection,protocolManager.getFirstMod(),commSigId)» 
+		«protocolManager.getTargetSignal(broadConn as Connection,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
 		«connection.source.setAttribute("printed","")»
 		«ENDIF»
 		«ENDIF»
 		«ELSE»
-		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» = «getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)»;
+		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» = «protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)»;
 		«ENDIF»
 		«ENDIF»
 		«ENDIF»
@@ -858,7 +832,7 @@ class NetworkPrinterGeneric {
 			«FOR output : network.outputs»
 			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.lastMod).keySet»
 			«IF protocolManager.isOutputSide(protocolManager.lastMod,commSigId)»
-			«protocolManager.modCommSignals.get(protocolManager.lastMod).get(commSigId).get(ProtocolManager.KIND)»  «protocolManager.getCommSigPrintRange(protocolManager.lastMod,null,commSigId,output)»«protocolManager.getSigPrintName(protocolManager.lastMod,commSigId,output)»,
+			«protocolManager.modCommSignals.get(protocolManager.lastMod).get(commSigId).get(ProtocolManager.KIND)» «protocolManager.getCommSigPrintRange(protocolManager.lastMod,null,commSigId,output)»«protocolManager.getSigPrintName(protocolManager.lastMod,commSigId,output)»,
 			«ENDIF»
 			«ENDFOR»
 			«ENDFOR»	
@@ -869,6 +843,21 @@ class NetworkPrinterGeneric {
 			input [«param.type.sizeInBits-1»:0] «param.name»,
 			«ENDFOR»
 			«ENDIF»
+			
+			// Monitoring
+			«FOR connection : network.connections»
+			«IF connection.hasAttribute("monitor_in")»
+			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
+			«IF protocolManager.isInputSide(protocolManager.getFirstMod(), commSigId)»
+			«IF connection.target instanceof Port»
+			output «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),null,commSigId,connection.target.getAdapter(Port))»«protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)», // «connection»
+			«ELSE»
+			output «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),connection.target.getAdapter(Actor),commSigId,connection.targetPort)»«protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)», // «connection»
+			«ENDIF»
+			«ENDIF»
+			«ENDFOR»
+			«ENDIF»
+			«ENDFOR»
 			
 			// Configuration ID
 			«IF !luts.empty»
