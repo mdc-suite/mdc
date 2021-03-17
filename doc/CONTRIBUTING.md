@@ -4,8 +4,8 @@
 
 The main branches of this repository are:
 
-*   The **master** branche contains the different releases of MDC. This means that you should **NOT** commit, push or merger on master branch.
-*   The **develop** branche integrates the latest new features that are currently being thoroughly tested. This means that it contains the latest version of the code.
+*   The **master** branch contains the different releases of MDC. This means that you should **NOT** commit, push or merger on master branch.
+*   The **develop** branch integrates the latest new features that are currently being thoroughly tested. This means that it contains the latest version of the code.
 
 If you want to contribute to this repository, you should follow the following steps:
 
