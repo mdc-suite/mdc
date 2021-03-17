@@ -1,7 +1,6 @@
 # MDC Release notes
 
 ## Release version 0.0.4
-<<<<<<< HEAD
 xxxx.xx.xx
 
 ### New features
@@ -14,15 +13,7 @@ xxxx.xx.xx
 - Fixed bug on system generation scripts (when no *.dat and no *.tcl files are in the hardware components library)
 - Fixed bug on library extraction for system generation
 - Clean version of network printer generic (protocol management methods moved to ProtocolManager)
-=======
-XXXX.XX.XX
-
-### New features
-- 
-
-### Changes
 - protocols and test folders moved to another repo (mdc-apps)
->>>>>>> refs/remotes/origin/develop
 
 ## Release version 0.0.3
 2021.01.19
