@@ -129,11 +129,11 @@ class DriverPrinter {
 			«ELSE»
 				// configure I/O
 				«FOR output : outputMap.keySet»
-					*((int*) (XPAR_S_ACCELERATOR_0_CFG_BASEADDR + «outputMap.get(output)+1»*4)) = size_«output.name»;
+					*(config + «outputMap.get(output)+1») = size_«output.name»;
 				«ENDFOR»
 			«ENDIF»
 			
-			// start execution (check matching ID
+			// start execution
 			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
 			
 			«IF !isMemoryMapped»

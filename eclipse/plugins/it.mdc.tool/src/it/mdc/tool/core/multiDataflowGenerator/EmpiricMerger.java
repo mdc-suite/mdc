@@ -438,6 +438,7 @@ public class EmpiricMerger extends Merger {
 								}
 							} else {
 					//			OrccLogger.debugln("UPD");
+								unifiable.addAttribute("bufferSize");
 								unifiable.getAttribute("bufferSize").setEObjectValue(getBufferSizeValue(candidate));	// for network editor
 								unifiable.getAttribute("bufferSize").setContainedValue(getBufferSizeValue(candidate));	// for platform-composer
 							}

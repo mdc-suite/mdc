@@ -929,12 +929,12 @@ public class MDCBackend extends AbstractBackend {
 		configManager = new ConfigManager(outputPath,rvcCalOutputFolder);
 	}
 	
-	@Override
 	/**
 	 * Libraries extraction*/
+	@Override
 	protected Result doLibrariesExtraction() {
 				
-		final Result result = FilesManagerMdc.extract("","outputPath");
+		final Result result = FilesManagerMdc.extract("/bundle/README.txt",outputPath);
 		
 		String prefix = "";
 		if(genCopr){

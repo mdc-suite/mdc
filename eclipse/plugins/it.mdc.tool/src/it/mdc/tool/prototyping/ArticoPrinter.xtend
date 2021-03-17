@@ -239,7 +239,7 @@ class ArticoPrinter extends WrapperPrinter {
 		wire done_input;
 		«FOR input : inputMap.keySet()»
 		«FOR commSigId : getInFirstModCommSignals().keySet»
-		wire «getSizePrefix(getPortCommSigSize(input,commSigId,getFirstModCommSignals()))»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+		wire «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),null,commSigId,input)»«input.getName()»_«getMatchingWrapMapping(getFirstModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
 		«ENDFOR»
 		
 		«ENDFOR»
@@ -257,7 +257,7 @@ class ArticoPrinter extends WrapperPrinter {
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
 		«FOR commSigId : getOutLastModCommSignals().keySet»
-		wire «getSizePrefix(getPortCommSigSize(output,commSigId,getLastModCommSignals()))»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
+		wire «protocolManager.getCommSigPrintRange(protocolManager.getLastMod(),null,commSigId,output)»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»;
 		«ENDFOR»
 		
 		«ENDFOR»
@@ -419,7 +419,7 @@ class ArticoPrinter extends WrapperPrinter {
 			.start(start),
 			.zero(slv_reg«portMap.get(input)+1»[C_ADDR_WIDTH-1:0]=={C_ADDR_WIDTH{1'b1}}),
 			.last(last_«input.name»),
-			.full(«IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»«input.name»_full),
+			.full(«IF protocolManager.isNegMatchingWrapMapping(protocolManager.getFullChannelWrapCommSignalID())»!«ENDIF»«input.name»_full),
 			.en(en_«input.name»),
 			.rden(rden_mem_«portMap.get(input)+1»),
 			.wr(«input.name»_push),
@@ -461,7 +461,7 @@ class ArticoPrinter extends WrapperPrinter {
 			// Multi-Dataflow Output(s)
 			«FOR output : outputMap.keySet()»
 			«FOR commSigId : getOutLastModCommSignals().keySet»
-			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+			.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF protocolManager.isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 			«ENDFOR»
 			«ENDFOR»
 			«FOR clockSignal : getClockSysSignals()»
@@ -612,7 +612,7 @@ class ArticoPrinter extends WrapperPrinter {
 		return null
 	}
 	
-	override getMatchingWrapMapping(String channel){
+	def getMatchingWrapMapping(String channel){
 		for(commSigId : wrapCommSignals.keySet) {
 			if(wrapCommSignals.get(commSigId).containsKey(ProtocolManager.CH)) {
 				if(channel.equals(wrapCommSignals.get(commSigId).get(ProtocolManager.CH))) {
@@ -623,7 +623,7 @@ class ArticoPrinter extends WrapperPrinter {
 		return null
 	}
 		
-	override getOutLastModCommSignals(){
+	def getOutLastModCommSignals(){
 		var Map<String,String> result = new HashMap<String,String>();
 		for(commSigId : getLastModCommSignals().keySet) {
 			if( (getLastModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("output") 
@@ -636,7 +636,7 @@ class ArticoPrinter extends WrapperPrinter {
 		return result
 	}
 	
-	override getLastModCommSignals(){
+	def getLastModCommSignals(){
 		if(modCommSignals.containsKey(ProtocolManager.SUCC)) {
 			return modCommSignals.get(ProtocolManager.SUCC)
 		} else {
@@ -644,7 +644,7 @@ class ArticoPrinter extends WrapperPrinter {
 		}
 	}
 	
-	override getInFirstModCommSignals(){
+	def getInFirstModCommSignals(){
 		var Map<String,String> result = new HashMap<String,String>();
 		for(commSigId : getFirstModCommSignals().keySet) {
 			if( (getFirstModCommSignals().get(commSigId).get(ProtocolManager.KIND).equals("input") 
@@ -657,7 +657,7 @@ class ArticoPrinter extends WrapperPrinter {
 		return result
 	}
 	
-	override getFirstModCommSignals(){
+	def getFirstModCommSignals(){
 		if(modCommSignals.containsKey(ProtocolManager.PRED)) {
 			return modCommSignals.get(ProtocolManager.PRED)
 		} else {
@@ -665,7 +665,7 @@ class ArticoPrinter extends WrapperPrinter {
 		}
 	}
 	
-	override getClockSysSignals(){
+	def getClockSysSignals(){
 		var List<String> result = new ArrayList<String>();
 		for(String sysSigId : netSysSignals.keySet) {
 			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)) {
@@ -675,7 +675,7 @@ class ArticoPrinter extends WrapperPrinter {
 		return result
 	}
 	
-	override getResetSysSignals(){
+	def getResetSysSignals(){
 		var Map<String,String> result = new HashMap<String,String>();
 		for(String sysSigId : netSysSignals.keySet) {
 			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)) {

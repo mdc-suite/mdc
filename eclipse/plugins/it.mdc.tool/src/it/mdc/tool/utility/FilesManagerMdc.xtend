@@ -50,6 +50,7 @@ class FilesManagerMdc extends FilesManager {
 	 * @throws FileNotFoundException If not resource have been found at the given path
 	 */
 	 def static extract(String path, String targetFolder) {
+	 	
 		val targetF = new File(targetFolder.sanitize)
 		val url = path.url
 		if(url == null) {
@@ -75,12 +76,13 @@ class FilesManagerMdc extends FilesManager {
 	 * 			Path to the folder where source will be copied
 	 */
 	private def static fsDirectoryExtract(File source, File targetFolder) {
+		
 		Assert.isTrue(source.directory)
-		if (!targetFolder.exists)
+		if (!targetFolder.exists) {
 			Assert.isTrue(targetFolder.mkdirs)
-		else
+		}else{
 			Assert.isTrue(targetFolder.directory)
-
+		}
 		val result = newInstance
 		for (file : source.listFiles) {
 			result.merge(
@@ -111,8 +113,10 @@ class FilesManagerMdc extends FilesManager {
 				new FileInputStream(source).streamExtract(target)
 			}
 		}
-		else if (source.directory)
+		else if (source.directory) {
 			source.fsDirectoryExtract(target)
+			
+			}
 	}
 	
 	/**

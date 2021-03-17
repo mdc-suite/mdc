@@ -1,10 +1,26 @@
 # MDC Release notes
 
+## Release version 0.0.4
+xxxx.xx.xx
+
+### New features
+- Added support for *.mem files in system generation
+- Added support for monitoring of FIFO signals (through "monitor_in" attribute on dataflow connections)
+- Added support for US+ in prototyping (tested for ARM, DMA, mm and stream)
+
+### Changes
+- Fixed bug on report printer while selecting system generation 
+- Fixed bug on system generation scripts (when no *.dat and no *.tcl files are in the hardware components library)
+- Fixed bug on library extraction for system generation
+- Clean version of network printer generic (protocol management methods moved to ProtocolManager)
+- protocols and test folders moved to another repo (mdc-apps)
+
 ## Release version 0.0.3
 2021.01.19
 
 ### New features
 - Added new CNN project to the available applications under test folder.
+
 ### Changes
 - Vivado HLS protocol has been updated according to the latest modification on the corresponding HCL.
 

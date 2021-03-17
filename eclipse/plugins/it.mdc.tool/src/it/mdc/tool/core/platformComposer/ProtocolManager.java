@@ -1,5 +1,6 @@
 package it.mdc.tool.core.platformComposer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.FileInputStream;
@@ -17,12 +18,15 @@ import net.sf.orcc.df.Port;
 import net.sf.orcc.util.OrccLogger;
 
 /**
- * 
+ * This class provides methods to manage the protocol file
  * 
  * @author Carlo Sau
  */
 public class ProtocolManager {
-
+	
+	/**
+	 * Protocol labels
+	 */
 	public static final String ACTOR = "actor";
 	public static final String PRED = "predecessor";
 	public static final String SUCC = "successor";
@@ -52,47 +56,42 @@ public class ProtocolManager {
 	public static final String FILTER = "filter";
 	public static final String MAP = "mapping";
 	public static final String INV = "invert";
-	
+
 	/**
-	 * Protocol signals
-	 */
-	
-	/**
-	 * System signals (reset, clock...)
+	 * System signals of the whole network
 	 */
 	private Map<String,Map<String,String>> netSysSignals;
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Name of the modules (predecessor, successor)
+	 */
 	private Map<String,String> modNames;
 	
 	/**
-	 * TODO add description
-	 * */
+	 * System signals of the modules (actor, predecessor, successor)
+	 */
 	private Map<String,Map<String,Map<String,String>>> modSysSignals;
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Communication signals of the modules (actor, predecessor, successor)
+	 */
 	private Map<String,Map<String,Map<String,String>>> modCommSignals;
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Communication parameters of the modules (actor, predecessor, successor)
+	 */
 	private Map<String,Map<String,Map<String,String>>> modCommParms;
 	
 	/**
-	 * TODO add description
+	 * Communication signals of the wrapper
 	 */
 	private Map<String,Map<String,String>> wrapCommSignals;
 	
-/**
- * This class provides methods to parse the input protocol file
- * 
- * @author Carlo Sau
- *
- */
+	/**
+	 * Acquire the protocol file and initialize attributes accordingly
+	 * 
+	 * @param protocolFile
+	 */
 	private void acquireProtocol(String protocolFile) {
 
 		File inputFile = new File(protocolFile);
@@ -239,17 +238,10 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * This method initializes the NetworkPrinter Class attributes.
+	 * Initializer of the ProtocolManager (maps instantiation and initialization)
 	 * 
-	 * @param outPath
-	 * 			the output folder path
-	 * @param configManager
-	 * 			the manager of the network configuration
-	 * @param network
-	 * 			the multi-dataflow network
-	 * @param protPath
-	 * 			the protocol file path
-	 * @throws IOException
+	 * @param protocolFile
+	 * 			the protocol file to be used to initialize the object
 	 */
 	public ProtocolManager(String protocolFile) throws IOException{
 		
@@ -264,14 +256,152 @@ public class ProtocolManager {
 
 	}
 	
+
 	/**
-	 * TODO add description
+	 * Return signal to be printed for the given communication signal and actor port
+	 * 
+	 * @param commSigId
+	 * 		communication signal ID
+	 * @param port
+	 * 		involved port
+	 * @return
+	 * 		signal to be printed for the given communication signal and actor port
+	 */
+	public String getActorPortPrintSignal(String commSigId, Port port) {
+		if(modCommSignals.get(ACTOR).get(commSigId).get(ACTP).equals("")) {
+			return port.getLabel();	
+		} else {
+			return port.getLabel() + "_" + modCommSignals.get(ACTOR).get(commSigId).get(ACTP);
+		}
+	}
+	
+	/**
+	 * Return a list of all actor system signals
+	 * 
+	 * @param actor
+	 * 		involved actor
+	 * @return
+	 * 		list of all actor system signals
+	 */
+	public ArrayList<String> getActorSysSignals(Actor actor) {
+		ArrayList<String> actorSysSignalsId = new ArrayList<String>();
+		for(String sysSigId : modSysSignals.get(ACTOR).keySet()) {
+			if(modSysSignals.get(ACTOR).get(sysSigId).containsKey(FILTER)) {
+				if(actor.hasAttribute(modSysSignals.get(ACTOR).get(sysSigId).get(FILTER))) {
+					actorSysSignalsId.add(sysSigId);
+				}
+			} else {
+				actorSysSignalsId.add(sysSigId);
+			}
+		}
+		return actorSysSignalsId;
+	}
+	
+	/**
+	 * Return a list of all actor communication signals
+	 * 
+	 * @param actor
+	 * 		involved actor
+	 * @return
+	 * 		list of all actor communication signals
+	 */
+	public ArrayList<String> getActorCommSignals(Actor actor) {
+		ArrayList<String> actorCommSignalsId = new ArrayList<String>();
+		for(String commSigId : modCommSignals.get(ACTOR).keySet()) {
+			if(modCommSignals.get(ACTOR).get(commSigId).containsKey(FILTER)) {
+				if(actor.hasAttribute(modCommSignals.get(ACTOR).get(commSigId).get(FILTER))) {
+					actorCommSignalsId.add(commSigId);
+				}
+			} else {
+				actorCommSignalsId.add(commSigId);
+			}
+		}
+		return actorCommSignalsId;
+	}
+	
+	/**
+	 * Return a list of actor input communication signals
+	 * 
+	 * @param actor
+	 * 		involved actor
+	 * @return
+	 * 		list of actor input communication signals
+	 */
+	public ArrayList<String> getActorInputCommSignals(Actor actor) {
+		ArrayList<String> actorInputCommSignalsId = new ArrayList<String>();
+		for(String commSigId : getActorCommSignals(actor)) {
+			if(isInputSide(ACTOR,commSigId)) {
+				actorInputCommSignalsId.add(commSigId);
+			}
+		}
+		return actorInputCommSignalsId;
+	}
+	
+	/**
+	 * Return a list of actor output communication signals
+	 * 
+	 * @param actor
+	 * 		involved actor
+	 * @return
+	 * 		list of actor output communication signals
+	 */
+	public ArrayList<String> getActorOutputCommSignals(Actor actor) {
+		ArrayList<String> actorOutputCommSignalsId = new ArrayList<String>();
+		for(String commSigId : getActorCommSignals(actor)) {
+			if(isOutputSide(ACTOR,commSigId)) {
+				actorOutputCommSignalsId.add(commSigId);
+			}
+		}
+		return actorOutputCommSignalsId;
+	}
+	
+	/**
+	 * Return channel suffix to be printed for the given communication signal and module
 	 * 
 	 * @param module
-	 * @param actor
+	 * 		involved module
 	 * @param commSigId
-	 * @param port
+	 * 		communication signal ID
 	 * @return
+	 * 		channel suffix to be printed for the given communication signal and module
+	 */
+	public String getChannelPrintSuffix(String module, String commSigId) {
+		if(modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
+			return "";
+		} else {
+			return "_" + modCommSignals.get(module).get(commSigId).get(CH);
+		}
+	}
+	
+	/**
+	 * Return clock system signals
+	 * 
+	 * @return
+	 * 			list of clock sistem signals
+	 */
+	public ArrayList<String> getClockSysSignals(){
+		ArrayList<String> result = new ArrayList<String>();
+		for(String sysSigId : netSysSignals.keySet()) {
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.CLOCK)) {
+				result.add(netSysSignals.get(sysSigId).get(ProtocolManager.NETP));
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * Return the size of the communication signal
+	 * 
+	 * @param module 
+	 * 			involved module label (actor, predecessor, successor)
+	 * @param actor
+	 * 			involved actor  
+	 * @param commSigId
+	 * 			communication signal ID
+	 * @param port
+	 * 			involved port
+	 * @return
+	 * 			size of the communication signal
 	 */
 	public int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
 		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable")) {
@@ -305,11 +435,56 @@ public class ProtocolManager {
 			return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(SIZE));
 		}
 		return 1;
-	} 
+	}
 	
 	/**
+	 * Return range of the communication signal to be printed for the module, actor and port
+	 * 
+	 * @param module
+	 * 				involved module
+	 * @param actor
+	 * 				involved actor
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @param port
+	 * 				involved port
+	 * @return
+	 * 				range of the communication signal to be printed 
+	 */
+	public String getCommSigPrintRange(String module, Actor actor, String commSigId, Port port) {
+		if (getCommSigSize(module,actor,commSigId,port) != 1) {
+			return "[" + (getCommSigSize(module,actor,commSigId,port)-1) + " : 0] ";
+		} else {
+			return "";
+		}
+	}
+	
+	/**
+	 * Return size in bits of the given port data channel
+	 * 
+	 * @param port
+	 * 				involved port
+	 * @return
+	 * 				size in bit of the port data channel
+	 */
+	public int getDataSize(Port port) {
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("data")) {
+				if(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE).equals("variable")) {
+					return port.getType().getSizeInBits();
+				} else {
+					return Integer.parseInt(wrapCommSignals.get(commSigId).get(ProtocolManager.SIZE));
+				}
+			}
+		}
+		return 1;
+	}
+	
+	/**
+	 * Return first module in the protocol chain (predecessor, if any, or actor)
 	 * 
 	 * @return
+	 * 			first module label
 	 */
 	public String getFirstMod(){
 		if (modNames.containsKey(PRED)) {
@@ -320,9 +495,10 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * This method returns communication signals of the first module (PRED or ACTOR)
+	 * Return communication signals of the first module in the protocol chain
 	 * 
-	 * @return map of first module communication signals
+	 * @return 
+	 * 			map of the first module communication signals
 	 */
 	public Map<String,Map<String,String>> getFirstModCommSignals(){
 		if(modCommSignals.containsKey(PRED)) {
@@ -333,7 +509,10 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
+	 * Return all inputs within communication signals of the first module in the protocol chain
+	 * 
+	 * @return
+	 * 			map of the first module communication input signals
 	 * */
 	public Map<String,String> getInFirstModCommSignals(){
 		Map<String,String> result = new HashMap<String,String>();
@@ -349,8 +528,25 @@ public class ProtocolManager {
 	} 
 	
 	/**
+	 * Return ID of the wrapper full channel
 	 * 
 	 * @return
+	 * 			full channel ID
+	 */
+	public String getFullChannelWrapCommSignalID() {
+		for(String commSigId : wrapCommSignals.keySet()) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("full")) {
+				return wrapCommSignals.get(commSigId).get(ProtocolManager.CH);
+			}		
+		}
+		return null;
+	}
+	
+	/**
+	 * Return last module in the protocol chain (successor, if any, or actor)
+	 * 
+	 * @return
+	 * 			last module label
 	 */
 	public String getLastMod(){
 		if (modNames.containsKey(SUCC)) {
@@ -361,9 +557,10 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * This method returns communication signals of the last module (SUCC or ACTOR)
+	 * Return communication signals of the last module in the protocol chain
 	 * 
-	 * @return map of last module communication signals
+	 * @return 
+	 * 			map of the last module communication signals
 	 */
 	public Map<String,Map<String,String>> getLastModCommSignals(){
 		if(modCommSignals.containsKey(SUCC)) {
@@ -374,12 +571,13 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * This method returns mapping signal name of the channel passed as argument
+	 * Returns wrapper mapping signal of the channel passed as argument
 	 * 
 	 * @param channel
-	 * 				the channel for which corresponding mapping signal name is asked
+	 * 				involved channel
 	 * 
-	 * @return name of the mapping signal
+	 * @return 
+	 * 				wrapper mapping signal
 	 */
  	public String getMatchingWrapMapping(String channel){
 		for(String commSigId : wrapCommSignals.keySet()) {
@@ -393,9 +591,12 @@ public class ProtocolManager {
 	}
 
 	/**
+	 * Return the name of the passed module (predecessor, successor)
 	 * 
 	 * @param module
+	 * 				involved module
 	 * @return
+	 * 				name of the involved module, if any
 	 */
 	public String getModName(String module) {
 		if (modNames.containsKey(module)) {
@@ -406,48 +607,71 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return names of the modules in the protocol chain
+	 * 
+	 * @return
+	 * 			map of names of the modules
+	 */
 	public Map<String,String> getModNames() {
 		return modNames;
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the modules communication signals
+	 * 
+	 * @return
+	 * 			map of the modules communication signals
+	 */
 	public Map<String,Map<String,Map<String,String>>> getModCommSignals() {
 		return modCommSignals;
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the modules communication parameters
+	 * 
+	 * @return
+	 * 			map of the modules communication parameters
+	 */
 	public Map<String,Map<String,Map<String,String>>> getModCommParms() {
 		return modCommParms;
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the wrapper communication signals
+	 * 
+	 * @return
+	 * 			map of the wrapper communication signals
+	 */
 	public Map<String,Map<String,String>> getWrapCommSignals() {
 		return wrapCommSignals;
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the module system signals
+	 * 
+	 * @return
+	 * 			map of the module system signals
+	 */
 	public Map<String,Map<String,Map<String,String>>> getModSysSignals() {
 		return modSysSignals;
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the network system signals
+	 * 
+	 * @return
+	 * 			map of the network system signals
+	 */
 	public Map<String,Map<String,String>> getNetSysSignals() {
 		return netSysSignals;
 	}
 	
-
+	/**
+	 * Return all outputs within communication signals of the last module in the protocol chain
+	 * 
+	 * @return
+	 * 			map of the last module communication output signals
+	 * */
 	public Map<String,String> getOutLastModCommSignals(){
 		Map<String,String> result = new HashMap<String,String>();
 		for(String commSigId : getLastModCommSignals().keySet()) {
@@ -462,14 +686,36 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
+	 * Return reset system signals
+	 * 
+	 * @return
+	 * 			map of reset system signals
+	 */
+	public Map<String,String> getResetSysSignals(){
+		HashMap<String,String> result = new HashMap<String,String>();
+		for(String sysSigId : netSysSignals.keySet()) {
+			if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RST)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"HIGH");
+			} else if(netSysSignals.get(sysSigId).containsKey(ProtocolManager.RSTN)) {
+				result.put(netSysSignals.get(sysSigId).get(ProtocolManager.NETP),"LOW");
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * Return whole signal name to be printed (port name + communication signal name)
 	 * 
 	 * @param module
+	 * 				involved module
 	 * @param commSigId
+	 * 				communication signal ID
 	 * @param port
+	 * 				involved port
 	 * @return
+	 * 				signal name to be printed
 	 */
-	public String getSigName(String module, String commSigId, Port port) {
+	public String getSigPrintName(String module, String commSigId, Port port) {
 		if (!modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
 			return port.getLabel() + "_" + modCommSignals.get(module).get(commSigId).get(CH);
 		} else {
@@ -478,22 +724,87 @@ public class ProtocolManager {
 	}
 	
 	/**
+	 * Return range of the system signal to be printed for the module
 	 * 
 	 * @param module
-	 * @param commSigId
+	 * 				involved module
+	 * @param sysSigId
+	 * 				system signal ID
 	 * @return
+	 * 				range of the system signal to be printed 
 	 */
-	public int getSysSigSize(String module, String commSigId) {
-		if(module == null) {
-			return Integer.parseInt(netSysSignals.get(commSigId).get(SIZE));
+	public String getSysSigPrintRange(String module, String sysSigId) {
+		if (getSysSigSize(module,sysSigId) != 1) {
+			return "[" + (getSysSigSize(module,sysSigId)-1) + " : 0] "; 
 		} else {
-			return Integer.parseInt(modSysSignals.get(module).get(commSigId).get(SIZE));
+			return "";
 		}
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return the size of the system signal
+	 * 
+	 * @param module 
+	 * 				involved module label (network, actor, predecessor, successor)  
+	 * @param sysSigId
+	 * 				system signal ID
+	 * @return
+	 * 				size of the system signal
+	 */
+	public int getSysSigSize(String module, String sysSigId) {
+		if(module == null) {
+			return Integer.parseInt(netSysSignals.get(sysSigId).get(SIZE));
+		} else {
+			return Integer.parseInt(modSysSignals.get(module).get(sysSigId).get(SIZE));
+		}
+	}
+	
+	/**
+	 * Return the target signal for the given communication signal, connection and predecessor
+	 * 
+	 * @param connection
+	 * 				involved connection
+	 * @param pred
+	 * 				predecessor
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				target signal
+	 */
+	public String getTargetSignal(Connection connection, String pred, String commSigId) {
+		
+		String prefix = "";
+		if (connection.getTarget() instanceof Actor) {
+			if(!(connection.getTarget().getAdapter(Actor.class)).hasAttribute("sbox")) {
+				if(getModName(pred) != "") {
+					prefix = getModName(pred);
+				}	
+			}
+		}
+
+		String suffix = "";
+		if(!modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH).equals("")) {
+			suffix = "_" + modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH);	
+		}
+		
+		if (connection.getTargetPort() == null) {
+			
+			return prefix + connection.getTarget().getLabel() + suffix;
+		} else {
+			return prefix + connection.getTarget().getLabel() + "_" + connection.getTargetPort().getLabel() + suffix;
+		}	
+	}
+
+	/**
+	 * Return true if the communication signal is an input
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an input, false otherwise
+	 */
 	public boolean isInputSide(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
@@ -506,8 +817,15 @@ public class ProtocolManager {
 	}
 
 	/**
-	 * TODO add description
-	 * */
+	 * Return true if the communication signal is an input of the input protocol interface
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an input of the input protocol interface, false otherwise
+	 */
 	public boolean isInputSideDirect(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct")) ) {
@@ -518,8 +836,15 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
-	 * */
+	 * Return true if the communication signal is an input of the output protocol interface
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an input of the output protocol interface, false otherwise
+	 */
 	public boolean isInputSideReverse(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
@@ -530,11 +855,12 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * This method returns if the matching wrapping signal is discordant or not with the channel passed as argument
+	 * Return true if the wrapper mapping signal is negated with respect to a channel
 	 * 
 	 * @param channel
-	 * 				the channel for which corresponding mapping signal discordance is asked
-	 * @return true if the matching wrapping signal is discordant, false otherwise
+	 * 				involved channel
+	 * @return 
+	 * 				true if the wrapper mapping signal is negated with respect to the channel, false otherwise
 	 */
 	public boolean isNegMatchingWrapMapping(String channel){
 		for(String commSigId : wrapCommSignals.keySet()) {
@@ -548,8 +874,15 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
-	 * */	
+	 * Return true if the communication signal is an output
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an output, false otherwise
+	 */
 	public boolean isOutputSide(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
@@ -562,8 +895,15 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
-	 * */	
+	 * Return true if the communication signal is an output of the output protocol interface
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an output of the output protocol interface, false otherwise
+	 */
 	public boolean isOutputSideDirect(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("output")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct")) ) {
@@ -574,8 +914,15 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * TODO add description
-	 * */	
+	 * Return true if the communication signal is an output of the input protocol interface
+	 * 
+	 * @param module
+	 * 				involved module label (actor, predecessor, successor)
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				true if the signal is an output of the input protocol interface, false otherwise
+	 */	
 	public boolean isOutputSideReverse(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("reverse")) ) {
