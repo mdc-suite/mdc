@@ -985,6 +985,8 @@ class WrapperPrinter {
 		    «ENDIF»
 		    .slv_reg0(slv_reg0)
 		);
+		assign sw_rst_n = slv_reg0[3];
+		assign rst_n = sw_rst_n && s00_axi_aresetn;
 		// ----------------------------------------------------------------------------
 		
 		«IF coupling.equals("mm")»
@@ -1377,7 +1379,7 @@ class WrapperPrinter {
 			.SIZE(SIZE_COUNT_«portMap.get(output)+1») ) 
 		i_counter_«output.name» (
 			.aclk(s00_axi_aclk),
-			.aresetn(s00_axi_aresetn),
+			.aresetn(rst_n),
 			.clr(slv_reg0[2]),
 			.en(«output.getName()»_push),
 			.max(slv_reg«outputMap.get(output)+1»[SIZE_COUNT_«portMap.get(output)+1»-1:0]),
@@ -1421,7 +1423,7 @@ class WrapperPrinter {
 			.«clockSignal»(s00_axi_aclk)«IF !(protocolManager.getResetSysSignals().empty && this.luts.empty)»,«ENDIF»
 			«ENDFOR»
 			«FOR resetSignal : protocolManager.getResetSysSignals().keySet»
-			.«resetSignal»(«IF protocolManager.getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»s00_axi_aresetn)«IF !(this.luts.empty)»,«ENDIF»
+			.«resetSignal»(«IF protocolManager.getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_n)«IF !(this.luts.empty)»,«ENDIF»
 			«ENDFOR»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
 			.ID(slv_reg0[31:24])«ENDIF»
@@ -1740,6 +1742,8 @@ class WrapperPrinter {
 				wire [31 : 0] slv_reg«outputMap.get(output)+1»;
 			«ENDFOR»
 		«ENDIF»
+		wire sw_rst_n;
+		wire rst_n;
 		'''
 		
 		

@@ -134,7 +134,7 @@ class DriverPrinter {
 			«ENDIF»
 			
 			// start execution
-			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
+			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+9)»;
 			
 			«IF !isMemoryMapped»
 				«FOR input : inputMap.keySet»
@@ -189,7 +189,7 @@ class DriverPrinter {
 				«ENDFOR»
 			«ELSE»
 				// wait for completion
-				while( ((*(config)) & 0x4) != 0x4 );
+				while( ((*(config)) & 0xC) != 0xC );
 						
 				«FOR output : outputMap.keySet»
 					// receive data port «output.name»
@@ -209,7 +209,7 @@ class DriverPrinter {
 			«ENDIF»
 			
 			// stop execution
-			//*(config) = 0x«Integer.toHexString(0)»;
+			*(config) = 0x«Integer.toHexString(0)»;
 			
 			return 0;
 		}
