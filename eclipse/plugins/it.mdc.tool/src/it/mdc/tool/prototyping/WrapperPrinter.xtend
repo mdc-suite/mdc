@@ -985,6 +985,7 @@ class WrapperPrinter {
 		    «ENDIF»
 		    .slv_reg0(slv_reg0)
 		);
+		assign start = slv_reg[0];
 		assign sw_rst_n = slv_reg0[3];
 		assign rst_n = sw_rst_n && s00_axi_aresetn;
 		// ----------------------------------------------------------------------------
@@ -1387,6 +1388,7 @@ class WrapperPrinter {
 			.last(m«getLongId(outputMap.get(output))»_axis_tlast)
 		);
 		«ENDFOR»
+		assign done =«FOR output : outputMap.keySet() SEPARATOR "&&"» m«getLongId(outputMap.get(output))»_axis_tlast«ENDFOR»;
 		«ENDIF»
 		// ----------------------------------------------------------------------------
 		'''
@@ -1617,6 +1619,8 @@ class WrapperPrinter {
 			«ENDIF»
 			
 			// Monitoring
+			output wire start,
+			output wire done,
 			«FOR connection : network.connections»
 			«IF connection.hasAttribute("monitor_in")»
 			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
@@ -1694,7 +1698,6 @@ class WrapperPrinter {
 				wire [31 : 0] s01_axi_data_in;
 				reg [31 : 0] s01_axi_data_out;
 			«ENDIF»
-			wire done;
 			wire done_input;
 		«ENDIF»
 		«FOR input : inputMap.keySet()»
