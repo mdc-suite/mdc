@@ -985,7 +985,7 @@ class WrapperPrinter {
 		    «ENDIF»
 		    .slv_reg0(slv_reg0)
 		);
-		assign start = slv_reg[0];
+		assign start = slv_reg0[0];
 		assign sw_rst_n = slv_reg0[3];
 		assign rst_n = sw_rst_n && s00_axi_aresetn;
 		// ----------------------------------------------------------------------------
