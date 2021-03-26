@@ -8,7 +8,10 @@ public class TypeConverter {
 		
 		if(typeToTranslate.toString().equals("int(size=32)")) {
 			return "int32_t";
-		} else
-			return "";			
+		} else if(typeToTranslate.toString().equals("uint(size=32)")){
+			return "uint32_t";
+		}else {
+			return "";	
+		}
 	}
 }

@@ -329,8 +329,10 @@ public abstract class PlatformComposer {
 		}		
 		// output/deps/hwpe-multidataflow-wrapper/rtl/hwpe-ctrl
 		try {
+			//copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
+			//		"hwpe-ctrl" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-ctrl");
 			copier.copy(hwpeWrapperGeneratorPath + File.separator + "static" + File.separator + "static_rtl" + File.separator + 
-					"hwpe-ctrl" + File.separator + "rtl", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-ctrl");
+					"hwpe-ctrl-fpga", hwpeMultiDataflowWrapperRtl + File.separator + "hwpe-ctrl");
 		} catch (IOException e) {
 			OrccLogger.severeln("The hwpe-ctrl folder could not have been copied: " + e.getMessage());
 		}

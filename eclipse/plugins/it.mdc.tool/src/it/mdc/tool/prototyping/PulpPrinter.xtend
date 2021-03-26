@@ -1384,29 +1384,29 @@ class PulpPrinter {
 		  // Global signals
 		  input  logic          clk_i,
 		  input  logic          rst_ni,
-		  input  logic          test_mode_i,
+		  (* DONT_TOUCH = "yes" *) input  logic          test_mode_i,
 		  // Events
-		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+		  (* DONT_TOUCH = "yes" *) output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
 		  // TCDM master ports
-		  output logic [MP-1:0]                         tcdm_req,
-		  input  logic [MP-1:0]                         tcdm_gnt,
-		  output logic [MP-1:0][31:0]                   tcdm_add,
-		  output logic [MP-1:0]                         tcdm_wen,
-		  output logic [MP-1:0][3:0]                    tcdm_be,
-		  output logic [MP-1:0][31:0]                   tcdm_data,
-		  input  logic [MP-1:0][31:0]                   tcdm_r_data,
-		  input  logic [MP-1:0]                         tcdm_r_valid,
+		  (* DONT_TOUCH = "yes" *) output logic [MP-1:0]                         tcdm_req,
+		  (* DONT_TOUCH = "yes" *) input  logic [MP-1:0]                         tcdm_gnt,
+		  (* DONT_TOUCH = "yes" *) output logic [MP-1:0][31:0]                   tcdm_add,
+		  (* DONT_TOUCH = "yes" *) output logic [MP-1:0]                         tcdm_wen,
+		  (* DONT_TOUCH = "yes" *) output logic [MP-1:0][3:0]                    tcdm_be,
+		  (* DONT_TOUCH = "yes" *) output logic [MP-1:0][31:0]                   tcdm_data,
+		  (* DONT_TOUCH = "yes" *) input  logic [MP-1:0][31:0]                   tcdm_r_data,
+		  (* DONT_TOUCH = "yes" *) input  logic [MP-1:0]                         tcdm_r_valid,
 		  // Peripheral slave port
-		  input  logic                                  periph_req,
-		  output logic                                  periph_gnt,
-		  input  logic         [31:0]                   periph_add,
-		  input  logic                                  periph_wen,
-		  input  logic         [3:0]                    periph_be,
-		  input  logic         [31:0]                   periph_data,
-		  input  logic       [ID-1:0]                   periph_id,
-		  output logic         [31:0]                   periph_r_data,
-		  output logic                                  periph_r_valid,
-		  output logic       [ID-1:0]                   periph_r_id
+		  (* DONT_TOUCH = "yes" *) input  logic                                  periph_req,
+		  (* DONT_TOUCH = "yes" *) output logic                                  periph_gnt,
+		  (* DONT_TOUCH = "yes" *) input  logic         [31:0]                   periph_add,
+		  (* DONT_TOUCH = "yes" *) input  logic                                  periph_wen,
+		  (* DONT_TOUCH = "yes" *) input  logic         [3:0]                    periph_be,
+		  (* DONT_TOUCH = "yes" *) input  logic         [31:0]                   periph_data,
+		  (* DONT_TOUCH = "yes" *) input  logic       [ID-1:0]                   periph_id,
+		  (* DONT_TOUCH = "yes" *) output logic         [31:0]                   periph_r_data,
+		  (* DONT_TOUCH = "yes" *) output logic                                  periph_r_valid,
+		  (* DONT_TOUCH = "yes" *) output logic       [ID-1:0]                   periph_r_id
 		);
 		  hwpe_stream_intf_tcdm tcdm[MP-1:0] (
 		    .clk ( clk_i )
@@ -1479,6 +1479,7 @@ class PulpPrinter {
 		 * Module: pulp_hwpe_wrap.sv
 		 *
 		 */
+		(* dont_touch = "yes" *)
 		module pulp_hwpe_wrap
 		#(
 		  parameter N_CORES = 2,
@@ -1497,20 +1498,20 @@ class PulpPrinter {
 		(
 		  input  logic                        clk,
 		  input  logic                        rst_n,
-		  input  logic                        test_mode,
-		  XBAR_TCDM_BUS.Master                hwacc_xbar_master[N_MASTER_PORT-1:0],
-		  XBAR_PERIPH_BUS.Slave               hwacc_cfg_slave,
-		  output logic [N_CORES-1:0][1:0]     evt_o,
-		  output logic                        busy_o
+		  (* DONT_TOUCH = "yes" *) input  logic                        test_mode,
+		  (* DONT_TOUCH = "yes" *) XBAR_TCDM_BUS.Master                hwacc_xbar_master[N_MASTER_PORT-1:0],
+		  (* DONT_TOUCH = "yes" *) XBAR_PERIPH_BUS.Slave               hwacc_cfg_slave,
+		  (* DONT_TOUCH = "yes" *) output logic [N_CORES-1:0][1:0]     evt_o,
+		  (* DONT_TOUCH = "yes" *) output logic                        busy_o
 		);
-		  logic [N_MASTER_PORT-1:0]           tcdm_req;
-		  logic [N_MASTER_PORT-1:0]           tcdm_gnt;
-		  logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_add;
-		  logic [N_MASTER_PORT-1:0]           tcdm_type;
-		  logic [N_MASTER_PORT-1:0] [4 -1:0]  tcdm_be;
-		  logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_wdata;
-		  logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_r_rdata;
-		  logic [N_MASTER_PORT-1:0]           tcdm_r_valid;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0]           tcdm_req;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0]           tcdm_gnt;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_add;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0]           tcdm_type;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0] [4 -1:0]  tcdm_be;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_wdata;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0] [32-1:0]  tcdm_r_rdata;
+		  (* DONT_TOUCH = "yes" *) logic [N_MASTER_PORT-1:0]           tcdm_r_valid;
 		  multi_dataflow_top_wrap #(
 		    .N_CORES          ( N_CORES ),
 		    .MP               ( N_MASTER_PORT ),
@@ -1596,21 +1597,21 @@ class PulpPrinter {
 			  // Global signals
 			  input  logic          clk_i,
 			  input  logic          rst_ni,
-			  input  logic          test_mode_i,
+			  (* DONT_TOUCH = "yes" *) input  logic          test_mode_i,
 			  // Events
-			  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+			  (* DONT_TOUCH = "yes" *) output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
 			  // TCDM master ports
-			  hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
+			  (* DONT_TOUCH = "yes" *) hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
 			  // Peripheral slave port
-			  hwpe_ctrl_intf_periph.slave                   periph
+			  (* DONT_TOUCH = "yes" *) hwpe_ctrl_intf_periph.slave                   periph
 			);
 			  // Signals
-			  logic enable, clear;
-			  logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
-			  ctrl_streamer_t  streamer_ctrl;
-			  flags_streamer_t streamer_flags;
-			  ctrl_engine_t    engine_ctrl;
-			  flags_engine_t   engine_flags;
+			  (* DONT_TOUCH = "yes" *) logic enable, clear;
+			  (* DONT_TOUCH = "yes" *) logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
+			  (* DONT_TOUCH = "yes" *) ctrl_streamer_t  streamer_ctrl;
+			  (* DONT_TOUCH = "yes" *) flags_streamer_t streamer_flags;
+			  (* DONT_TOUCH = "yes" *) ctrl_engine_t    engine_ctrl;
+			  (* DONT_TOUCH = "yes" *) flags_engine_t   engine_flags;
 			  // Streamer interfaces
 			«FOR port : portMap.keySet»  
 				hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «port.name» ( .clk (clk_i) );
@@ -3309,12 +3310,12 @@ class PulpPrinter {
 			}
 			// TCDM address regs
 			   «FOR port : inputMap.keySet»  
-			   static inline void hwpe_«port.name»_addr_set(int32_t value) {
+			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
 			     HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
 			   «FOR port : outputMap.keySet»  
-			   static inline void hwpe_«port.name»_addr_set(int32_t value) {
+			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
 			     HWPE_WRITE(value, HWPE_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
@@ -3350,7 +3351,7 @@ class PulpPrinter {
 			}
 			// custom hal
 			«FOR param : network.parameters»
-				static inline void hwpe_«param.name.toLowerCase»_set(int32_t value) {
+				static inline void hwpe_«param.name.toLowerCase»_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(param.type)» value) {
 				  HWPE_WRITE(value, HWPE_«param.name.toUpperCase» );
 				}
 			«ENDFOR»
