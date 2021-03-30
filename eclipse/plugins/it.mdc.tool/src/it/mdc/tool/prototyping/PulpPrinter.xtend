@@ -1045,10 +1045,9 @@ class PulpPrinter {
 			      - rtl/hwpe-ctrl/hwpe_ctrl_package.sv
 			      - rtl/hwpe-ctrl/hwpe_ctrl_interfaces.sv
 			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch_test_wrap.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_fpga.sv
+			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_fpga_wrap.sv
 			      - rtl/hwpe-ctrl/hwpe_ctrl_slave.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_seq_mult.sv
 			      - rtl/hwpe-ctrl/hwpe_ctrl_uloop.sv
 			  - include_dirs:
 			      - rtl/hwpe-engine
