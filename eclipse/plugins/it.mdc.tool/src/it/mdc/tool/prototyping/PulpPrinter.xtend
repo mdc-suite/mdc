@@ -1695,78 +1695,66 @@ class PulpPrinter {
 			  output flags_engine_t           flags_o
 			);
 			  // multi_dataflow control
-			  logic clear;
-			  logic done, idle, ready;
-			  assign clear = ctrl_i.clear;
-			  assign flags_o.done = done;
-			  assign flags_o.idle = idle;
+			  logic engine_clear;
+			  logic engine_done, engine_idle, engine_ready;
+			  logic unsigned [($clog2(FIR_CNT_LEN)+1):0] cnt_done;
+			  assign engine_clear = ctrl_i.clear;
+			  assign flags_o.done = engine_done;
+			  assign flags_o.idle = engine_idle;
 			  always_ff @(posedge clk_i or negedge rst_ni)
 			  begin: fsm_ready
 			    if(~rst_ni)
 			      flags_o.ready = 1'b0;
-			    else if(~(ready | idle))
+			    else if(~(engine_ready | engine_idle))
 			      flags_o.ready = 1'b0;
 			    else
 			      flags_o.ready = 1'b1;
 			  end
-			  // IN/OUT synchronization
-			  logic unsigned [$clog2(CNT_LEN):0] cnt_in;
-			  logic unsigned [$clog2(CNT_LEN):0] cnt_out;
 			  always_ff @(posedge clk_i or negedge rst_ni)
-			  begin: engine_cnt_in
-			    if((~rst_ni) | clear)
-			      cnt_in = 32'b0;
-			    else if(«FOR port : inputMap.keySet SEPARATOR " & "»  («port.name».valid)&(«port.name».ready)«ENDFOR» )
-			      cnt_in = cnt_in + 1;
-			    else
-			      cnt_in = cnt_in;
-			  end
-			  always_ff @(posedge clk_i or negedge rst_ni or posedge done)
-			  begin: engine_cnt_out
-			    if((~rst_ni) | clear)
-			      cnt_out = 32'b0;
-			    else if((done)&(cnt_in>cnt_out))
-			      cnt_out = cnt_out + 1;
-			    else
-			      cnt_out = cnt_out;
-			  end
-			  assign flags_o.cnt = cnt_out;
-			  // Engine
-			  generate
-			  begin: multi_dataflow_gen
-			    multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
-			          // Global signals
-			          .clk_i             ( clk_i            ),
-			          .rst_ni           ( rst_ni           ),
-			          // Input data (to-hwpe)
-			            «FOR port : inputMap.keySet»  
-			            	.«port.name»              ( «port.name»_i	),
-			            «ENDFOR»  
-			            // Output data (from-hwpe)
-			            «FOR port : outputMap.keySet»  
-			            	.«port.name»              ( «port.name»_o	),
-			            «ENDFOR»  	  
-			          // Algorithm parameters
-			          «FOR param : network.parameters» 
-			          	.«param.name»        (  ctrl_i.«param.name»      ),
-			          «ENDFOR»  
-			          // Control signals
-			          .ap_start           ( ctrl_i.start     ),
-			          .ap_done            ( done             ),
-			          .ap_idle            ( idle             ),
-			          .ap_ready           ( ready            )
-			    );
-			  end
-			  endgenerate
+			  begin: done_cnt
+			      if((~rst_ni) | engine_clear)
+			        cnt_done = 32'b0;
+			      else if(engine_done)
+			        cnt_done = cnt_done + 1;
+			      else
+			        cnt_done = cnt_done;
+			    end
+			  assign flags_o.cnt = cnt_done;
+			  // Kernel wrapper
+			  kernel_wrapper i_k_wrap (
+			      // Global signals
+			      .clk_i           ( clk_i            ),
+			      .rst_ni          ( rst_ni           ),
+			      .test_mode_i     ( test_mode_i      ),
+			      // Input data (to-hwpe)
+			      «FOR port : inputMap.keySet»  
+			        .«port.name»              ( «port.name»_i	),
+			      «ENDFOR»  
+			      // Output data (from-hwpe)
+			      «FOR port : outputMap.keySet»  
+			        .«port.name»              ( «port.name»_o	),
+			      «ENDFOR»  	  
+			      // Algorithm parameters
+			      «FOR param : network.parameters» 
+			        .«param.name»        ( ctrl_i.«param.name»      ),
+			      «ENDFOR»  
+			      // Control signals
+			      .start           ( ctrl_i.start     ),
+			      .clear           ( engine_clear     ),
+			      // Flag signals
+			      .done            ( engine_done      ),
+			      .idle            ( engine_idle      ),
+			      .ready           ( engine_ready     )
+			  );
 			  // At the moment output strobe is always '1
 			  // All bytes of output streams are written
 			  // to TCDM
-			  always_comb
-			  begin
+			  //always_comb
+			  //begin
 			    «FOR port : outputMap.keySet»  
-			    	«port.name»_o.strb = '1;
+			    	//«port.name»_o.strb = '1;
 			    «ENDFOR»  	
-			  end
+			  //end
 			endmodule
 		'''
 	}	
@@ -3394,7 +3382,7 @@ class PulpPrinter {
 			#include "inc/hwpe_lib/archi_hwpe.h"
 			#include "inc/hwpe_lib/hal_hwpe.h"
 			#include "inc/hero_lib/hero_memory_map.h"
-			#include "inc/hero_lib/pulp_fc.h"
+			//#include "inc/hero_lib/pulp_fc.h"
 			#include "inc/test_lib/test_hwpe.h"
 			/* Stimuli */
 			#include "inc/stim/stim_def.h"
@@ -3410,43 +3398,28 @@ class PulpPrinter {
 			  volatile int errors = 0;
 			  int i,j,k,cnt;
 			  int offload_id_tmp, offload_id;
-			  const unsigned stim_dim_local   = hero_tryread((unsigned int *)&stim_dim);
-			  const unsigned stripe_len_local = hero_tryread((unsigned int *)&stripe_len);
+			  const unsigned stim_dim_local   = stim_dim;
+			  const unsigned stripe_len_local = stripe_len;
 			  const unsigned num_unfiltered = stim_dim_local;
 			  const unsigned num_stripe     = num_unfiltered / stripe_len_local;
 			  /* L2 init - Input stimuli */
 			     «FOR port : inputMap.keySet»  
-			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *)malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*num_unfiltered);
-			  «ENDFOR»  
-			  «FOR port : inputMap.keySet»  
-			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
-			  «ENDFOR»
-			  «FOR port : inputMap.keySet»  
-			  	«port.name»_l2 = stim_«counterStim++»;
+			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = stim_«counterStim++»;
 			  «ENDFOR»
 			  /* L2 init - Output result */
 			       «FOR port : outputMap.keySet»  
-			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *)malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*num_unfiltered);
-			  «ENDFOR»  
-			  «FOR port : outputMap.keySet»  
-			  	memset((void *)«port.name»_l2, 0, (size_t)(num_unfiltered));
+			  	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l2 = hero_l2malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			  «ENDFOR»
 			  #if DB
 			  #else
 			    /* L1 init - Input stimuli */
 			       «FOR port : inputMap.keySet»  
-			    	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 = hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
+			    	__device «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 =  (__device  «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			    «ENDFOR»  
-			    «FOR port : inputMap.keySet»  
-			    	memset((void *)«port.name»_l1, 0, (size_t)(stripe_len_local));
-			    «ENDFOR»
 			    /* L1 init - Output result */
 			       «FOR port : outputMap.keySet»  
-			    	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 = hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
+			    	__device «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * «port.name»_l1 = (__device  «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) hero_l1malloc(sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			    «ENDFOR»  
-			    «FOR port : outputMap.keySet»  
-			    	memset((void *)«port.name»_l1, 0, (size_t)(num_unfiltered));
-			    «ENDFOR»
 			  #endif
 			  #if DB
 			  #else
@@ -3466,16 +3439,9 @@ class PulpPrinter {
 			      // Ucode parameters
 			      hwpe_nb_iter_set(1);
 			      hwpe_vectstride_set(sizeof(«inputMap.keySet.get(0).name»_l1)*4);
-			      /* Job-dependent programming */
-			          «FOR port : inputMap.keySet»  
-			      	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * curr_«port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local);
-			      «ENDFOR»  
-			      «FOR port : outputMap.keySet»  
-			      	«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» * curr_«port.name»_l2 = («it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local);
-			      «ENDFOR»  
 			      // Stripe -> TCDM
 			        «FOR port : inputMap.keySet»  
-			        hero_dma_memcpy((void *)«port.name»_l1, curr_«port.name»_l2, sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
+			        hero_memcpy_host2dev(«port.name»_l1, (__host «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local*sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)), sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			      	«ENDFOR»  
 			      	// Set TCDM address reg values
 			      	  «FOR port : inputMap.keySet»  
@@ -3500,46 +3466,37 @@ class PulpPrinter {
 			      	printf("End of processing - STATUS: %x , STRIPE #%d\n", hwpe_get_status(), i);
 			      	// Stripe -> L2
 			      	  «FOR port : outputMap.keySet»  
-			      	  hero_dma_memcpy(curr_«port.name»l2 , (void *)«port.name»_l1, sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
+			      	  hero_memcpy_dev2host((__host «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) («port.name»_l2 + i*stripe_len_local*sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)), (__device  «it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» *) «port.name»_l1, sizeof(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)»)*stripe_len_local);
 			      	«ENDFOR»  
 			      	hwpe_soft_clear();
 			    	}
 			    	hwpe_cg_disable();
-			    	/* Free L1 memory */
-			    	     «FOR port : inputMap.keySet»  			    	     	hero_l1free(«port.name»_l1);
-			    	«ENDFOR»  
-			    	«FOR port : outputMap.keySet»  
-			    		hero_l1free(«port.name»_l1);
-			    	«ENDFOR»  
 			  	#endif
 			  	/* Error check */
-			  		  «FOR port : outputMap.keySet»  
-			  		  	for(i=0;i<num_unfiltered;i++){
-			  		  	  printf("multi_dataflow -> #%d is %x (%d)\n\n", i, *(«port.name»_l2+i), *(res_«counterOutput»+i));
-			  		  	  if(*(«port.name»_l2+i) != res_«counterOutput++»[i]) errors++;
-			  		  	}
-			  		«ENDFOR»  
-			  		/* Free L2 memory */
-			  		      «FOR port : inputMap.keySet»  
-			  		      free(«port.name»_l2);
-			  		«ENDFOR»  
-			  		«FOR port : outputMap.keySet»  
-			  			free(«port.name»_l2);
-			  		«ENDFOR»  
-			  		/* Return errors */
-			  		*(int *) 0x80000000 = errors;
-			  		printf("errors: %d\n", errors);
-			  		printf("end\n");
-			  		return errors;
-					}
-					int main() {
-					  /* Dimension of stimuli array */
-					  uint32_t stim_dim   = STIM_DIM;
-					  /* Length of single stimuli stripe */
-					  uint32_t stripe_len = STRIPE_LEN;
-					  while(!multi_dataflow(stim_dim, stripe_len))
-					  return 0;
-					}
+			  «FOR port : outputMap.keySet»  
+			  	for(i=0;i<num_unfiltered;i++){
+			  	  printf("multi_dataflow -> #%d is %x (%d)\n\n", i, *(«port.name»_l2+i), *(res_«counterOutput»+i));
+			  	  if(*(«port.name»_l2+i) != res_«counterOutput++»[i]) errors++;
+			  	}
+			  «ENDFOR»  
+			  /* Free L2 memory */
+			  «FOR port : inputMap.keySet»  
+			    free(«port.name»_l2);
+			  «ENDFOR»  
+			  /* Return errors */
+			  *(int *) 0x80000000 = errors;
+			  printf("errors: %d\n", errors);
+			  printf("end\n");
+			  return errors;
+			}
+			int main() {
+			  /* Dimension of stimuli array */
+			  uint32_t stim_dim   = STIM_DIM;
+			  /* Length of single stimuli stripe */
+			  uint32_t stripe_len = STRIPE_LEN;
+			  while(!multi_dataflow(stim_dim, stripe_len))
+			  return 0;
+			}
 				'''
 	}	
 	
