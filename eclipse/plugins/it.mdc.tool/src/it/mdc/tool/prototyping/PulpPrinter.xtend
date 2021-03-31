@@ -359,25 +359,20 @@ class PulpPrinter {
 			module multi_dataflow_reconf_datapath_top 
 			(
 				// Global signals
-				input  logic                                  clk_i,
-				input  logic                                  rst_ni,
-				   // Sink ports
-				   «FOR port : inputMap.keySet»  
-				   	hwpe_stream_intf_stream.sink    «port.name»,
-				   «ENDFOR»  
-				   // Source ports
-				   «FOR port : outputMap.keySet»  
-				   	hwpe_stream_intf_stream.source  «port.name»,
-				   «ENDFOR»  	
-				   // Algorithm parameters
-				   «FOR param : network.parameters» 
-				   	logic unsigned [(32-1):0] 		«param.name»,
-				   «ENDFOR»  
-				   // Control signals
-				   input logic 								  ap_start,
-				   output logic 								  ap_done,
-				   output logic 								  ap_idle,
-				   output logic 								  ap_ready	  
+				input  logic                      clk_i,
+				input  logic                      rst_ni,
+				// Sink ports
+				«FOR port : inputMap.keySet»  
+				  hwpe_stream_intf_stream.sink    «port.name»,
+				«ENDFOR»  
+				// Source ports
+				«FOR port : outputMap.keySet»  
+				  hwpe_stream_intf_stream.source  «port.name»,
+				«ENDFOR»  	
+				// Algorithm parameters
+				«FOR param : network.parameters SEPARATOR ","» 
+				  logic unsigned [(32-1):0] 		«param.name»
+				«ENDFOR»  
 			);
 			
 		'''
@@ -420,24 +415,6 @@ class PulpPrinter {
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
 		assign «output.getName()»_full = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»!«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
-		// ----------------------------------------------------------------------------	
-		
-		«FOR output : outputMap.keySet()»
-		// Output Counter(s)
-		// ----------------------------------------------------------------------------
-		//counter #(			
-		//	.SIZE(SIZE_ADDR_«portMap.get(output)+1») ) 
-		//i_counter_«output.name» (
-		//	.aclk(s00_axi_aclk),
-		//	.aresetn(s00_axi_aresetn),
-		//	.clr(slv_reg0[2]),
-		//	.en(«output.getName()»_push),
-		//	.max(slv_reg«outputMap.get(output)+1»[SIZE_ADDR_«portMap.get(output)+1»-1:0]),
-		//	.count(),
-		//	.last(m«getLongId(outputMap.get(output))»_axis_tlast)
-		//);
-		«ENDFOR»
-		// ----------------------------------------------------------------------------
 		'''
 	}
 	
@@ -497,11 +474,6 @@ class PulpPrinter {
 				«FOR resetSignal : getResetSysSignals().keySet»
 					.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
 				«ENDFOR»
-				   «/* // Control signals
-            .ap_start           ( ap_start     ),
-            .ap_done            ( ap_done             ),
-            .ap_idle            ( ap_idle             ),
-            .ap_ready           ( ap_ready            )*/»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
 				.ID(engine_ctrl.configuration)«ENDIF»
 			);
@@ -1711,39 +1683,39 @@ class PulpPrinter {
 			  end
 			  always_ff @(posedge clk_i or negedge rst_ni)
 			  begin: done_cnt
-			      if((~rst_ni) | engine_clear)
-			        cnt_done = 32'b0;
-			      else if(engine_done)
-			        cnt_done = cnt_done + 1;
-			      else
-			        cnt_done = cnt_done;
-			    end
+			    if((~rst_ni) | engine_clear)
+			      cnt_done = 32'b0;
+			    else if(engine_done)
+			      cnt_done = cnt_done + 1;
+			    else
+			      cnt_done = cnt_done;
+			  end
 			  assign flags_o.cnt = cnt_done;
 			  // Kernel wrapper
-			  kernel_wrapper i_k_wrap (
-			      // Global signals
-			      .clk_i           ( clk_i            ),
-			      .rst_ni          ( rst_ni           ),
-			      .test_mode_i     ( test_mode_i      ),
-			      // Input data (to-hwpe)
-			      «FOR port : inputMap.keySet»  
+			  multi_dataflow_kernel_wrapper i_k_wrap (
+			    // Global signals
+			    .clk_i           ( clk_i            ),
+			    .rst_ni          ( rst_ni           ),
+			    .test_mode_i     ( test_mode_i      ),
+			    // Input data (to-hwpe)
+			    «FOR port : inputMap.keySet»  
 			        .«port.name»              ( «port.name»_i	),
-			      «ENDFOR»  
-			      // Output data (from-hwpe)
-			      «FOR port : outputMap.keySet»  
+			    «ENDFOR»  
+			    // Output data (from-hwpe)
+			    «FOR port : outputMap.keySet»  
 			        .«port.name»              ( «port.name»_o	),
-			      «ENDFOR»  	  
-			      // Algorithm parameters
-			      «FOR param : network.parameters» 
+			    «ENDFOR»  	  
+			    // Algorithm parameters
+			    «FOR param : network.parameters» 
 			        .«param.name»        ( ctrl_i.«param.name»      ),
-			      «ENDFOR»  
-			      // Control signals
-			      .start           ( ctrl_i.start     ),
-			      .clear           ( engine_clear     ),
-			      // Flag signals
-			      .done            ( engine_done      ),
-			      .idle            ( engine_idle      ),
-			      .ready           ( engine_ready     )
+			    «ENDFOR»  
+			    // Control signals
+			    .start           ( ctrl_i.start     ),
+			    .clear           ( engine_clear     ),
+			    // Flag signals
+			    .done            ( engine_done      ),
+			    .idle            ( engine_idle      ),
+			    .ready           ( engine_ready     )
 			  );
 			  // At the moment output strobe is always '1
 			  // All bytes of output streams are written
@@ -1755,6 +1727,218 @@ class PulpPrinter {
 			    «ENDFOR»  	
 			  //end
 			endmodule
+		'''
+	}		
+	
+	def printKernelWrapper() {
+		'''	
+			«printHWPELicense(true ,"kernel_wrapper")»
+			import multi_dataflow_package::*;
+			module multi_dataflow_kernel_wrapper (
+			  // Global signals
+			  input  logic          clk_i,
+			  input  logic          rst_ni,
+			  input  logic          test_mode_i,
+			  // Sink ports
+			  «FOR port : inputMap.keySet»  
+			  	hwpe_stream_intf_stream.sink    «port.name»_i,
+			  «ENDFOR»  
+			  // Source ports
+			  «FOR port : outputMap.keySet»  
+			  	hwpe_stream_intf_stream.source    «port.name»_o,
+			  «ENDFOR»  
+			  // Algorithm parameters
+			  «FOR param : network.parameters» 
+			  	input logic [31:0] «param.name»,
+			  «ENDFOR»  
+			  // Control signals
+			  input  logic          start,
+			  input  logic          clear,
+			  // FIXME: Clear is not used in ap_ctrl (used at engine level).
+			  //        Instantiate interface in a way that clear port gets used (or not) on the basis of is_intf.
+			  // Counters
+			  // FIXME: They could be wrapped in a custom typedef or just kept here and the
+			  // on the iteration loop could be done at the FSM side counting the number of
+			  // received done signals
+			  // % if is_dflow is True:
+			  //   % for j in range (n_source):
+			  // output logic [($clog2(FIR_CNT_LEN)+1):0] cnt_b,
+			  //   % endfor
+			  // % endif
+			  // Flag signals
+			  output logic          done,
+			  output logic          idle,
+			  output logic          ready
+			  // FIXME: Use flags and ctrl typedef instead of single signals.
+			  // Why? If more i/o are going to be used (unrolling, ..), it would
+			  // be more elegant to parametrize the typedefs, instead of discrete ports.
+			);
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow control signals. */
+			  logic local_start;
+			  /* multi_dataflow flag signals. */
+			  // FIXME: This won't scale up with large interfaces (unrolling, and so on).
+			  // SOL: Use array or custom typedef.
+			  // Input signal flags
+			  «FOR port : inputMap.keySet»  
+			  	logic local_ready_«port.name»;
+			  	logic local_done_«port.name»;  //FIXEME: to be removed
+			  «ENDFOR»
+			  // Output signal flags
+			  «FOR port : outputMap.keySet»  
+			  	logic local_done_«port.name»;
+			  «ENDFOR»
+			  logic set_idle;
+			  logic local_idle;
+			  /* Counters. */
+			  «FOR port : inputMap.keySet»  
+			  	logic unsigned [($clog2(CNT_LEN)+1):0] local_cnt_«port.name»;
+			  «ENDFOR»
+			  «FOR port : outputMap.keySet»  
+			  	logic unsigned [($clog2(CNT_LEN)+1):0] local_cnt_«port.name»;
+			  «ENDFOR»
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow hardware kernel. */
+			  multi_dataflow_reconf_datapath_top multi_dataflow_reconf_datapath_top (
+			    // Global signals.
+			    .clk_i             ( clk_i            ),
+			    .rst_ni           ( rst_ni           ),
+			    // Input data (to-hwpe)
+			    «FOR port : inputMap.keySet»  
+			        .«port.name»	( «port.name»_i	),
+			    «ENDFOR»  
+			    // Output data (from-hwpe)
+			    «FOR port : outputMap.keySet»  
+			        .«port.name»	( «port.name»_o	),
+			    «ENDFOR»  
+			    // Algorithm parameters
+			    «FOR param : network.parameters SEPARATOR ","» 
+			        .«param.name»	( «param.name» )
+			    «ENDFOR» 
+			  );
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow control signals. */
+			  // Start is not always high. For each ready (~(engine_ready | engine_idle)) that is
+			  // delivered to the FSM, a new Start signal is set high
+			  // and received by the kernel wrapper.
+			  assign local_start = start;
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* Done. */
+			  // A done is generated for each output. These are counted and
+			  // delivered to the FSM that decides when to update the address
+			  // on the basis of the state of the line processing (see HWPE-docs).
+			  // FIXME: This temporarily works synch-outputs.
+			  // EX: What if Out_0 is provided at each input and Out_1 once per 10 inputs?
+			  assign done = «FOR output : outputMap.keySet SEPARATOR " & "» local_done_«output.name» «ENDFOR»;
+			  «FOR output : outputMap.keySet»
+			    always_ff @(posedge clk_i or negedge rst_ni)
+			      begin: fsm_done_0
+			    	if(~rst_ni)
+			    	  local_done_«output.name» = 1'b0;
+			    	else if((«output.name»_o.valid)&(«output.name»_o.ready))
+			    	  local_done_«output.name» = 1'b1;
+			    	else
+			    	  local_done_«output.name» = 1'b0;
+			      end
+			  «ENDFOR»
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* Ready. */
+			  /* This is used in the hwpe-engine to set flags_o.ready.
+			     The latter triggers the START of accelerator. (see FSM_COMPUTE). */
+			  /* Driven using input counters. */
+			  assign ready = «FOR input : inputMap.keySet SEPARATOR " & "» local_done_«input.name» «ENDFOR»;
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* Idle. */
+			  /* This is used in the hwpe-engine to set flags_o.ready.
+			     The latter triggers the START of accelerator. (see FSM_COMPUTE). */
+			  /* For more infos refer to UG902. */
+			  assign idle = local_idle;
+			  /* The Idle signal indicates when the design is idle and not operating. */
+			  always_ff @(posedge clk_i or negedge rst_ni)
+			  begin: fsm_idle
+					if(~rst_ni) begin
+			      local_idle = 1'b0;
+			    end
+			    else if(local_start) begin
+			      /* Idle goes Low immediately after Start to indicate the design is no longer idle. */
+			      /* If the Start signal is High when Ready is High, the design continues to operate,
+			          and the Idle signal remains Low. */
+						local_idle = 1'b0;
+			    end
+			    else if((!local_start) & (ready)) begin
+			      if(«FOR output : outputMap.keySet SEPARATOR " & "» (local_done_«output.name») «ENDFOR») begin
+			        /* If the Start signal is Low when Ready is High, the design stops operation, and
+			            the ap_idle signal goes High one cycle after ap_done.*/
+			        local_idle = 1'b1;
+			      end
+			    end
+			    else begin
+						local_idle = local_idle;
+			    end
+			  end
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow input counters. Ready. */
+			  «FOR port : inputMap.keySet»  
+			    always_ff @(posedge clk_i or negedge rst_ni)
+			      begin: engine_cnt_a
+			      if((~rst_ni) | clear) begin
+			        local_cnt_«port.name» = 32'b0;
+			      end
+			      else if(local_start) begin
+			        local_cnt_«port.name» = 32'b0;
+			      end
+			      else if ((«port.name»_i.valid) & («port.name»_i.ready)) begin
+			    	local_cnt_«port.name» = local_cnt_«port.name» + 1;
+			      end
+			      else begin
+			        local_cnt_«port.name» = local_cnt_«port.name»;
+			      end
+			    end
+			    // FIXME: Now local_done_in goes High every time an input enters the acc.
+			    // This should be generalized. Even though the wrapper looper is designed to
+			    // on counting the ouputs, the number of inputs needed to generate an ouput
+			    // are usually > 1.
+			    // SOL: Add to ctrl_i also the information about max_input.
+			    assign local_done_«port.name» = (local_cnt_«port.name»==1) ? 1 : 0;
+			  «ENDFOR» 
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow output counters. */
+			  // Suggested design:
+			  //      ap_done = done_out0 & ... & done_outM;
+			  //      done_outM = cnt_out,i == ctrl_i.max_out,i; (for i=1,..,N)
+			  // However, loop ctrl is already implemented in micro-code looper that sits
+			  // in the hwpe-ctrl. Thus, the done information provided by this stage should
+			  // concern a single output element, not a tile (block,..).
+			  // FIXME: At this point, cnt_out is not essential here and could be removed.
+			  «FOR output : outputMap.keySet»
+			    always_ff @(posedge clk_i or negedge rst_ni)
+			    begin: engine_cnt_b
+			      if((~rst_ni) | clear)
+			        local_cnt_«output.name» = 32'b0;
+			      else if(!local_idle) begin
+			        if((«output.name»_o.valid)&(«output.name»_o.ready))
+			          local_cnt_«output.name» = local_cnt_«output.name» + 1;
+			        else
+			          local_cnt_«output.name» = local_cnt_«output.name»;
+			      end
+			    end
+			    assign cnt_«output.name» = local_cnt_«output.name»;
+			  «ENDFOR» 
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
+			  /* multi_dataflow streaming interface control. */
+			  // At the moment output strobe is always '1
+			  // All bytes of output streams are written
+			  // to TCDM
+			  always_comb
+			  begin
+			    «FOR output : outputMap.keySet»
+			    «output.name»_o.strb = '1;
+			    «ENDFOR»
+			  end
+			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
 		'''
 	}	
 	

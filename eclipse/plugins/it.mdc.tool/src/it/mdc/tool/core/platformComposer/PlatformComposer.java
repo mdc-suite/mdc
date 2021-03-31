@@ -612,6 +612,20 @@ public abstract class PlatformComposer {
 		/// </ol> </ul>
 		/////////////////////////
 
+		/// <ol> <li> Generate kernel_wrapper
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_kernel_wrapper.sv";
+		sequence = pulpPrinter.printKernelWrapper();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
 		/// <ol> <li> Generate Wrap
 		File wrapDir = new File(hdlDir.getPath().replaceFirst("hwpe-engine","wrap"));
 		// If directory doesn't exist, create it
