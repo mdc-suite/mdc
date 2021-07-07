@@ -7,6 +7,7 @@ xxxx.xx.xx
 - Added support for *.mem files in system generation
 - Added support for monitoring of FIFO signals (through "monitor_in" attribute on dataflow connections)
 - Added support for US+ in prototyping (tested for ARM, DMA, mm and stream)
+- Added support for UNIMORE's FPGA overlay. HWPE wrapper generation.
 
 ### Changes
 - Fixed bug on report printer while selecting system generation 

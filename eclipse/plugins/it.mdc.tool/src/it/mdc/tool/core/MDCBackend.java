@@ -176,6 +176,11 @@ public class MDCBackend extends AbstractBackend {
 	private boolean enPulp;
 	
 	/**
+	 * Hwpe wrapper generator tool folder
+	 */
+	private String hwpeWrapperGeneratorPath;
+	
+	/**
 	 * Enable profiling flag
 	 */
 	private boolean profileEn;
@@ -544,7 +549,7 @@ public class MDCBackend extends AbstractBackend {
 		} else if(enArtico && !genCopr) {
 			   hdlDir = new File(outputPath + File.separator + "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog");
 		} else if(enPulp && !genCopr) {
-			   hdlDir = new File(outputPath + File.separator + "rtl");
+			   hdlDir = new File(outputPath);
 		}
 		else{
 			hdlDir = new File(outputPath + File.separator + "hdl");
@@ -737,6 +742,8 @@ public class MDCBackend extends AbstractBackend {
 			}
 			
 			if(!genCopr && enPulp){
+				hdlWriter.generatePulpStaticFolders(hwpeWrapperGeneratorPath, outputPath);
+				hdlWriter.moveMultiDataflowFile(getOptions());
 				hdlWriter.generatePulpWrapper(luts,networkVertexMap,getOptions());
 			}
 			
@@ -759,14 +766,15 @@ public class MDCBackend extends AbstractBackend {
 			}
 		} else  if(enArtico && !genCopr){
 			subfolder = "src" + File.separator + "a3_cgr_accelerator" + File.separator + "verilog";
-		} else  if(enPulp && !genCopr){
+		} /*else  if(enPulp && !genCopr){
 			subfolder = "rtl";
-		}
+		}*/
 		try {
 			if(enArtico && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
 			} else if(enPulp && !genCopr){
-				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
+				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" +
+						File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev");
 			} else {
 				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
 			}
@@ -902,6 +910,9 @@ public class MDCBackend extends AbstractBackend {
 			enMon = getOption("it.unica.diee.mdc.monitoring", false);			
 			enArtico = getOption("it.unica.diee.mdc.artico", false);			
 			enPulp = getOption("it.unica.diee.mdc.pulp", false);
+			if(enPulp) {
+				hwpeWrapperGeneratorPath = getOption("it.unica.diee.mdc.hwpeWrapperGenTool", "<unknown>");
+			}
 		}
 		
 
@@ -989,8 +1000,10 @@ public class MDCBackend extends AbstractBackend {
 		} 
 		
 		if(enPulp && !genCopr) {
-			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "rtl")));
-		} 
+			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "deps" 
+		    + File.separator + "hwpe-multidataflow-wrapper" + File.separator + "rtl" + File.separator + "hwpe-engine"
+		    + File.separator + "engine_dev")));
+		}
 				
 		
 		return result;

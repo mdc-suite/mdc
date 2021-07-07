@@ -460,7 +460,17 @@
           description="Generate HDL Wrapper compatible with Pulp HWPE Architecture"
           id="it.unica.diee.mdc.pulp"
           name="Pulp Backend">
-       <checkBox></checkBox>
+       <checkBox>
+	     <option
+	        description="Folder containing the repository of hwpe-wrapper-gen-tool."
+	        id="it.unica.diee.mdc.hwpeWrapperGenTool"
+	        name="Hwpe Wrapper Generator Tool folder">
+	        <browseFile
+	            folder="true"
+	            workspace="false">
+	        </browseFile>
+	     </option>
+       </checkBox>
     </option>
    	</extension>
 
