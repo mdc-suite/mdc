@@ -452,14 +452,16 @@ public abstract class PlatformComposer {
 	
 	/**
 	 * Moves the multiDataflow file to the corresponding location
+	 * @param luts 
 	 * 
 	 * @return
 	 * @throws IOException 
 	 */
 	
-	public void moveMultiDataflowFile(Map<String, Object> options) {
+	public void moveMultiDataflowFile(List<SboxLut> luts, Map<String, Object> options) {
 		FileCopier copier = new FileCopier();
 
+		// Multi-dataflow copy
 		File multiDataflowFileOrigin = new File(hdlPath + File.separator + network.getSimpleName() + ".v");
 		File multiDataflowFileDestination = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
 				File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev" + File.separator + network.getSimpleName() + ".v");
@@ -468,9 +470,37 @@ public abstract class PlatformComposer {
 		} catch (IOException e) {
 			OrccLogger.severeln("The multi-dataflow.v could not have been copied: " + e.getMessage());
 		}
-		
 		copier.delete(multiDataflowFileOrigin);
-		
+
+		// Sbox and configurator copy
+		if(!luts.isEmpty()) {
+			// Sbox copy
+			File sbox1x2File = new File(hdlPath + File.separator + "sbox1x2.v");
+			File sbox2x1File = new File(hdlPath + File.separator + "sbox2x1.v");
+			File sbox1x2FileDestination = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+					File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev" + File.separator + "sbox1x2.v");
+			File sbox2x1FileDestination = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+					File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev" + File.separator + "sbox2x1.v");
+			try {
+				copier.copy(sbox1x2File, sbox1x2FileDestination);
+				copier.copy(sbox2x1File, sbox2x1FileDestination);
+			} catch (IOException e) {
+				OrccLogger.severeln("The sboxFiles could not have been copied: " + e.getMessage());
+			}
+			copier.delete(sbox1x2File);
+			copier.delete(sbox2x1File);
+
+			// configurator copy
+			File configurator = new File(hdlPath + File.separator + "configurator.v");
+			File configuratorDestination = new File(hdlPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" + 
+					File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev" + File.separator + "configurator.v");
+			try {
+				copier.copy(configurator, configuratorDestination);
+			} catch (IOException e) {
+				OrccLogger.severeln("The configurator could not have been copied: " + e.getMessage());
+			}
+			copier.delete(configurator);
+		}		
 	}
 	
 	/**
