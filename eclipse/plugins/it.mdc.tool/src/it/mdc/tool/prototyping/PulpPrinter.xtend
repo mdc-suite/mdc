@@ -356,9 +356,6 @@ class PulpPrinter {
 		'''
 			module multi_dataflow_reconf_datapath_top 
 			(
-				// Global signals
-				input  logic                      clk_i,
-				input  logic                      rst_ni,
 				// Sink ports
 				«FOR port : inputMap.keySet»  
 				  hwpe_stream_intf_stream.sink    «port.name»,
@@ -368,9 +365,15 @@ class PulpPrinter {
 				  hwpe_stream_intf_stream.source  «port.name»,
 				«ENDFOR»  	
 				// Algorithm parameters
-				«FOR param : network.parameters SEPARATOR ","» 
-				  logic unsigned [(32-1):0] 		«param.name»
+				«FOR param : network.parameters» 
+				  logic unsigned [(32-1):0] 		«param.name»,
 				«ENDFOR»  
+				«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
+					.ID(ID),
+				«ENDIF»
+				// Global signals
+				input  logic                      clk_i,
+				input  logic                      rst_ni
 			);
 			
 		'''
@@ -471,7 +474,7 @@ class PulpPrinter {
 					.«resetSignal»(«IF getResetSysSignals().get(resetSignal).equals("HIGH")»!«ENDIF»rst_ni)«IF !(this.luts.empty)»,«ENDIF»
 				«ENDFOR»
 			«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
-				.ID(engine_ctrl.configuration)«ENDIF»
+				.ID(ID)«ENDIF»
 			);
 		'''
 	}
@@ -1025,11 +1028,11 @@ class PulpPrinter {
 			      «ENDFOR»
 			      - rtl/hwpe-engine/engine_dev/multi_dataflow.v
 			      - rtl/hwpe-engine/engine_dev/interface_wrapper.sv
-			    «IF !luts.empty»
-			    	rtl/configurator.v\
-			    	rtl/sbox1x2.v\
-			    	rtl/sbox2x1.v\
-			    «ENDIF»
+			      «IF !luts.empty»
+			      - rtl/hwpe-engine/engine_dev/configurator.v
+			      - rtl/hwpe-engine/engine_dev/sbox1x2.v
+			      - rtl/hwpe-engine/engine_dev/sbox2x1.v
+			      «ENDIF»
 			      - rtl/hwpe-engine/multi_dataflow_package.sv
 			      - rtl/hwpe-engine/multi_dataflow_fsm.sv
 			      - rtl/hwpe-engine/multi_dataflow_ctrl.sv
@@ -1706,6 +1709,9 @@ class PulpPrinter {
 			    «FOR param : network.parameters» 
 			        .«param.name»        ( ctrl_i.«param.name»      ),
 			    «ENDFOR»  
+			    «IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
+			      .ID(ctrl_i.configuration),
+			     «ENDIF»
 			    // Control signals
 			    .start           ( ctrl_i.start     ),
 			    .clear           ( engine_clear     ),
@@ -1748,6 +1754,9 @@ class PulpPrinter {
 			  «FOR param : network.parameters» 
 			  	input logic [31:0] «param.name»,
 			  «ENDFOR»  
+			  «IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
+			    .ID(ID),
+			  «ENDIF»
 			  // Control signals
 			  input  logic          start,
 			  input  logic          clear,
@@ -1797,9 +1806,6 @@ class PulpPrinter {
 			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
 			  /* multi_dataflow hardware kernel. */
 			  multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
-			    // Global signals.
-			    .clk_i             ( clk_i            ),
-			    .rst_ni           ( rst_ni           ),
 			    // Input data (to-hwpe)
 			    «FOR port : inputMap.keySet»  
 			        .«port.name»	( «port.name»	),
@@ -1809,9 +1815,15 @@ class PulpPrinter {
 			        .«port.name»	( «port.name»	),
 			    «ENDFOR»  
 			    // Algorithm parameters
-			    «FOR param : network.parameters SEPARATOR ","» 
-			        .«param.name»	( «param.name» )
+			    «FOR param : network.parameters» 
+			        .«param.name»	( «param.name» ),
 			    «ENDFOR» 
+				«IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
+					.ID(ID),
+				«ENDIF»
+			    // Global signals.
+			    .clk_i             ( clk_i            ),
+			    .rst_ni           ( rst_ni           )
 			  );
 			  /* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ */
 			  /* multi_dataflow control signals. */
