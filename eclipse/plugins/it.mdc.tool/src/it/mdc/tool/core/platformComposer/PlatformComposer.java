@@ -643,8 +643,8 @@ public abstract class PlatformComposer {
 		/////////////////////////
 
 		/// <ol> <li> Generate kernel_wrapper
-		file = hdlDir.getPath() + File.separator +  "multi_dataflow_kernel_wrapper.sv";
-		sequence = pulpPrinter.printKernelWrapper();
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_kernel_adapter.sv";
+		sequence = pulpPrinter.printKernelAdapter();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
