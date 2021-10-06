@@ -690,7 +690,7 @@ class PulpPrinter {
 					assign static_reg_config = reg_file.hwpe_params[CONFIG];
 				«ENDIF»
 			  // FSM signals
-			  assign static_reg_cnt_limit = reg_file.hwpe_params[MMUL_OPT_MDC_REG_CNT_LIMIT] + 1;
+			  assign static_reg_cnt_limit = reg_file.hwpe_params[REG_CNT_LIMIT] + 1;
 			  // Address generator
 			  «FOR input : inputMap.keySet»
 			    // Mapping - «input.name»
@@ -1775,7 +1775,7 @@ class PulpPrinter {
 			    begin: cnt_«port.name»_counter
 			      if((~rst_ni) | clear)
 			    	cnt_«port.name» = 32'b0;
-			      else if( («port.name».valid) & («port.name».ready) & (done) )			    	cnt_«port.name» = cnt_«port.name» + 1;
+			      else if( («port.name».valid) & («port.name».ready) & (done) )
 			        cnt_«port.name» = cnt_«port.name» + 1;
 			      else
 			    	cnt_«port.name» = cnt_«port.name»;
@@ -1858,7 +1858,6 @@ class PulpPrinter {
 			  «FOR port : outputMap.keySet»  
 			  	logic kernel_done_«port.name»;
 			  «ENDFOR»
-			  logic kernel_done_out_r;
 			  logic kernel_idle, kernel_ready;
 			  /* Done. */
 			  // A done is generated for each output. These are counted and
