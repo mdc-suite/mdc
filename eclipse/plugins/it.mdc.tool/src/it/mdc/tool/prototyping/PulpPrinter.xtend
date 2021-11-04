@@ -405,14 +405,14 @@ class PulpPrinter {
 		// ----------------------------------------------------------------------------
 		«printTopDatapath()»
 		«FOR input :inputMap.keySet»
-		assign stream_if_«input.name»_ready = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»«ENDIF»~«input.getName()»_full;
+		assign stream_if_«input.name»_ready = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»~«ENDIF»«input.getName()»_full;
 		assign «input.getName()»_data = stream_if_«input.name»_data«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
 		assign «input.getName()»_push = stream_if_«input.name»_valid;
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
 		assign stream_if_«output.name»_valid = «output.getName()»_push;
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
-		assign «output.getName()»_full = «IF !isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»«ENDIF»stream_if_«output.name»_ready;
+		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
 		'''
 	}
@@ -460,7 +460,7 @@ class PulpPrinter {
 				// Multi-Dataflow Output(s)
 				«FOR output : outputMap.keySet()»
 					«FOR commSigId : getOutLastModCommSignals().keySet»
-						.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«IF isNegMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»!«ENDIF»«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
+						.«output.getName()»«getSuffix(getOutLastModCommSignals(),commSigId)»(«output.getName()»_«getMatchingWrapMapping(getLastModCommSignals().get(commSigId).get(ProtocolManager.CH))»),
 					«ENDFOR»
 				«ENDFOR»
 				// Algorithm parameters
