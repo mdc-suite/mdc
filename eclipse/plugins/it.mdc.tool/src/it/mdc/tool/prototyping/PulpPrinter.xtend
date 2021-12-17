@@ -232,8 +232,8 @@ class PulpPrinter {
 		 * CONDITIONS OF ANY KIND, either express or implied. See the License for the
 		 * specific language governing permissions and limitations under the License.
 		 *
-		 * Authors:     Francesco Conti <fconti@iis.ee.ethz.ch>
-		 * Contribute:  Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
+		 * HWPE author: Francesco Conti <fconti@iis.ee.ethz.ch>
+		 * HWPE specialization tool: Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
 		 *
 		 * Module: multi_dataflow_«modulePrinted».sv
 		 *
@@ -606,24 +606,30 @@ class PulpPrinter {
 			  // periph slave port
 			  hwpe_ctrl_intf_periph.slave                   periph
 			);
+
 			  /* Ctrl/flag signals */
+
 			  // Slave
 			  ctrl_slave_t   slave_ctrl;
 			  flags_slave_t  slave_flags;
+
 			  // Register file
 			  ctrl_regfile_t reg_file;
+
 			  // Uloop
 			  logic [223:0]  ucode_flat;
 			  uloop_code_t   ucode;
 			  ctrl_uloop_t   ucode_ctrl;
 			  flags_uloop_t  ucode_flags;
 			  logic [11:0][31:0] ucode_registers_read;
+
 			  /* Standard registers */
+
 			  // Uloop
 			  logic unsigned [31:0] static_reg_nb_iter;
 			  logic unsigned [31:0] static_reg_vectstride;
 			  logic unsigned [31:0] static_reg_onestride;
-			  logic unsigned [15:0] static_reg_shift;
+
 			  // Address generator
 			  «FOR input : inputMap.keySet»
 			  	// Controls - «input.name»
@@ -637,6 +643,7 @@ class PulpPrinter {
 			  	logic unsigned static_reg_«input.name»_loop_outer;
 			  	logic unsigned static_reg_«input.name»_realign_type;
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			  	// Controls - «output.name»
 			  	logic unsigned [31:0] static_reg_«output.name»_trans_size;
@@ -649,26 +656,30 @@ class PulpPrinter {
 			  	logic unsigned static_reg_«output.name»_loop_outer;
 			  	logic unsigned static_reg_«output.name»_realign_type;
 			  «ENDFOR»
+
 			  // FSM
 			  «FOR output : outputMap.keySet»
 			  logic unsigned [31:0] static_reg_cnt_limit_«output.name»;
 			  «ENDFOR»
-			  // Custom register files
-				«FOR netParm : this.network.parameters»
-					logic unsigned [(32-1):0] static_reg_«netParm.name»;
-				«ENDFOR»
+
+			  /* Custom registers */
+			  «FOR netParm : this.network.parameters»
+			  	logic unsigned [(32-1):0] static_reg_«netParm.name»;
+			  «ENDFOR»
 			«IF !luts.empty»
 				logic unsigned [(32-1):0] static_reg_config;
 			«ENDIF»
+
 			  /* FSM input signals */
 			  ctrl_fsm_t fsm_ctrl;
+
 			  /* Peripheral slave & register file */
 			  hwpe_ctrl_slave #(
-			  .N_CORES        ( N_CORES               ),
-			  .N_CONTEXT      ( N_CONTEXT             ),
-			  .N_IO_REGS      ( N_IO_REGS             ),
-			  .N_GENERIC_REGS ( (1-UCODE_HARDWIRED)*8 ),
-			  .ID_WIDTH       ( ID                    )
+			    .N_CORES        ( N_CORES               ),
+			    .N_CONTEXT      ( N_CONTEXT             ),
+			    .N_IO_REGS      ( N_IO_REGS             ),
+			    .N_GENERIC_REGS ( (1-UCODE_HARDWIRED)*8 ),
+			    .ID_WIDTH       ( ID                    )
 			  ) i_slave (
 			    .clk_i    ( clk_i       ),
 			    .rst_ni   ( rst_ni      ),
@@ -678,21 +689,18 @@ class PulpPrinter {
 			    .flags_o  ( slave_flags ),
 			    .reg_file ( reg_file    )
 			  );
+
 			  /* Events */
 			  assign evt_o = slave_flags.evt;
+
 			  /* Direct register file mappings */
+
 			  // Uloop registers
 			  assign static_reg_nb_iter    = reg_file.hwpe_params[REG_NB_ITER]  + 1;
 			  assign static_reg_linestride = reg_file.hwpe_params[REG_SHIFT_LINESTRIDE];
 			  assign static_reg_tilestride = reg_file.hwpe_params[REG_SHIFT_TILESTRIDE];
 			  assign static_reg_onestride  = 4;
-			  // Custom registers
-			  «FOR netParm : this.network.parameters»
-			  	assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
-			  «ENDFOR»
-			  «IF !luts.empty»
-			  	assign static_reg_config = reg_file.hwpe_params[CONFIG];
-			  «ENDIF»
+
 			  // FSM signals
 			  «FOR output : outputMap.keySet»
 			  assign static_reg_cnt_limit_«output.name» = reg_file.hwpe_params[REG_CNT_LIMIT_«output.name.toUpperCase»] + 1;
@@ -710,6 +718,7 @@ class PulpPrinter {
 			    assign static_reg_«input.name»_loop_outer          = reg_file.hwpe_params[REG_«input.name.toUpperCase»_LOOP_OUTER];
 			    assign static_reg_«input.name»_realign_type        = reg_file.hwpe_params[REG_«input.name.toUpperCase»_REALIGN_TYPE];
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			  	// Mapping - «output.name»
 			  	assign static_reg_«output.name»_trans_size         = reg_file.hwpe_params[REG_«output.name.toUpperCase»_TRANS_SIZE];
@@ -722,6 +731,15 @@ class PulpPrinter {
 			  	assign static_reg_«output.name»_loop_outer         = reg_file.hwpe_params[REG_«output.name.toUpperCase»_LOOP_OUTER];
 			  	assign static_reg_«output.name»_realign_type       = reg_file.hwpe_params[REG_«output.name.toUpperCase»_REALIGN_TYPE];
 			  «ENDFOR»
+
+			  // Custom registers
+			  «FOR netParm : this.network.parameters»
+			    assign static_reg_«netParm.name» = reg_file.hwpe_params[REG_«netParm.name.toUpperCase»];
+			  «ENDFOR»
+			  «IF !luts.empty»
+			  	assign static_reg_config = reg_file.hwpe_params[CONFIG];
+			  «ENDIF»
+
 			  /* Microcode processor */
 			  generate
 			    if(UCODE_HARDWIRED != 0) begin
@@ -749,6 +767,7 @@ class PulpPrinter {
 			  assign ucode_registers_read[UCODE_MNEM_ONESTRIDE]  = static_reg_onestride;
 			  assign ucode_registers_read[UCODE_MNEM_TILESTRIDE] = static_reg_tilestride;
 			  assign ucode_registers_read[11:4] = '0;
+
 			  hwpe_ctrl_uloop #(
 			    .NB_LOOPS       ( 2  ), // Default: 1
 			    .NB_REG         ( 4  ),
@@ -764,6 +783,7 @@ class PulpPrinter {
 			    .uloop_code_i     ( ucode                ),
 			    .registers_read_i ( ucode_registers_read )
 			  );
+
 			  /* Main FSM */
 			  multi_dataflow_fsm i_fsm (
 			    .clk_i            ( clk_i              ),
@@ -783,13 +803,7 @@ class PulpPrinter {
 			  );
 			  always_comb
 			  begin
-			    // Custom register file mappings to fsm
-			    «FOR netParm : this.network.parameters»
-			      fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
-			    «ENDFOR»
-			    «IF !luts.empty»
-			      fsm_ctrl.configuration    = static_reg_config;
-			    «ENDIF»
+			
 			    // Address generator
 			    «FOR input : inputMap.keySet»
 			      // Mapping - «input.name»
@@ -802,6 +816,7 @@ class PulpPrinter {
 			      fsm_ctrl.«input.name»_loop_outer     = static_reg_«input.name»_loop_outer;
 			      fsm_ctrl.«input.name»_realign_type   = static_reg_«input.name»_realign_type;
 			    «ENDFOR»
+			
 			    «FOR output : outputMap.keySet»
 			      // Mapping - «output.name»
 			      fsm_ctrl.«output.name»_trans_size     = static_reg_«output.name»_trans_size;
@@ -814,10 +829,19 @@ class PulpPrinter {
 			      fsm_ctrl.«output.name»_loop_outer     = static_reg_«output.name»_loop_outer;
 			      fsm_ctrl.«output.name»_realign_type   = static_reg_«output.name»_realign_type;
 			    «ENDFOR»
+			
 			    /* Custom register file mappings to FSM */
 			    «FOR output : outputMap.keySet»
-			    fsm_ctrl.cnt_limit_«output.name»             = static_reg_cnt_limit_«output.name»;
+			      fsm_ctrl.cnt_limit_«output.name»             = static_reg_cnt_limit_«output.name»;
 			    «ENDFOR»
+			
+			    // Custom registers
+			    «FOR netParm : this.network.parameters»
+			      fsm_ctrl.«netParm.name»	= static_reg_«netParm.name»;
+			    «ENDFOR»
+			    «IF !luts.empty»
+			      fsm_ctrl.configuration    = static_reg_config;
+			    «ENDIF»
 			  end
 			endmodule
 			'''
@@ -827,8 +851,10 @@ class PulpPrinter {
 
 		'''
 			«printHWPELicense(true, "fsm")»
+			
 			import multi_dataflow_package::*;
 			import hwpe_ctrl_package::*;
+			
 			module multi_dataflow_fsm (
 			  // Global signals
 			  input  logic                                  clk_i,
@@ -847,8 +873,10 @@ class PulpPrinter {
 			  input  ctrl_regfile_t                         reg_file_i,
 			  input  ctrl_fsm_t                             ctrl_i
 			);
+
 			  // State signals
 			  state_fsm_t curr_state, next_state;
+
 			  // State computation
 			  always_ff @(posedge clk_i or negedge rst_ni)
 			  begin : main_fsm_seq
@@ -862,11 +890,15 @@ class PulpPrinter {
 			      curr_state <= next_state;
 			    end
 			  end
+
 			  // State declaration
 			  always_comb
 			  begin : main_fsm_comb
+
 			    /* Initialize */
+
 			    // Address generator
+
 			    «FOR input : inputMap.keySet»
 			    	// Input stream - «input.name» (programmable)
 			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.trans_size   = ctrl_i.«input.name»_trans_size;
@@ -880,6 +912,7 @@ class PulpPrinter {
 			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.realign_type = ctrl_i.«input.name»_realign_type;
 			    	ctrl_streamer_o.«input.name»_source_ctrl.addressgen_ctrl.step         = ctrl_i.«input.name»_step;
 			    «ENDFOR»
+
 			    «FOR output : outputMap.keySet»
 			    	// Output stream - «output.name» (programmable)
 			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.trans_size   = ctrl_i.«output.name»_trans_size;
@@ -893,13 +926,16 @@ class PulpPrinter {
 			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.realign_type = ctrl_i.«output.name»_realign_type;
 			    	ctrl_streamer_o.«output.name»_sink_ctrl.addressgen_ctrl.step         = ctrl_i.«output.name»_step;
 			    «ENDFOR»
+
 			    // Streamer
 			    «FOR input : inputMap.keySet»
 			    	ctrl_streamer_o.«input.name»_source_ctrl.req_start    = '0;
 			    «ENDFOR»
+
 			    «FOR output : outputMap.keySet»
 			    	ctrl_streamer_o.«output.name»_sink_ctrl.req_start    = '0;
 			    «ENDFOR»			        
+
 			    // Engine
 			    ctrl_engine_o.clear      = '1; // Clear counters
 			    ctrl_engine_o.enable     = '1; // Enable execution
@@ -907,21 +943,29 @@ class PulpPrinter {
 			    «FOR output : outputMap.keySet»
 			    ctrl_engine_o.cnt_limit_«output.name»  = ctrl_i.cnt_limit_«output.name»;
 			    «ENDFOR»
+
+			    // Slave
+			    ctrl_slave_o.done = '0;
+			    ctrl_slave_o.evt  = '0;
+
+			    // Custom Registers
 			    «FOR netParm : this.network.parameters»
 			    	ctrl_engine_o.«netParm.name»    = ctrl_i.«netParm.name»;
 			    «ENDFOR»
 			    «IF !luts.empty»
-			    	ctrl_engine_o.configuration    = ctrl_i.configuration;		
+			        ctrl_engine_o.configuration    = ctrl_i.configuration;		
 			    «ENDIF»
-			    // Slave
-			    ctrl_slave_o.done = '0;
-			    ctrl_slave_o.evt  = '0;
+
 			    // Real finite-state machine
 			    next_state   = curr_state;
+
 			    ctrl_ucode_o.enable                        = '0;
 			    ctrl_ucode_o.clear                         = '0;
+
 			    /* States */
+
 			    case(curr_state)
+
 			      FSM_IDLE: begin
 			        // Wait for a start signal
 			        ctrl_ucode_o.clear = '1;
@@ -929,24 +973,31 @@ class PulpPrinter {
 			          next_state = FSM_START;
 			        end
 			      end
+
 			      FSM_START: begin
 			        // Update the indeces, then load the first feature
 			        if(
+
 			          «FOR input : inputMap.keySet»
 			          flags_streamer_i.«input.name»_source_flags.ready_start &
 			          «ENDFOR»
+
 				      «FOR output : outputMap.keySet SEPARATOR " & "»
 				      flags_streamer_i.«output.name»_sink_flags.ready_start
 			          «ENDFOR»
 			        ) begin
+
 			          next_state  = FSM_COMPUTE;
 			          ctrl_engine_o.start  = 1'b1;
 			          ctrl_engine_o.clear  = 1'b0;
 			          ctrl_engine_o.enable = 1'b1;
+
 			          // Request data streaming from/to TCDM
+
 			          «FOR input : inputMap.keySet»
 			          	ctrl_streamer_o.«input.name»_source_ctrl.req_start = '1;
 			          «ENDFOR»
+
 			          «FOR output : outputMap.keySet»
 			          	ctrl_streamer_o.«output.name»_sink_ctrl.req_start = '1;
 			          «ENDFOR»
@@ -955,11 +1006,14 @@ class PulpPrinter {
 			           next_state = FSM_WAIT;
 			         end
 			      end
+
 			      FSM_COMPUTE: begin
 			        ctrl_engine_o.clear  = 1'b0;
-			        if («FOR output : outputMap.keySet SEPARATOR " & "»
+			        if (
+			        «FOR output : outputMap.keySet SEPARATOR " & "»
 			            (flags_engine_i.cnt_«output.name» == ctrl_i.cnt_limit_«output.name») 
 			            «ENDFOR»
+
 			        ) begin
 			          next_state = FSM_TERMINATE;
 			        end
@@ -969,6 +1023,7 @@ class PulpPrinter {
 			          ctrl_engine_o.enable = 1'b1;
 			        end
 			      end
+
 			      FSM_UPDATEIDX: begin
 			        // update the indeces, then go back to load or idle
 			        if(flags_ucode_i.valid == 1'b0) begin
@@ -978,65 +1033,86 @@ class PulpPrinter {
 			          next_state = FSM_TERMINATE;
 			        end
 			        else if(
+
 			          «FOR input : inputMap.keySet»
 			              		flags_streamer_i.«input.name»_source_flags.ready_start &
 			          «ENDFOR»
+
 			          «FOR output : outputMap.keySet SEPARATOR " & "»
 			              		flags_streamer_i.«output.name»_sink_flags.ready_start
 			          «ENDFOR»
+
 			        )  begin
 			          next_state = FSM_COMPUTE;
+
 			          ctrl_engine_o.start  = 1'b1;
 			          ctrl_engine_o.clear  = 1'b0;
 			          ctrl_engine_o.enable = 1'b1;
+
 			          // Request data streaming from/to TCDM
+
 			          «FOR input : inputMap.keySet»
 			            ctrl_streamer_o.«input.name»_source_ctrl.req_start = '1;
 			    	  «ENDFOR»
+
 			    	  «FOR output : outputMap.keySet»
 			    	    ctrl_streamer_o.«output.name»_sink_ctrl.req_start = '1;
 					  «ENDFOR»
+
 			        end
 			        else begin
 			          next_state = FSM_WAIT;
 			        end
 			      end
+
 			      FSM_WAIT: begin
 			        // wait for the flags to be ok then go back to load
 			        ctrl_engine_o.clear  = 1'b0;
 			        ctrl_engine_o.enable = 1'b0;
 			        ctrl_ucode_o.enable  = 1'b0;
 			        if(
+
 			          «FOR input : inputMap.keySet»
 			          flags_streamer_i.«input.name»_source_flags.ready_start &
 			          «ENDFOR»
+
 			          «FOR output : outputMap.keySet SEPARATOR " & "»
 			          flags_streamer_i.«output.name»_sink_flags.ready_start
 			          «ENDFOR»
+
 			        )  begin
+
 			          next_state = FSM_COMPUTE;
 			          ctrl_engine_o.start = 1'b1;
 			          ctrl_engine_o.enable = 1'b1;
+
 			          // Request data streaming from/to TCDM
+
 			          «FOR input : inputMap.keySet»
 			          ctrl_streamer_o.«input.name»_source_ctrl.req_start = '1;
 			    	  «ENDFOR»
+
 			          «FOR output : outputMap.keySet»
 			          ctrl_streamer_o.«output.name»_sink_ctrl.req_start = '1;
 			          «ENDFOR»
+
 			        end
 			      end
+
 			      FSM_TERMINATE: begin
 			        // wait for the flags to be ok then go back to idle
 			        ctrl_engine_o.clear  = 1'b0;
 			        ctrl_engine_o.enable = 1'b0;
 			        if(
+
 			          «FOR input : inputMap.keySet»
 			            flags_streamer_i.«input.name»_source_flags.ready_start &
 			          «ENDFOR»
+
 			          «FOR output : outputMap.keySet SEPARATOR " & "»
 			            flags_streamer_i.«output.name»_sink_flags.ready_start
 			          «ENDFOR»
+
 			        )  begin
 			          next_state = FSM_IDLE;
 			          ctrl_slave_o.done = 1'b1;
@@ -1044,6 +1120,7 @@ class PulpPrinter {
 			      end
 			    endcase // curr_state
 			  end
+
 			endmodule // multi_dataflow_fsm
 		'''
 	}
@@ -1054,78 +1131,72 @@ class PulpPrinter {
 			  name: hwpe-multidataflow-wrapper
 			sources:
 			  - include_dirs:
-			      - rtl/hwpe-stream
-			    files:
-			      - rtl/hwpe-stream/hwpe_stream_package.sv
-			      - rtl/hwpe-stream/hwpe_stream_interfaces.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_assign.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_mux_static.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_demux_static.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_buffer.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_merge.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_fence.sv
-			      - rtl/hwpe-stream/basic/hwpe_stream_split.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall_sidech.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_earlystall.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_scm_test_wrap.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_sidech.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo.sv
-			      - rtl/hwpe-stream/fifo/hwpe_stream_fifo_ctrl.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_addressgen_v2.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_strbgen.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_sink.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_sink_realign.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_source.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_source_realign.sv
-			      - rtl/hwpe-stream/streamer/hwpe_stream_streamer_queue.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_load_sidech.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo_store.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_fifo.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_assign.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_mux_static.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder.sv
-			      - rtl/hwpe-stream/tcdm/hwpe_stream_tcdm_reorder_static.sv
-			  - include_dirs:
-			      - rtl/hwpe-ctrl
-			    files:
-			      - rtl/hwpe-ctrl/hwpe_ctrl_package.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_interfaces.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_latch_test_wrap.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_ff.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_regfile_ff_test_wrap.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_slave.sv
-			      - rtl/hwpe-ctrl/hwpe_ctrl_uloop.sv
-			  - include_dirs:
 			      - rtl/hwpe-engine
 			    files:
-			      «FOR file : new File(hclPath).listFiles»
-			      - rtl/hwpe-engine/engine_dev/«file.name»
+			      «FOR file : new File(hclPath).listFiles.sort»
+			      - rtl/acc_kernel/«file.name»
 			      «ENDFOR»
-			      - rtl/hwpe-engine/engine_dev/multi_dataflow.v
-			      - rtl/hwpe-engine/engine_dev/interface_wrapper.sv
+			      - rtl/acc_kernel/multi_dataflow.v
+			      - rtl/acc_kernel/interface_wrapper.sv
 			      «IF !luts.empty»
-			      - rtl/hwpe-engine/engine_dev/configurator.v
-			      - rtl/hwpe-engine/engine_dev/sbox1x2.v
-			      - rtl/hwpe-engine/engine_dev/sbox2x1.v
+			      - rtl/acc_kernel/configurator.v
+			      - rtl/acc_kernel/sbox1x2.v
+			      - rtl/acc_kernel/sbox2x1.v
 			      «ENDIF»
-			      - rtl/hwpe-engine/multi_dataflow_package.sv
-			      - rtl/hwpe-engine/multi_dataflow_fsm.sv
-			      - rtl/hwpe-engine/multi_dataflow_ctrl.sv
-			      - rtl/hwpe-engine/multi_dataflow_streamer.sv
-			      - rtl/hwpe-engine/multi_dataflow_reconf_datapath_top.sv
-			      - rtl/hwpe-engine/multi_dataflow_kernel_adapter.sv
-			      - rtl/hwpe-engine/multi_dataflow_engine.sv
-			      - rtl/hwpe-engine/multi_dataflow_top.sv
-			  - include_dirs:
-			      - rtl/wrap
-			    files:
-			      - rtl/wrap/multi_dataflow_top_wrapper.sv
+			      - rtl/multi_dataflow_package.sv
+			      - rtl/multi_dataflow_fsm.sv
+			      - rtl/multi_dataflow_ctrl.sv
+			      - rtl/multi_dataflow_streamer.sv
+			      - rtl/multi_dataflow_reconf_datapath_top.sv
+			      - rtl/multi_dataflow_kernel_adapter.sv
+			      - rtl/multi_dataflow_engine.sv
+			      - rtl/multi_dataflow_top.sv
+			      - wrap/multi_dataflow_top_wrapper.sv
+		'''
+	}
+	
+	def printipsList() {
+		'''
+			hwpe-ctrl:
+			  commit: 67b6ceb1fbe7e3539ca938c17c07f730a88d96d9
+			hwpe-stream:
+			  commit: 772da7969f31c435993273e1a6b49402dc35e3d8
+
+		'''
+	}
+	
+	def printSrcFiles(String hclPath) {
+		'''
+			hwpe_wrapper:
+			  incdirs : [
+			    rtl
+			  ]
+			  files: [
+
+			    «FOR file : new File(hclPath).listFiles.sort»
+			      rtl/acc_kernel/«file.name»,
+			    «ENDFOR»
+			    rtl/acc_kernel/multi_dataflow.v,
+			    rtl/acc_kernel/interface_wrapper.sv,
+			    «IF !luts.empty»
+			      rtl/acc_kernel/configurator.v,
+			      rtl/acc_kernel/sbox1x2.v,
+			      rtl/acc_kernel/sbox2x1.v,
+			    «ENDIF»
+			    rtl/multi_dataflow_package.sv,
+			    rtl/multi_dataflow_fsm.sv,
+			    rtl/multi_dataflow_ctrl.sv,
+			    rtl/multi_dataflow_streamer.sv,
+			    rtl/multi_dataflow_reconf_datapath_top.sv,
+			    rtl/multi_dataflow_kernel_adapter.sv,
+			    rtl/multi_dataflow_engine.sv,
+			    rtl/multi_dataflow_top.sv,
+			    wrap/multi_dataflow_top_wrapper.sv,
+			  ]
+			  vlog_opts : [
+			    "-L hwpe_ctrl_lib",
+			    "-L hwpe_stream_lib"
+			  ]
 		'''
 	}
 	
@@ -1133,33 +1204,48 @@ class PulpPrinter {
 		var counterReg = 0;
 		'''		
 			«printHWPELicense(true, "package")»
+			
 			import hwpe_stream_package::*;
 			
 			package multi_dataflow_package;
+
 			  parameter int unsigned CNT_LEN = 1024; // maximum length of the vectors for a scalar product
+
 			  /* Registers */
+
 			  // TCDM
+
 			  // Input ports
 			  «FOR input : inputMap.keySet»
 			    parameter int unsigned REG_«input.name.toUpperCase»_ADDR              = «counterReg++»;
 			  «ENDFOR»
+
 			  // Output ports
 			  «FOR output : outputMap.keySet»
 			  	parameter int unsigned REG_«output.name.toUpperCase»_ADDR             = «counterReg++»;
 			  «ENDFOR»			  
+
 			  // Standard registers
+
 			  parameter int unsigned REG_NB_ITER              = «counterReg++»;
+
 			  parameter int unsigned REG_SHIFT_LINESTRIDE     = «counterReg++»;
+
 			  parameter int unsigned REG_SHIFT_TILESTRIDE     = «counterReg++»;
+
 			  «FOR output : outputMap.keySet»
 			    parameter int unsigned REG_CNT_LIMIT_«output.name.toUpperCase»             = «counterReg++»;
 			  «ENDFOR»			 
+
 			  // Custom register files
+
 			  «FOR netParm : this.network.parameters»
 			  	parameter int unsigned REG_«netParm.name.toUpperCase»             = «counterReg++»;
+
 			  «ENDFOR»
 			  «IF !luts.empty»		  
 			  	parameter int unsigned CONFIG             = «counterReg++»;
+
 			  «ENDIF»
 			  «FOR input : inputMap.keySet»
 			  	// Input stream - «input.name» (programmable)
@@ -1173,6 +1259,7 @@ class PulpPrinter {
 			  	parameter int unsigned REG_«input.name.toUpperCase»_REALIGN_TYPE     = «counterReg++»;
 			  	parameter int unsigned REG_«input.name.toUpperCase»_STEP             = «counterReg++»;
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			  	// Output stream - «output.name» (programmable)
 			  	parameter int unsigned REG_«output.name.toUpperCase»_TRANS_SIZE       = «counterReg++»;
@@ -1185,25 +1272,36 @@ class PulpPrinter {
 			  	parameter int unsigned REG_«output.name.toUpperCase»_REALIGN_TYPE     = «counterReg++»;
 			  	parameter int unsigned REG_«output.name.toUpperCase»_STEP             = «counterReg++»;
 			  «ENDFOR»
+
 			  /* Microcode processor */
+
 			  // offset indeces -- this should be aligned to the microcode compiler of course!
 			  «FOR port : portMap.keySet»
 			  	parameter int unsigned UCODE_«port.name.toUpperCase»_OFFS              = «portMap.get(port)»;
+
 			  «ENDFOR»
 			  // mnemonics -- this should be aligned to the microcode compiler of course!
+
 			  parameter int unsigned UCODE_MNEM_NBITER     = 0;
+
 			  parameter int unsigned UCODE_MNEM_ITERSTRIDE = 1;
+
 			  parameter int unsigned UCODE_MNEM_ONESTRIDE  = 2;
+
 			  parameter int unsigned UCODE_MNEM_TILESTRIDE = 3;
+
 			  /* Typedefs */
+
 			  typedef struct packed {
 			    logic clear;
 			    logic enable;
 			    logic start;
+
 			    «FOR output : outputMap.keySet»
 			      logic unsigned [$clog2(CNT_LEN):0] cnt_limit_«output.name»;
 			    «ENDFOR»	
-			    // Custom register files
+
+			    // Custom register
 			  «FOR netParm : this.network.parameters»
 			  	logic unsigned [(32-1):0] «netParm.name»;
 			  «ENDFOR»
@@ -1211,31 +1309,52 @@ class PulpPrinter {
 			  	logic unsigned [(32-1):0] configuration;
 			  «ENDIF»
 			  } ctrl_engine_t;
+
 			  typedef struct packed {
-			  	«FOR output : outputMap.keySet»
-			  	  logic unsigned [$clog2(CNT_LEN):0] cnt_«output.name»;
-			  	«ENDFOR»	
+
+			    «FOR output : outputMap.keySet»
+			      logic unsigned [$clog2(CNT_LEN):0] cnt_«output.name»;
+			    «ENDFOR»	
+
+			    logic done;
+			    logic ready;
+			  } flags_engine_t;
+
+			  typedef struct packed {
+			    logic start;
+			  } ctrl_kernel_adapter_t;
+
+			  typedef struct packed {
 			    logic done;
 			    logic idle;
 			    logic ready;
-			  } flags_engine_t;
+			  } flags_kernel_adapter_t;
+
 			  typedef struct packed {
+			  	
 			  «FOR input : inputMap.keySet»
 			    hwpe_stream_package::ctrl_sourcesink_t «input.name»_source_ctrl;
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			    hwpe_stream_package::ctrl_sourcesink_t «output.name»_sink_ctrl;
 			  «ENDFOR»
+			  
 			  } ctrl_streamer_t;
+
 			  typedef struct packed {
+
 			  «FOR input : inputMap.keySet»
 			    hwpe_stream_package::flags_sourcesink_t «input.name»_source_flags;
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			    hwpe_stream_package::flags_sourcesink_t «output.name»_sink_flags;
 			  «ENDFOR»
 			  } flags_streamer_t;
+
 			  typedef struct packed {
+
 			    «FOR input : inputMap.keySet»
 			      // Input stream - «input.name» (programmable)
 			      logic unsigned [31:0] «input.name»_trans_size;
@@ -1248,6 +1367,7 @@ class PulpPrinter {
 			      logic unsigned «input.name»_loop_outer;
 			      logic unsigned «input.name»_realign_type;
 			    «ENDFOR»
+
 			    «FOR output : outputMap.keySet»
 			      // Output stream - «output.name» (programmable)
 			      logic unsigned [31:0] «output.name»_trans_size;
@@ -1260,18 +1380,22 @@ class PulpPrinter {
 			      logic unsigned «output.name»_loop_outer;
 			      logic unsigned «output.name»_realign_type;
 			    «ENDFOR»
+
 			    // Computation
 			    «FOR output : outputMap.keySet»
 			      logic unsigned [$clog2(CNT_LEN):0] cnt_limit_«output.name»;
 			    «ENDFOR»
-			    // Custom register files
+
+			    // Custom register
 			    «FOR netParm : this.network.parameters»
 			      logic unsigned [(32-1):0] «netParm.name»;
 			    «ENDFOR»
 			    «IF !luts.empty»
 			      logic unsigned [(32-1):0] configuration;
 			    «ENDIF»
+
 			  } ctrl_fsm_t;
+
 			  typedef enum {
 			    FSM_IDLE,
 			    FSM_START,
@@ -1280,6 +1404,7 @@ class PulpPrinter {
 			    FSM_UPDATEIDX,
 			    FSM_TERMINATE
 			  } state_fsm_t;
+
 			endpackage
 				'''
 	}
@@ -1287,8 +1412,10 @@ class PulpPrinter {
 	def printStreamer() {
 		'''
 			«printHWPELicense(false ,"streamer")»
+
 			import multi_dataflow_package::*;
 			import hwpe_stream_package::*;
+
 			module multi_dataflow_streamer
 			#(
 			  parameter int unsigned MP = «portMap.size», // number of master ports
@@ -1299,35 +1426,50 @@ class PulpPrinter {
 			  input  logic          clk_i,
 			  input  logic          rst_ni,
 			  input  logic          test_mode_i,
+
 			  // Local enable & clear
 			  input  logic          enable_i,
 			  input  logic          clear_i,
+
 			  // TCDM interface
+
 			  hwpe_stream_intf_tcdm.master tcdm [MP-1:0],
+
 			  // Streaming interfaces
+
 			  «FOR input : inputMap.keySet»
 			   	hwpe_stream_intf_stream.source «input.name»,
 			  «ENDFOR»
+
 			  «FOR output : outputMap.keySet»
 			   	hwpe_stream_intf_stream.sink «output.name»,
 			  «ENDFOR»
+
 			  // control channel
 			  input  ctrl_streamer_t  ctrl_i,
 			  output flags_streamer_t flags_o
 			);
+
 			  // TCDM ready signals
+
 			  «FOR input : inputMap.keySet»
 			    logic tcdm_fifo_ready_«input.name»;
 			  «ENDFOR»
+
 			  // TCDM interface
+
 			  «FOR port : portMap.keySet»
 			    hwpe_stream_intf_tcdm tcdm_fifo_«port.name» [0:0] ( .clk (clk_i) );
+
 			  «ENDFOR»	
 			  // Streaming interface
+
 			  «FOR port : portMap.keySet»
 			    hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) stream_fifo_«port.name» ( .clk (clk_i) );
+
 			  «ENDFOR»	
 			  // TCDM-side FIFOs - Inputs
+
 			  «FOR input : inputMap.keySet»
 			  	hwpe_stream_tcdm_fifo_load #(
 			  	  .FIFO_DEPTH ( 4 )
@@ -1341,7 +1483,9 @@ class PulpPrinter {
 			  	  .tcdm_master ( tcdm[«portMap.get(input)»]     )
 			  	);
 			  «ENDFOR»
+
 			  // TCDM-side FIFOs - Outputs
+
 			  «FOR output : outputMap.keySet»
 			  	hwpe_stream_tcdm_fifo_store #(
 			  	  .FIFO_DEPTH ( 4 )
@@ -1354,7 +1498,9 @@ class PulpPrinter {
 			  	  .tcdm_master ( tcdm[«portMap.get(output)»] )
 			  	);
 			  «ENDFOR»
+
 			  // Engine-side FIFO - Inputs
+
 			  «FOR input : inputMap.keySet»
 			  	hwpe_stream_fifo #(
 			  	  .DATA_WIDTH( 32 ),
@@ -1369,7 +1515,9 @@ class PulpPrinter {
 			  	  .flags_o (                )
 			  	);
 			  «ENDFOR»
+
 			  // Engine-side FIFO - Outputs
+
 			  «FOR output : outputMap.keySet»
 			  	hwpe_stream_fifo #(
 			  	  .DATA_WIDTH( 32 ),
@@ -1383,44 +1531,47 @@ class PulpPrinter {
 			  	  .pop_o   ( stream_fifo_«output.name».source),
 			  	  .flags_o (                   )
 			  	);
-			  	
 			    «ENDFOR»
-			    // Source modules (TCDM -> HWPE)
-			    «FOR input : inputMap.keySet»
-			      hwpe_stream_source #(
-			        .DATA_WIDTH ( 32 ),
-			        .DECOUPLED  ( 1  ),
-			        .IS_ADDRESSGEN_PROGR  ( 1  )
-			      ) i_«input.name»_source (
-			        .clk_i              ( clk_i                  ),
-			        .rst_ni             ( rst_ni                 ),
-			        .test_mode_i        ( test_mode_i            ),
-			        .clear_i            ( clear_i                ),
-			        .tcdm               ( tcdm_fifo_«input.name»	),
-			        .stream             ( stream_fifo_«input.name».source),
-			        .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
-			        .flags_o            ( flags_o.«input.name»_source_flags ),
-			        .tcdm_fifo_ready_o  ( tcdm_fifo_ready_«input.name»      )
-			      );
-			    «ENDFOR»
-			    //
-			    // Sink modules (TCDM <- HWPE)
-			    «FOR output : outputMap.keySet»
-			      hwpe_stream_sink #(
-			        .DATA_WIDTH ( 32 ),
-			        .IS_ADDRESSGEN_PROGR  ( 1  )
-			        // .NB_TCDM_PORTS (    )
-			      ) i_«output.name»_sink (
-			        .clk_i       ( clk_i                ),
-			        .rst_ni      ( rst_ni               ),
-			        .test_mode_i ( test_mode_i          ),
-			        .clear_i     ( clear_i              ),
-			        .tcdm        ( tcdm_fifo_«output.name»	),
-			        .stream      ( stream_fifo_«output.name».sink),
-			        .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
-			        .flags_o     ( flags_o.«output.name»_sink_flags )
-			      );
-			    «ENDFOR»
+
+			  // Source modules (TCDM -> HWPE)
+
+			  «FOR input : inputMap.keySet»
+			    hwpe_stream_source #(
+			      .DATA_WIDTH ( 32 ),
+			      .DECOUPLED  ( 1  ),
+			      .IS_ADDRESSGEN_PROGR  ( 1  )
+			    ) i_«input.name»_source (
+			      .clk_i              ( clk_i                  ),
+			      .rst_ni             ( rst_ni                 ),
+			      .test_mode_i        ( test_mode_i            ),
+			      .clear_i            ( clear_i                ),
+			      .tcdm               ( tcdm_fifo_«input.name»	),
+			      .stream             ( stream_fifo_«input.name».source),
+			      .ctrl_i             ( ctrl_i.«input.name»_source_ctrl   ),
+			      .flags_o            ( flags_o.«input.name»_source_flags ),
+			      .tcdm_fifo_ready_o  ( tcdm_fifo_ready_«input.name»      )
+			    );
+			  «ENDFOR»
+
+			  // Sink modules (TCDM <- HWPE)
+
+			  «FOR output : outputMap.keySet»
+			    hwpe_stream_sink #(
+			      .DATA_WIDTH ( 32 ),
+			      .IS_ADDRESSGEN_PROGR  ( 1  )
+			      // .NB_TCDM_PORTS (    )
+			    ) i_«output.name»_sink (
+			      .clk_i       ( clk_i                ),
+			      .rst_ni      ( rst_ni               ),
+			      .test_mode_i ( test_mode_i          ),
+			      .clear_i     ( clear_i              ),
+			      .tcdm        ( tcdm_fifo_«output.name»	),
+			      .stream      ( stream_fifo_«output.name».sink),
+			      .ctrl_i      ( ctrl_i.«output.name»_sink_ctrl   ),
+			      .flags_o     ( flags_o.«output.name»_sink_flags )
+			    );
+			  «ENDFOR»
+
 			  endmodule // multi_dataflow_streamer
 		  	'''
 	}
@@ -1476,6 +1627,7 @@ class PulpPrinter {
 	def printWrap() {
 		'''
 		«printHWPELicense(true ,"wrapper")»
+
 		import multi_dataflow_package::*;
 		import hwpe_ctrl_package::*;
 		
@@ -1490,8 +1642,10 @@ class PulpPrinter {
 		  input  logic          clk_i,
 		  input  logic          rst_ni,
 		  input  logic          test_mode_i,
+
 		  // Events
 		  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+
 		  // TCDM master ports
 		  output logic [MP-1:0]                         tcdm_req,
 		  input  logic [MP-1:0]                         tcdm_gnt,
@@ -1501,6 +1655,7 @@ class PulpPrinter {
 		  output logic [MP-1:0][31:0]                   tcdm_data,
 		  input  logic [MP-1:0][31:0]                   tcdm_r_data,
 		  input  logic [MP-1:0]                         tcdm_r_valid,
+
 		  // Peripheral slave port
 		  input  logic                                  periph_req,
 		  output logic                                  periph_gnt,
@@ -1513,14 +1668,17 @@ class PulpPrinter {
 		  output logic                                  periph_r_valid,
 		  output logic       [ID-1:0]                   periph_r_id
 		);
+
 		  hwpe_stream_intf_tcdm tcdm[MP-1:0] (
 		    .clk ( clk_i )
 		  );
+
 		  hwpe_ctrl_intf_periph #(
 		    .ID_WIDTH ( ID )
 		  ) periph (
 		    .clk ( clk_i )
 		  );
+
 		  // bindings
 		  generate
 		    for(genvar ii=0; ii<MP; ii++) begin: tcdm_binding
@@ -1534,6 +1692,7 @@ class PulpPrinter {
 		      assign tcdm[ii].r_valid = tcdm_r_valid [ii];
 		    end
 		  endgenerate
+
 		  always_comb
 		  begin
 		    periph.req  = periph_req;
@@ -1547,6 +1706,7 @@ class PulpPrinter {
 		    periph_r_valid = periph.r_valid;
 		    periph_r_id    = periph.r_id;
 		  end
+
 		  multi_dataflow_top #(
 		    .N_CORES ( N_CORES ),
 		    .MP      ( MP      ),
@@ -1559,7 +1719,9 @@ class PulpPrinter {
 		    .tcdm        ( tcdm        ),
 		    .periph      ( periph      )
 		  );
+
 		endmodule // multi_dataflow_top_wrap
+
 		'''
 	}
 	
@@ -1702,8 +1864,10 @@ class PulpPrinter {
 	def printPulpTop() {
 		'''	
 			«printHWPELicense(true ,"top")»
+
 			import multi_dataflow_package::*;
 			import hwpe_ctrl_package::*;
+
 			module multi_dataflow_top
 			#(
 			  parameter int unsigned N_CORES = 2,
@@ -1715,13 +1879,17 @@ class PulpPrinter {
 			  input  logic          clk_i,
 			  input  logic          rst_ni,
 			  input  logic          test_mode_i,
+
 			  // Events
 			  output logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt_o,
+
 			  // TCDM master ports
 			  hwpe_stream_intf_tcdm.master                  tcdm[MP-1:0],
+
 			  // Peripheral slave port
 			  hwpe_ctrl_intf_periph.slave                   periph
 			);
+
 			  // Signals
 			  logic enable, clear;
 			  logic [N_CORES-1:0][REGFILE_N_EVT-1:0] evt;
@@ -1729,24 +1897,30 @@ class PulpPrinter {
 			  flags_streamer_t streamer_flags;
 			  ctrl_engine_t    engine_ctrl;
 			  flags_engine_t   engine_flags;
+
 			  // Streamer interfaces
 			  «FOR port : portMap.keySet»  
 			  hwpe_stream_intf_stream #( .DATA_WIDTH(32) ) «port.name» ( .clk (clk_i) );
+
 			  «ENDFOR»  
 			  // HWPE engine wrapper
 			  multi_dataflow_engine i_engine (
 			    .clk_i            ( clk_i          ),
 			    .rst_ni           ( rst_ni         ),
 			    .test_mode_i      ( test_mode_i    ),
+
 			    «FOR port : inputMap.keySet»  
 			    .«port.name»_i              ( «port.name».sink       ),
 			    «ENDFOR»  
+
 			    «FOR port : outputMap.keySet»  
 			    .«port.name»_o              ( «port.name».source       ),
 			    «ENDFOR»  
+
 			    .ctrl_i           ( engine_ctrl    ),
 			    .flags_o          ( engine_flags   )
 			  );
+
 			  // HWPE streamer wrapper
 			  multi_dataflow_streamer #(
 			    .MP ( MP )
@@ -1756,21 +1930,27 @@ class PulpPrinter {
 			    .test_mode_i      ( test_mode_i    ),
 			    .enable_i         ( enable         ),
 			    .clear_i          ( clear          ),
+
 			    «FOR port : inputMap.keySet»  
 			    	.«port.name»              ( «port.name».source       ),
 			    «ENDFOR»  
+
 			    «FOR port : outputMap.keySet»  
 			    	.«port.name»              ( «port.name».sink       ),
 			    «ENDFOR»  		  
+
 			    .tcdm             ( tcdm           ),
 			    .ctrl_i           ( streamer_ctrl  ),
 			    .flags_o          ( streamer_flags )
 			  );
+
 			  // HWPE ctrl wrapper
 			  multi_dataflow_ctrl #(
 			    .N_CORES   ( N_CORES  ),
 			    .N_CONTEXT ( 1  ),
-			    .N_IO_REGS ( 31 ),
+
+			    .N_IO_REGS ( 26 ),
+
 			    .ID ( ID )
 			  ) i_ctrl (
 			    .clk_i            ( clk_i          ),
@@ -1784,7 +1964,9 @@ class PulpPrinter {
 			    .flags_engine_i   ( engine_flags   ),
 			    .periph           ( periph         )
 			  );
+
 			  assign enable = 1'b1;
+
 			endmodule
 			    
 		'''
@@ -1793,52 +1975,68 @@ class PulpPrinter {
 	def printEngine() {
 		'''	
 			«printHWPELicense(true ,"engine")»
+			
 			import multi_dataflow_package::*;
+			
 			module multi_dataflow_engine (
 			  // Global signals
 			  input  logic          clk_i,
 			  input  logic          rst_ni,
 			  input  logic          test_mode_i,
+
 			  // Sink ports
 			  «FOR port : inputMap.keySet»  
 			  	hwpe_stream_intf_stream.sink    «port.name»_i,
 			  «ENDFOR»  
+
 			  // Source ports
 			  «FOR port : outputMap.keySet»  
 			  	hwpe_stream_intf_stream.source  «port.name»_o,
-			  «ENDFOR»  		  
+			  «ENDFOR»  		 
+
 			  // Control channel
 			  input  ctrl_engine_t            ctrl_i,
 			  output flags_engine_t           flags_o
 			);
-			  // multi_dataflow control
+			
 			  /* Control signals */
-			  logic engine_start, engine_clear;
-			  assign engine_start = ctrl_i.start;
-			  assign engine_clear = ctrl_i.clear;
+			
+			  ctrl_kernel_adapter_t ctrl_k_ad;
+			
+			  assign ctrl_k_ad.start = ctrl_i.start;
+			
 			  /* Flag signals */
-			  logic engine_done, engine_idle, engine_ready;
-			  assign flags_o.done = engine_done;
-			  assign flags_o.idle = engine_idle;
+			
+			  flags_kernel_adapter_t flags_k_ad;
+			
+			  assign flags_o.done = flags_k_ad.done;
+			
 			  always_ff @(posedge clk_i or negedge rst_ni)
 			  begin: fsm_ready
 			    if(~rst_ni)
 			      flags_o.ready = 1'b0;
-			    else if(~(engine_ready | engine_idle))
+			    else if(~(flags_k_ad.ready | flags_k_ad.idle))
 			      flags_o.ready = 1'b0;
 			    else
 			      flags_o.ready = 1'b1;
 			  end
+
 			  /* Count outputs */
+
 			  «FOR port : outputMap.keySet»  
 			    // Declaration of trackers
+
 			    logic track_«port.name»_q, track_«port.name»_d;
+
 			    // Declaration of counters
+
 			    logic unsigned [($clog2(CNT_LEN)+1):0] cnt_«port.name»;
+
 			    // AND-ed trackers implementation (FF)
+
 			    always_comb
 			    begin: «port.name»_track_q
-			      if(~rst_ni | engine_clear) begin
+			      if(~rst_ni | ctrl_i.clear) begin
 			        track_«port.name»_d = '0;
 			      end
 			      else if(«port.name»_o.valid & «port.name»_o.ready) begin
@@ -1848,37 +2046,45 @@ class PulpPrinter {
 			        track_«port.name»_d = '0;
 			      end
 			    end
+
 			    always_ff @(posedge clk_i or negedge rst_ni)
 			    begin: «port.name»_track_d
 			      if(~rst_ni) begin
 			        track_«port.name»_q <= '0;
 			      end
-			      else if(engine_clear) begin
+			      else if(ctrl_i.clear) begin
 			        track_«port.name»_q <= '0;
 			      end
 			      else begin
 			        track_«port.name»_q <= track_«port.name»_d;
 			      end
 			    end
+
 			    // Counter implementation (FF)
+
 			    always_ff @(posedge clk_i or negedge rst_ni)
 			    begin: «port.name»_cnt
-			      if((~rst_ni) | engine_clear)
+			      if((~rst_ni) | ctrl_i.clear)
 			        cnt_«port.name» = 32'b0;
-			      else if( track_«port.name»_q & engine_done )
+			      else if( track_«port.name»_q & flags_o.done )
 			        cnt_«port.name» = cnt_«port.name» + 1;
 			      else
 			        cnt_«port.name» = cnt_«port.name»;
 			    end
+
 			    // Assign to fsm flags
 			    assign flags_o.cnt_«port.name» = cnt_«port.name»;
 			  «ENDFOR» 
+
 			  /* Kernel adapter */
+
 			  multi_dataflow_kernel_adapter i_multi_dataflow_adapter (
+
 			    // Global signals
 			    .clk_i           ( clk_i            ),
 			    .rst_ni          ( rst_ni           ),
 			    .test_mode_i     ( test_mode_i      ),
+
 			    // Data streams
 			    «FOR port : inputMap.keySet»  
 			        .«port.name»_i              ( «port.name»_i	),
@@ -1886,21 +2092,23 @@ class PulpPrinter {
 			    «FOR port : outputMap.keySet»  
 			        .«port.name»_o              ( «port.name»_o	),
 			    «ENDFOR»  	  
-			    // Algorithm parameters
+
+			    // Kernel parameters
 			    «FOR param : network.parameters» 
 			        .«param.name»        ( ctrl_i.«param.name»      ),
 			    «ENDFOR»  
 			    «IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
-			      .ID(ctrl_i.configuration),
-			     «ENDIF»
+			        .ID(ctrl_i.configuration),
+			    «ENDIF»
+
 			    // Control signals
-			    .start           ( engine_start     ),
-			    .clear           ( engine_clear     ),
+			    .ctrl_i      ( ctrl_k_ad            ),
+
 			    // Flag signals
-			    .done            ( engine_done      ),
-			    .idle            ( engine_idle      ),
-			    .ready           ( engine_ready     )
+			    .flags_o       ( flags_k_ad             )
+
 			  );
+
 			  // At the moment output strobe is always '1
 			  // All bytes of output streams are written
 			  // to TCDM
@@ -1910,64 +2118,92 @@ class PulpPrinter {
 			    «output.name»_o.strb = '1;
 			  «ENDFOR»
 			  end
+
 			endmodule
 		'''
 	}		
 	
 	def printKernelAdapter() {
 		'''	
-			«printHWPELicense(true ,"kernel_wrapper")»
+			/* =====================================================================
+			 * Project:      HWPE kernel adapter
+			 * Title:        hwpe_kernel_adapter.sv
+			 * Description:  Interface between hardware wrapper and accelerated kernel.
+			 *
+			 * ===================================================================== */
+			/*
+			 * Copyright (C) 2021 University of Modena and Reggio Emilia..
+			 *
+			 * Author: Gianluca Bellocchi, University of Modena and Reggio Emilia.
+			 *
+			 */
+
 			import multi_dataflow_package::*;
+
 			module multi_dataflow_kernel_adapter (
 			  // Global signals
 			  input  logic          clk_i,
 			  input  logic          rst_ni,
 			  input  logic          test_mode_i,
+
 			  // Sink ports
 			  «FOR port : inputMap.keySet»  
 			  	hwpe_stream_intf_stream.sink    «port.name»_i,
 			  «ENDFOR»  
+
 			  // Source ports
 			  «FOR port : outputMap.keySet»  
 			  	hwpe_stream_intf_stream.source    «port.name»_o,
 			  «ENDFOR»  
-			  // Algorithm parameters
+
+			  // Kernel parameters
 			  «FOR param : network.parameters» 
 			  	input logic [31:0] «param.name»,
 			  «ENDFOR»  
 			  «IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
 			    input logic [31:0] 		ID,
 			  «ENDIF»
+
 			  // Control signals
-			  input  logic          start,
-			  input  logic          clear,
+			  input  ctrl_kernel_adapter_t           ctrl_i,
+
 			  // Flag signals
-			  output logic          done,
-			  output logic          idle,
-			  output logic          ready
+			  output  flags_kernel_adapter_t           flags_o
+
 			  );
+
 			  /* multi_dataflow control signals. */
+
 			  logic kernel_start;
+
 			  // START is not always high. For each READY (~(engine_ready | engine_idle)) that is
 			  // delivered to the FSM, a new START signal is set high and iaaued to the kernel.
-			  assign kernel_start = start;
+
+			  assign kernel_start = ctrl_i.start;
+
 			  /* multi_dataflow flag signals. */
+
 			  «FOR port : inputMap.keySet»  
-			  	logic kernel_ready_«port.name»;
+			  	//logic kernel_ready_«port.name»;
 			  	logic kernel_done_«port.name»;  //FIXEME: to be removed
 			  «ENDFOR»
+
 			  «FOR port : outputMap.keySet»  
 			  	logic kernel_done_«port.name»;
 			  «ENDFOR»
+
 			  logic kernel_idle;
 			  // logic kernel_ready;
+
 			  /* Done. */
 			  // A done is generated for each output. These are counted and
 			  // delivered to the FSM that decides when to update the address
 			  // on the basis of the state of the line processing (see HWPE-docs).
+
 			  // FIXME: This temporarily works synch-outputs.
 			  // EX: What if Out_0 is provided at each input and Out_1 once per 10 inputs?
-			  assign done = «FOR output : outputMap.keySet SEPARATOR " & "» (kernel_done_«output.name») «ENDFOR»;
+			  assign flags_o.done = «FOR output : outputMap.keySet SEPARATOR " & "» (kernel_done_«output.name») «ENDFOR»;
+
 			  «FOR output : outputMap.keySet»
 			    always_ff @(posedge clk_i or negedge rst_ni)
 			      begin: fsm_done_«output.name»
@@ -1979,16 +2215,21 @@ class PulpPrinter {
 			    	  kernel_done_«output.name» = 1'b0;
 			      end
 			  «ENDFOR»
+
 			  /* Ready. */
 			  /* This is used in the hwpe-engine to set flags_o.ready.
 			     The latter triggers the START of accelerator. (see FSM_COMPUTE). */
 			  /* Driven using input counters. */
-			  assign ready = «FOR input : inputMap.keySet SEPARATOR " & "» (kernel_done_«input.name») «ENDFOR»;
+
+			  assign flags_o.ready = «FOR input : inputMap.keySet SEPARATOR " & "» (kernel_done_«input.name») «ENDFOR»;
+
 			  /* Idle. */
 			  /* This is used in the hwpe-engine to set flags_o.ready.
 			     The latter triggers the START of accelerator. (see FSM_COMPUTE). */
 			  /* For more infos refer to UG902. */
-			  assign idle = kernel_idle;
+
+			  assign flags_o.idle = kernel_idle;
+
 			  /* The Idle signal indicates when the design is idle and not operating. */
 			  always_ff @(posedge clk_i or negedge rst_ni)
 			  begin: fsm_idle
@@ -2001,7 +2242,8 @@ class PulpPrinter {
 			          and the Idle signal remains Low. */
 						kernel_idle = 1'b0;
 			    end
-			    else if((!kernel_start) & (ready)) begin
+			      else if(!kernel_start) begin
+			        // else if((!kernel_start) & (ready)) begin # removed ready signal
 			      if(«FOR output : outputMap.keySet SEPARATOR " & "» (kernel_done_«output.name») «ENDFOR») begin
 			        /* If the Start signal is Low when Ready is High, the design stops operation, and
 			            the ap_idle signal goes High one cycle after ap_done.*/
@@ -2012,12 +2254,14 @@ class PulpPrinter {
 						kernel_idle = kernel_idle;
 			    end
 			  end
+
 			  /* multi_dataflow input counters. Ready. */
+
 			  «FOR port : inputMap.keySet»  
 			    logic unsigned [($clog2(CNT_LEN)+1):0] kernel_cnt_«port.name»;
 			    always_ff @(posedge clk_i or negedge rst_ni)
 			      begin: engine_cnt_«port.name»
-			      if((~rst_ni) | start) begin
+			      if((~rst_ni) | kernel_start) begin
 			        kernel_cnt_«port.name» = 32'b0;
 			      end
 			      else if(kernel_start) begin
@@ -2030,17 +2274,21 @@ class PulpPrinter {
 			        kernel_cnt_«port.name» = kernel_cnt_«port.name»;
 			      end
 			    end
-			    // FIXME: Now local_done_in goes High every time an input enters the acc.
+
+			    // FIXME: Now kernel_done_in goes High every time an input enters the acc.
 			    // This should be generalized. Even though the wrapper looper is designed to
 			    // on counting the ouputs, the number of inputs needed to generate an ouput
 			    // are usually > 1.
 			    // SOL: Add to ctrl_i also the information about max_input.
 			    assign kernel_done_«port.name» = (kernel_cnt_«port.name»==1) ? 1 : 0;
 			  «ENDFOR» 
+
 			  /* multi_dataflow output counters. */
+
 			  «FOR port : outputMap.keySet»  
 			    logic unsigned [($clog2(CNT_LEN)+1):0] kernel_cnt_«port.name»;
 			  «ENDFOR»
+
 			  // Suggested design:
 			  //      ap_done = done_out0 & ... & done_outM;
 			  //      done_outM = cnt_out,i == ctrl_i.max_out,i; (for i=1,..,N)
@@ -2048,10 +2296,11 @@ class PulpPrinter {
 			  // in the hwpe-ctrl. Thus, the done information provided by this stage should
 			  // concern a single output element, not a tile (block,..).
 			  // FIXME: At this point, cnt_out is not essential here and could be removed.
+
 			  «FOR output : outputMap.keySet»
 			    always_ff @(posedge clk_i or negedge rst_ni)
 			    begin: engine_cnt_«output.name»
-			      if((~rst_ni) | start)
+			      if((~rst_ni) | kernel_start)
 			        kernel_cnt_«output.name» = 32'b0;
 			      else if(!kernel_idle) begin
 			        if((«output.name»_o.valid)&(«output.name»_o.ready))
@@ -2060,9 +2309,12 @@ class PulpPrinter {
 			          kernel_cnt_«output.name» = kernel_cnt_«output.name»;
 			      end
 			    end
+
 			    assign cnt_«output.name» = kernel_cnt_«output.name»;
+
 			  «ENDFOR» 
-			  /* multi_dataflow streaming interface control. */  
+			  /* multi_dataflow kernel interface. */  
+
 			  multi_dataflow_reconf_datapath_top i_multi_dataflow_reconf_datapath_top (
 			    // Input data (to-hwpe)
 			    «FOR port : inputMap.keySet»  
@@ -3489,6 +3741,7 @@ class PulpPrinter {
 		 * See the License for the specific language governing permissions and
 		 * limitations under the License.
 		 */
+
 		/*
 		 * Authors:     Francesco Conti <fconti@iis.ee.ethz.ch>
 		 * Contribute:  Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
@@ -3533,15 +3786,18 @@ class PulpPrinter {
 			 «FOR port : outputMap.keySet»  
 			   	*     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «port.name.toUpperCase»_ADDR
 			 «ENDFOR»  
+			
 			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  NB_ITER
 			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  LEN_ITER
 			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31:16  |  0xffff0000  ||  SHIFT
 			 *        |          |   0: 0  |  0x00000001  ||  SIMPLEMUL
 			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE
 			 *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  VECTSTRIDE2
-			 «FOR param : network.parameters»
-			 	*     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «param.name.toUpperCase»
-			 «ENDFOR»
+			«FOR param : network.parameters»
+			 
+			  *     «counterReg++»  |  0x«String.format("%04x", counterOffset)»«{counterOffset = counterOffset + 4; ""}»  |  31: 0  |  0xffffffff  ||  «param.name.toUpperCase»
+			«ENDFOR»
+			 *
 			 * ================================================================================
 			 *
 			 */
@@ -3553,49 +3809,86 @@ class PulpPrinter {
 		var counterOffset2 = 64;
 		'''	
 			«printRiscvHeader()»
+
 			#ifndef __ARCHI_HWPE_H__
 			#define __ARCHI_HWPE_H__
+
 			«printRiscvRegs»
+
 			#define ARCHI_CL_EVT_ACC0 0
 			#define ARCHI_CL_EVT_ACC1 1
 			#define ARCHI_HWPE_ADDR_BASE 0x1b201000
 			#define ARCHI_HWPE_EU_OFFSET 12
 			#define __builtin_bitinsert(a,b,c,d) (a | (((b << (32-c)) >> (32-c)) << d))
+
 			/* Basic archi */
+
 			#define REG_TRIGGER          0x00
+
 			#define REG_ACQUIRE          0x04
+
 			#define REG_FINISHED         0x08
+
 			#define REG_STATUS           0x0c
+
 			#define REG_RUNNING_JOB      0x10
+
 			#define REG_SOFT_CLEAR       0x14
+
 			/* Microcode processor registers archi */
+
 			/* Microcode processor */
+
 			#define REG_BYTECODE         0x20
+
 			#define REG_BYTECODE0_OFFS        0x00
+
 			#define REG_BYTECODE1_OFFS        0x04
+
 			#define REG_BYTECODE2_OFFS        0x08
+
 			#define REG_BYTECODE3_OFFS        0x0c
+
 			#define REG_BYTECODE4_OFFS        0x10
+
 			#define REG_BYTECODE5_LOOPS0_OFFS 0x14
+
 			#define REG_LOOPS1_OFFS           0x18
+
 			/* TCDM registers archi */
+
 			// Input master ports
 			   «FOR port : inputMap.keySet»  
 			   	#define REG_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
 			   «ENDFOR»  
+
 			// Output master ports
 			   «FOR port : outputMap.keySet»  
 			   	#define REG_«port.name.toUpperCase»_ADDR           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
 			   «ENDFOR»  
+
 			/* Standard registers archi */
+
 			#define REG_NB_ITER                         0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+
 			#define REG_LINESTRIDE                0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+
 			#define REG_TILESTRIDE                0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+
 			«FOR port : outputMap.keySet»  
 			  #define REG_CNT_LIMIT_«port.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
 			«ENDFOR»  
+
 			/* Custom registers archi */
+			«FOR param : network.parameters»
+				#define REG_«param.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			«ENDFOR»
+			«IF !luts.empty»
+			    #define REG_ID_CONFIGURATION		0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+			«ENDIF»
+
 			/* Address generator archi */
+
 			«FOR port : portMap.keySet» 
 				// Input stream - «port.name» (programmable)
 				#define REG_«port.name.toUpperCase»_TRANS_SIZE                  0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
@@ -3607,14 +3900,8 @@ class PulpPrinter {
 				#define REG_«port.name.toUpperCase»_LOOP_OUTER                  0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
 				#define REG_«port.name.toUpperCase»_REALIGN_TYPE                0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
 				#define REG_«port.name.toUpperCase»_STEP                        0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
+
 			«ENDFOR»  
-			// custom regs
-			«FOR param : network.parameters»
-				#define REG_«param.name.toUpperCase»           0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-			«ENDFOR»
-			«IF !luts.empty»
-				#define REG_ID_CONFIGURATION		0x«String.format("%02x", counterOffset2)»«{counterOffset2 = counterOffset2 + 4; ""}»
-			«ENDIF»
 			#endif
 		'''
 	}	
@@ -3623,17 +3910,24 @@ class PulpPrinter {
 
 		'''	
 			«printRiscvHeader()»
+
 			#ifndef __HAL_HWPE_H__
 			#define __HAL_HWPE_H__
+
 			«printRiscvRegs()»
+
 			#define HWPE_ADDR_BASE ARCHI_FC_HWPE_ADDR
 			#define HWPE_ADDR_SPACE 0x00000100
+
 			// For all the following functions we use __builtin_pulp_OffsetedWrite and __builtin_pulp_OffsetedRead
 			// instead of classic load/store because otherwise the compiler is not able to correctly factorize
 			// the HWPE base in case several accesses are done, ending up with twice more code
+
 			// #define HWPE_WRITE(value, offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset) = value
 			// #define HWPE_READ(offset) *(volatile int *)(ARCHI_HWPE_ADDR_BASE + offset)
+
 			#define hwpe_write32(add, val_) (*(volatile unsigned int *)(long)(add) = val_)
+
 			static inline uint32_t hwpe_read32(uint32_t add)
 			{
 			  __asm__ __volatile__ ("" : : : "memory");
@@ -3642,23 +3936,42 @@ class PulpPrinter {
 			  __asm__ __volatile__ ("" : : : "memory");
 			  return result;
 			}
+
 			#define HWPE_WRITE(value, offset) hwpe_write32(ARCHI_HWPE_ADDR_BASE + (offset), (value))
 			#define HWPE_READ(offset) hwpe_read32(ARCHI_HWPE_ADDR_BASE + (offset))
+
 			/* uloop hal */
+
 			static inline void hwpe_nb_iter_set(unsigned int value) {
 			  HWPE_WRITE(value, REG_NB_ITER);
 			}
+
 			static inline void hwpe_linestride_set(unsigned int value) {
 			  HWPE_WRITE(value, REG_LINESTRIDE);
 			}
+
 			static inline void hwpe_tilestride_set(unsigned int value) {
 			  HWPE_WRITE(value, REG_TILESTRIDE);
 			}
+
 			«FOR port : outputMap.keySet»  
 			  static inline void hwpe_len_iter_set_«port.name»(unsigned int value) {
 			    HWPE_WRITE(value, REG_CNT_LIMIT_«port.name.toUpperCase»);
 			  }
 			«ENDFOR» 			
+
+			/* custom hal */
+			«FOR param : network.parameters»
+			  static inline void hwpe_«param.name»_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(param.type)» value) {
+			    HWPE_WRITE(value, REG_«param.name.toUpperCase» );
+			  }
+			«ENDFOR»  
+			«IF !luts.empty»
+			  static inline void hwpe_ID_configuration_set(uint8_t value) {
+			    HWPE_WRITE(value, REG_ID_CONFIGURATION );
+			  }
+			«ENDIF»
+
 			«FOR port : portMap.keySet»  
 			  /* address generator hal - «port.name» */
 			  static inline void hwpe_addr_gen_«port.name»(
@@ -3683,132 +3996,442 @@ class PulpPrinter {
 			    HWPE_WRITE(«port.name»_step,          REG_«port.name.toUpperCase»_STEP        );
 			  }
 			«ENDFOR» 			
+
 			/* basic hal */
+
 			static inline void hwpe_trigger_job() {
 			  HWPE_WRITE(0, REG_TRIGGER);
 			}
+
 			static inline int hwpe_acquire_job() {
 			  return HWPE_READ(REG_ACQUIRE);
 			}
+
 			static inline unsigned int hwpe_get_status() {
 			  return HWPE_READ(REG_STATUS);
 			}
+
 			static inline void hwpe_soft_clear() {
 			  volatile int i;
 			  HWPE_WRITE(0, REG_SOFT_CLEAR);
 			}
+
 			static inline void hwpe_cg_enable() {
 			  return;
 			}
+
 			static inline void hwpe_cg_disable() {
 			  return;
 			}
+
 			static inline void hwpe_bytecode_set(unsigned int offs, unsigned int value) {
 			  HWPE_WRITE(value, REG_BYTECODE+offs);
 			}
+
 			/* tcdm master port hal */
+
 			«FOR port : inputMap.keySet»  
 			   // input «port.name»
 			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
 			     HWPE_WRITE(value, REG_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
+
 			«FOR port : outputMap.keySet»   
 			   // output «port.name»
 			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
 			     HWPE_WRITE(value, REG_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
-			// custom hal
-			«FOR param : network.parameters»
-				static inline void hwpe_«param.name.toLowerCase»_set(unsigned int value) {
-				  HWPE_WRITE(value, REG_«param.name.toUpperCase» );
-				}
-			«ENDFOR»  
-			«IF !luts.empty»
-				static inline void hwpe_ID_configuration_set(uint8_t value) {
-				  HWPE_WRITE(value, REG_ID_CONFIGURATION );
-				}
-			«ENDIF»
+
 			#endif /* __HAL_HWPE_H__ */
+
 		'''
 	}	
 	
 	def printRiscvTestHwpe() {
-		var counterStim = 1;
-		var counterOutput = 1;
-
 		'''	
 			
-			/*
-			 * Copyright (C) 2019 ETH Zurich and University of Bologna
-			 *
-			 * Licensed under the Apache License, Version 2.0 (the "License");
-			 * you may not use this file except in compliance with the License.
-			 * You may obtain a copy of the License at
-			 *
-			 *     http://www.apache.org/licenses/LICENSE-2.0
-			 *
-			 * Unless required by applicable law or agreed to in writing, software
-			 * distributed under the License is distributed on an "AS IS" BASIS,
-			 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-			 * See the License for the specific language governing permissions and
-			 * limitations under the License.
-			 */
 			/*
 			 *
 			 * Authors:     Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
 			 *
 			 */
-			/* Libraries inclusion */
+			
+			// Standard libs
 			#include <stdlib.h>
 			#include <stdio.h>
 			#include <stdbool.h>
 			#include <stdint.h>
+			
+			// System
 			#include <hero-target.h>
-			/* HWPE. */
+			
+			// HWPE
 			#include "inc/hwpe_lib/archi_hwpe.h"
 			#include "inc/hwpe_lib/hal_hwpe.h"
-			/* Event unit. */
+			
+			// Event unit
 			#include "inc/eu_lib/archi_eu_v3.h"
 			#include "inc/eu_lib/hal_eu_v3.h"
-			/* Stimuli */
-			// Include initialization stimuli
-			// Include golden results
-			/* HWPE test */
-			int multi_dataflow_tb(
-			  «FOR port : inputMap.keySet»  
-			    «port.name»_width,
-			    «port.name»_height,
-			    «port.name»_stripe_height,
-			  «ENDFOR»
-			  «FOR port : outputMap.keySet SEPARATOR ","»   
-			  	«port.name»_width,
-			  	«port.name»_height,
-			  	«port.name»_stripe_height
-			  «ENDFOR»
-			) {
-			  printf("Testbench application - DUT: multi_dataflow\n");
-			  printf("Initializating test parameters\n");
-			  /* Init */
-			  omp_set_num_threads(1);
+
+			// Synthetic stimuli
+			«FOR port : inputMap.keySet»  
+			  #include "inc/stim/«port.name».h""
+			«ENDFOR»
+
+			// Golden results
+			«FOR port : outputMap.keySet»   
+			  #include "inc/stim/«port.name».h"
+			«ENDFOR»
+
+			/* - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / */
+
+			/*
+			 *
+			 *     HWPE SW test.
+			 *
+			 */			
+			
+			int main() {
+			
+			  printf("Software test application - DUT: multi_dataflow\n");
+			
+			  /* Application-specific parameters. */
+			
+			  // These parameters have to be set by the user before to compile the application.
+			
+			  // 1. Workload
+			
+			  uint32_t width                  = ;
+			  uint32_t height                 = ;
+			  uint32_t stripe_height          = ;
+			
+			  // 2. Accelerator execution
+			
+			  // Number of engine runs needed to terminate the accelerator job.
+			  // This is equivalent to the number of 'done' signals that are
+			  // produced by the engine itself.
+			
+			«FOR port : outputMap.keySet»
+			  const unsigned engine_runs_«port.name» = ;
+			«ENDFOR»
+			
+			  // 3. Custom registers
+			  «FOR param : network.parameters»
+			    const unsigned «param.name»_val = ;
+			  «ENDFOR»			  
+			
+			  /* General parameters. */
+			
 			  volatile int errors = 0;
-			  int i,j,k,cnt;
+			  int i, j;
 			  int offload_id_tmp, offload_id;
+			
+			  omp_set_num_threads(1);
+			
+			  /* Stream-specific parameters. */
+
+			«FOR port : portMap.keySet»
+			  const unsigned «port.name»_width              = width;
+			  const unsigned «port.name»_height             = height;
+			  const unsigned «port.name»_stripe_height      = stripe_height;
+
+			«ENDFOR»			
 			  /* Dataset parameters. */
-			  «FOR port : inputMap.keySet»  
-			  // input «port.name»
+			«FOR port : inputMap.keySet»
 			  const unsigned «port.name»_stim_dim               = «port.name»_width * «port.name»_height;
 			  const unsigned «port.name»_stripe_in_len          = «port.name»_width * «port.name»_stripe_height;
-			  «ENDFOR»
-			  «FOR port : outputMap.keySet»
-			  // output «port.name»
+
+			«ENDFOR»
+			«FOR port : outputMap.keySet»
 			  const unsigned «port.name»_stim_dim               = «port.name»_width * «port.name»_height;
 			  const unsigned «port.name»_stripe_out_len          = «port.name»_width * «port.name»_stripe_height;
+
+			«ENDFOR»	
+			  /* Address generator (input) - Parameters */
+			«FOR port : inputMap.keySet»
+			  const unsigned «port.name»_trans_size             = «port.name»_width * «port.name»_stripe_height;
+			  const unsigned «port.name»_line_stride            = 0;
+			  const unsigned «port.name»_line_length            = «port.name»_width * «port.name»_stripe_height;
+			  const unsigned «port.name»_feat_stride            = 0;
+			  const unsigned «port.name»_feat_length            = 1;
+			  const unsigned «port.name»_feat_roll              = 0;
+			  const unsigned «port.name»_loop_outer             = 0;
+			  const unsigned «port.name»_realign_type           = 0;
+			  const unsigned «port.name»_step                   = 4;
+
+			«ENDFOR»			
+			  /* Address generator (output) - Parameters */
+			«FOR port : outputMap.keySet»
+			  const unsigned «port.name»_trans_size             = «port.name»_stripe_height * «port.name»_stripe_height + 1;
+			  const unsigned «port.name»_line_stride            = sizeof(uint32_t);
+			  const unsigned «port.name»_line_length            = 1;
+			  const unsigned «port.name»_feat_stride            = «port.name»_width * sizeof(uint32_t);
+			  const unsigned «port.name»_feat_length            = «port.name»_stripe_height;
+			  const unsigned «port.name»_feat_roll              = «port.name»_stripe_height;
+			  const unsigned «port.name»_loop_outer             = 0;
+			  const unsigned «port.name»_realign_type           = 0;
+			  const unsigned «port.name»_step                   = 4;
+
+			«ENDFOR»						
+			  printf("Allocation and initialization of L1 stimuli\n");
+			
+			  /* Allocation of I/O arrays. */
+			
+			  // Stimuli
+
+			  «FOR port : inputMap.keySet»
+			    int32_t * «port.name»_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_in_len);
+			  «ENDFOR»			
+			
+			  // Results
+			  
+			  «FOR port : outputMap.keySet»
+			    int32_t * «port.name»_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_out_len);
+			  «ENDFOR»				
+			
+			  // Golden results
+
+			  «FOR port : outputMap.keySet»
+			    int32_t * «port.name»_golden_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_out_len);
+			  «ENDFOR»			
+			
+			  /* Initialization of I/O arrays. */
+			
+			  // Stimuli
+			
+			  «FOR port : inputMap.keySet»
+			    for (i = 0; i < «port.name»_stripe_height; i++){
+			      for (j = 0; j < «port.name»_width; j++){
+			        «port.name»_l1[i*«port.name»_width+j] = «port.name»[i*«port.name»_width+j];
+			      }
+			    }
 			  «ENDFOR»
-			  /* Address generator - Parameters for input streams */
+			
+			  // Golden results
+			
+			  «FOR port : outputMap.keySet»
+			    for (i = 0; i < «port.name»_stripe_height; i++){
+			      for (j = 0; j < «port.name»_width; j++){
+			        «port.name»_golden_l1[i*«port.name»_width+j] = «port.name»[i*«port.name»_width+j];
+			      }
+			    }
+			  «ENDFOR»
+			
+			  /* HWPE initialization */
+			
+			  hwpe_cg_enable();
+			  while((offload_id_tmp = hwpe_acquire_job()) < 0)
+			
+			  /* FSM programming */
+			
+			  «FOR port : outputMap.keySet»
+			    hwpe_len_iter_set_«port.name»(engine_runs_«port.name»-1);
+			  «ENDFOR»
+			
+			  /* Address generator programming */
+			
+			  «FOR port : inputMap.keySet»
+			    // Input «port.name»
+			    hwpe_addr_gen_«port.name»(
+			      «port.name»_trans_size,
+			      «port.name»_line_stride,
+			      «port.name»_line_length,
+			      «port.name»_feat_stride,
+			      «port.name»_feat_length,
+			      «port.name»_feat_roll,
+			      «port.name»_loop_outer,
+			      «port.name»_realign_type,
+			      «port.name»_step
+			    );
+			  «ENDFOR»
+			
+			  «FOR port : outputMap.keySet»
+			    // Output «port.name»
+			    hwpe_addr_gen_«port.name»(
+			      «port.name»_trans_size,
+			      «port.name»_line_stride,
+			      «port.name»_line_length,
+			      «port.name»_feat_stride,
+			      «port.name»_feat_length,
+			      «port.name»_feat_roll,
+			      «port.name»_loop_outer,
+			      «port.name»_realign_type,
+			      «port.name»_step
+			    );
+			  «ENDFOR»
+			
+			  /* Set TCDM address reg values */			
+			
 			  «FOR port : inputMap.keySet»
 			    // input «port.name»
+			    hwpe_«port.name»_addr_set( «port.name»_l1 );
+			  «ENDFOR»
+			
+			  «FOR port : outputMap.keySet»
+			    // output «port.name»
+			    hwpe_«port.name»_addr_set( «port.name»_l1 );
+			  «ENDFOR»
+			
+			
+			  /* Set user custom registers */
+			  «FOR port : portMap.keySet»
+			    hwpe_«port.name»_set( «port.name»_val );
+			  «ENDFOR»	
+			
+			  /* HWPE execution */
+			
+			  // Being RTL simualtion very slow, a single data stripe is processed
+			  // in order to assess the functionality of the multi_dataflow DUT.
+			
+			  printf("HWPE execution - Start!\n");
+			
+			  // Trigger execution
+			  hwpe_trigger_job();
+			
+			  /* Event unit programming */
+			
+			  // Set bit of event mask corresponding to the HWPE event.
+			  // If this change, modify ARCHI_HWPE_EU_OFFSET in archi_hwpe.h
+			  eu_evt_maskWaitAndClr(1 << ARCHI_HWPE_EU_OFFSET);
+			
+			  printf("DUT end of execution!\n");
+			
+			  /* Clean and disable HWPE */
+			
+			  hwpe_soft_clear();
+			  hwpe_cg_disable();
+			
+			  // // /* Error check on L2. */
+			  // printf("Results check");
+			
+			  // for (i = 0; i < stripe_height; i++){
+			  //   for (j = 0; j < stripe_height; j++){
+			  //     if(y_l1[i*stripe_height+j] != y_golden[i*stripe_height+j]){
+			  //       printf("[%d]    L1 - y_test:    %d \n",  i*stripe_height+j, y_l1[i*stripe_height+j]);
+			  //       printf("[%d]    L1 - y_golden:  %d\n\n", i*stripe_height+j, y_golden[i*stripe_height+j]);
+			  //       errors++;
+			  //     }
+			  //   }
+			  // }
+			
+			  // /* Return errors */
+			  // printf("errors: %d\n", errors);
+			  // printf("end\n");
+			
+			  return errors;
+			}
+			'''
+	}	
+	
+	
+	def printRiscvTestHwpeStandalone() {
+		'''	
+			
+			/*
+			 *
+			 * Copyright (C) 2018-2019 ETH Zurich, University of Bologna
+			 * Copyright and related rights are licensed under the Solderpad Hardware
+			 * License, Version 0.51 (the "License"); you may not use this file except in
+			 * compliance with the License.  You may obtain a copy of the License at
+			 * http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+			 * or agreed to in writing, software, hardware and materials distributed under
+			 * this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+			 * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+			 * specific language governing permissions and limitations under the License.
+			 *
+			 * HWPE author: Francesco Conti <fconti@iis.ee.ethz.ch>
+			 * HWPE specialization tool: Gianluca Bellocchi <gianluca.bellocchi@unimore.it>
+			 *
+			 * Module: tb_hwpe.c
+			 *
+			 */
+			
+			// Standard libs
+			#include <stdlib.h>
+			#include <stdio.h>
+			#include <stdbool.h>
+			#include <stdint.h>
+			
+			// HWPE
+			#include "inc/hwpe_lib/archi_hwpe.h"
+			#include "inc/hwpe_lib/hal_hwpe.h"
+			
+			  // Synthetic stimuli
+			  «FOR port : inputMap.keySet»
+			    #include "inc/stim/«port.name».h"
+			  «ENDFOR»
+			
+			  // Golden results
+			  «FOR port : outputMap.keySet»
+			    #include "inc/stim/«port.name»_dut.h"
+			    #include "inc/stim/«port.name»_ref.h"
+			  «ENDFOR»
+			
+			/* - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / - / */
+			
+			/*
+			 *
+			 *     HWPE SW test.
+			 *
+			 */
+			
+			int main() {
+			
+			  /* Application-specific parameters. */
+			
+			  // These parameters have to be set by the user before to compile the application.
+			
+			  // 1. Workload
+			
+			  unsigned width                  = ;
+			  unsigned height                 = ;
+			  unsigned stripe_height          = ;
+			
+			  // 2. Accelerator execution
+			
+			  // Number of engine runs needed to terminate the accelerator job.
+			  // This is equivalent to the number of 'done' signals that are
+			  // produced by the engine itself.
+			
+			  «FOR port : outputMap.keySet»
+			    unsigned engine_runs_«port.name» = ;
+			  «ENDFOR»
+			
+			  // 3. Custom registers
+			  «FOR param : network.parameters»
+			    unsigned «param.name»_val = ;
+			  «ENDFOR»
+			
+			  /* General parameters. */
+			
+			  volatile unsigned errors = 0;
+			  unsigned i, j;
+			  int offload_id_tmp, offload_id;
+			
+			  /* Stream-specific parameters. */
+			
+			  «FOR port : portMap.keySet»
+			    unsigned «port.name»_width              = width;
+			    unsigned «port.name»_height             = height;
+			    unsigned «port.name»_stripe_height      = stripe_height;
+			  «ENDFOR»
+			
+			  /* Dataset parameters. */
+			  «FOR port : inputMap.keySet»
+			    unsigned «port.name»_stim_dim               = «port.name»_width * «port.name»_height;
+			    unsigned «port.name»_stripe_in_len          = «port.name»_width * «port.name»_stripe_height;
+			  «ENDFOR»
+
+			  «FOR port : outputMap.keySet»
+			    unsigned «port.name»_stim_dim              = «port.name»_width * «port.name»_height;
+			    unsigned «port.name»_stripe_out_len        = «port.name»_width * «port.name»_stripe_height;
+			  «ENDFOR»		
+			
+			  /* Address generator (input) - Parameters */
+			
+			  «FOR port : inputMap.keySet»
 			    const unsigned «port.name»_trans_size             = «port.name»_width * «port.name»_stripe_height;
 			    const unsigned «port.name»_line_stride            = 0;
 			    const unsigned «port.name»_line_length            = «port.name»_width * «port.name»_stripe_height;
@@ -3819,170 +4442,147 @@ class PulpPrinter {
 			    const unsigned «port.name»_realign_type           = 0;
 			    const unsigned «port.name»_step                   = 4;
 			  «ENDFOR»
-			  /* Address generator - Parameters for output streams */
+			
+			  /* Address generator (output) - Parameters */
+			  
 			  «FOR port : outputMap.keySet»
-			    // output «port.name»
-			    const unsigned «port.name»_trans_size             = «port.name»_stripe_height * «port.name»_stripe_height + 1;
-			    const unsigned «port.name»_line_stride            = sizeof(uint32_t);
-			    const unsigned «port.name»_line_length            = 1;
-			    const unsigned «port.name»_feat_stride            = «port.name»_width * sizeof(uint32_t);
-			    const unsigned «port.name»_feat_length            = «port.name»_stripe_height;
-			    const unsigned «port.name»_feat_roll              = «port.name»_stripe_height;
+			    const unsigned «port.name»_trans_size             = «port.name»_width * «port.name»_stripe_height + 1;
+			    const unsigned «port.name»_line_stride            = 0;
+			    const unsigned «port.name»_line_length            = «port.name»_width * «port.name»_stripe_height;
+			    const unsigned «port.name»_feat_stride            = 0;
+			    const unsigned «port.name»_feat_length            = 1;
+			    const unsigned «port.name»_feat_roll              = 0;
 			    const unsigned «port.name»_loop_outer             = 0;
 			    const unsigned «port.name»_realign_type           = 0;
 			    const unsigned «port.name»_step                   = 4;
-			  «ENDFOR»
-			  // The following parameter is equivalent to the number of engine
-			  // runs needed to terminate the accelerator job. This is compared
-			  // to the number of 'done' signals that are produced by the engine
-			  // itself.
-			  «FOR port : outputMap.keySet»
-			  const unsigned engine_runs_«port.name»         = 1; // «port.name»_stripe_height * «port.name»_stripe_height - 1
-			  «ENDFOR»
-			  printf("Allocation and initialization of L1 stimuli\n");
-			  /* L1 init - Input stimuli */
+			  «ENDFOR»			
+			
+			  /* Allocation of I/O arrays. */
+			
+			  // Stimuli
+			  
 			  «FOR port : inputMap.keySet»
-			  // input «port.name»
-			  int32_t * «port.name»_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_in_len);
-			  «ENDFOR»
+			    int32_t *«port.name»_l1 = «port.name»;
+			  «ENDFOR»			
+			
+			  // Results
+			
 			  «FOR port : outputMap.keySet»
-			  // output «port.name»
-			  int32_t * «port.name»_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_out_len);
-			  int32_t * «port.name»_golden_l1 = hero_l1malloc(sizeof(int32_t)*«port.name»_stripe_out_len);
+			    int32_t *«port.name»_l1 = «port.name»_dut;
 			  «ENDFOR»
-			  /* Initialize stimuli. */
+			
+			  // Golden results
+			
+			  «FOR port : outputMap.keySet»
+			    int32_t *«port.name»_golden_l1 = «port.name»_ref;
+			  «ENDFOR»
+			
+			  /* Initialization of I/O arrays. */
+			
+			  // Stimuli
+			
 			  «FOR port : inputMap.keySet»
-			  // input «port.name»
-			  for (i = 0; i < «port.name»_stripe_height; i++){
-			    for (j = 0; j < «port.name»_width; j++){
-			      «port.name»_l1[i*«port.name»_width+j] = 1; // Modify the parameters with your own initialization value
-			    }
-			  }
-			  «ENDFOR»
+			    // for (i = 0; i < «port.name»_stripe_height; i++){
+			    //   for (j = 0; j < «port.name»_width; j++){
+			    //     «port.name»_l1[i*«port.name»_width+j] = «port.name»[i*«port.name»_width+j];
+			    //   }
+			    // }
+			  «ENDFOR»	
+
+			  // Golden results
+			
 			  «FOR port : outputMap.keySet»
-			  // output «port.name»
-			  for (i = 0; i < «port.name»_stripe_height; i++){
-			    for (j = 0; j < «port.name»_width; j++){
-			      «port.name»_l1[i*«port.name»_width+j] = 1; // Modify the parameters with your own initialization value
-			    }
-			  }
-			  // output golden results «port.name»
-			  for (i = 0; i < «port.name»_stripe_height; i++){
-			    for (j = 0; j < «port.name»_width; j++){
-			      «port.name»_golden_l1[i*«port.name»_width+j] = «port.name»_width; // Modify the parameters with your own initialization value
-			    }
-			  }
+			    // for (i = 0; i < «port.name»_stripe_height; i++){
+			    //   for (j = 0; j < «port.name»_width; j++){
+			    //     «port.name»_golden_l1[i*«port.name»_width+j] = «port.name»[i*«port.name»_width+j];
+			    //   }
+			    // }
 			  «ENDFOR»
+			
 			  /* HWPE initialization */
+			
 			  hwpe_cg_enable();
 			  while((offload_id_tmp = hwpe_acquire_job()) < 0)
+			
 			  /* FSM programming */
+			
 			  «FOR port : outputMap.keySet»
-			  hwpe_len_iter_set_«port.name»(engine_runs_«port.name»-1);
+			    hwpe_len_iter_set_«port.name»(engine_runs_«port.name»-1);
 			  «ENDFOR»
+			
 			  /* Address generator programming */
+			
 			  «FOR port : inputMap.keySet»
-			  // Input «port.name»
-			  hwpe_addr_gen_«port.name»(
-			    «port.name»_trans_size,
-			    «port.name»_line_stride,
-			    «port.name»_line_length,
-			    «port.name»_feat_stride,
-			    «port.name»_feat_length,
-			    «port.name»_feat_roll,
-			    «port.name»_loop_outer,
-			    «port.name»_realign_type,
-			    «port.name»_step
-			  );
+			    // Input «port.name»
+			    hwpe_addr_gen_«port.name»(
+			      «port.name»_trans_size,
+			      «port.name»_line_stride,
+			      «port.name»_line_length,
+			      «port.name»_feat_stride,
+			      «port.name»_feat_length,
+			      «port.name»_feat_roll,
+			      «port.name»_loop_outer,
+			      «port.name»_realign_type,
+			      «port.name»_step
+			    );
 			  «ENDFOR»
+			
 			  «FOR port : outputMap.keySet»
-			  // Output «port.name»
-			  hwpe_addr_gen_«port.name»(
-			    «port.name»_trans_size,
-			    «port.name»_line_stride,
-			    «port.name»_line_length,
-			    «port.name»_feat_stride,
-			    «port.name»_feat_length,
-			    «port.name»_feat_roll,
-			    «port.name»_loop_outer,
-			    «port.name»_realign_type,
-			    «port.name»_step
-			  );
+			    // Output «port.name»
+			    hwpe_addr_gen_«port.name»(
+			      «port.name»_trans_size,
+			      «port.name»_line_stride,
+			      «port.name»_line_length,
+			      «port.name»_feat_stride,
+			      «port.name»_feat_length,
+			      «port.name»_feat_roll,
+			      «port.name»_loop_outer,
+			      «port.name»_realign_type,
+			      «port.name»_step
+			    );
 			  «ENDFOR»
+			
 			  /* Set TCDM address reg values */
+			
 			  «FOR port : inputMap.keySet»
-			  // input «port.name»
-			  hwpe_«port.name»_addr_set( «port.name»_l1 );
+			    // input «port.name»
+			    hwpe_«port.name»_addr_set( (int32_t)«port.name»_l1 );
 			  «ENDFOR»
+			
 			  «FOR port : outputMap.keySet»
-			  // output «port.name»
-			  hwpe_«port.name»_addr_set( «port.name»_l1 );
+			    // output «port.name»
+			    hwpe_«port.name»_addr_set( (int32_t)«port.name»_l1 );
 			  «ENDFOR»
-			  /* HWPE execution */
-			  // Being RTL simualtion very slow, a single data stripe is processed
-			  // in order to assess the functionality of the multi_dataflow DUT.
-			  printf("HWPE execution - Start!\n");
+			
+			  /* Set user custom registers */
+			  «FOR parameter : network.parameters»
+			  hwpe_«parameter.name»_set( «parameter.name»_val );
+			  «ENDFOR»
+			
 			  // Trigger execution
 			  hwpe_trigger_job();
-			  /* Event unit programming */
-			  // Set bit of event mask corresponding to the HWPE event.
-			  // If this change, modify ARCHI_HWPE_EU_OFFSET in archi_hwpe.h
-			  eu_evt_maskWaitAndClr(1 << ARCHI_HWPE_EU_OFFSET);
-			  printf("DUT end of execution!\n");
+			
+			  // wait for end of computation
+			  asm volatile ("wfi" ::: "memory");
+			
 			  /* Clean and disable HWPE */
+			
 			  hwpe_soft_clear();
 			  hwpe_cg_disable();
-			  // // /* Error check on L2. */
-			  // printf("Results check");
-			  // for (i = 0; i < stripe_height; i++){
-			  //   for (j = 0; j < stripe_height; j++){
-			  //     if(y_l1[i*stripe_height+j] != y_golden[i*stripe_height+j]){
-			  //       printf("[%d]    L1 - y_test:    %d \n",  i*stripe_height+j, y_l1[i*stripe_height+j]);
-			  //       printf("[%d]    L1 - y_golden:  %d\n\n", i*stripe_height+j, y_golden[i*stripe_height+j]);
-			  //       errors++;
-			  //     }
-			  //   }
-			  // }
-			  // /* Return errors */
-			  // printf("errors: %d\n", errors);
-			  // printf("end\n");
-			  return errors;
-			}
-			int main() {
-			  /* Global parameters. */
-			  uint32_t width                  = 512; // Modify the parameters with your own value
-			  uint32_t height                 = 512; // Modify the parameters with your own value
-			  uint32_t stripe_height          = 8; // Modify the parameters with your own value
-			  /* Stream-specific parameters. */
-			  «FOR port : inputMap.keySet»
-			  // input «port.name»
-			  uint32_t «port.name»_width              = width;
-			  uint32_t «port.name»_height             = height;
-			  uint32_t «port.name»_stripe_height      = stripe_height;
-			  «ENDFOR»
-			  // Outputs
+			
 			  «FOR port : outputMap.keySet»
-			  // output «port.name»
-			  uint32_t «port.name»_width             = width;
-			  uint32_t «port.name»_height            = height;
-			  uint32_t «port.name»_stripe_height     = stripe_height;
+			    // error check on «port.name»
+			    for(i=0; i<«port.name»_height; i++){
+			      for(j=0; j<«port.name»_width; j++){
+			        if(«port.name»_l1[i*«port.name»_width+j] != «port.name»_golden_l1[i*«port.name»_width+j]) errors++;
+			      }
+			    }
 			  «ENDFOR»
-			  /* Launch application. */
-			  while(
-			    !multi_dataflow_tb(
-			      «FOR port : inputMap.keySet»
-			      «port.name»_width,
-			      «port.name»_height,
-			      «port.name»_stripe_height,
-			      «ENDFOR»
-			      «FOR port : outputMap.keySet»
-			      «port.name»_width,
-			      «port.name»_height,
-			      «port.name»_stripe_height
-			      «ENDFOR»
-			    )
-			  )
-			  return 0;
+			
+			  // return errors
+			  *(int *) 0x80000000 = errors;
+			  return errors;
+			
 			}
 			'''
 	}	
