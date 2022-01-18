@@ -412,7 +412,7 @@ class PulpPrinter {
 		«FOR output : outputMap.keySet()»
 		assign stream_if_«output.name»_valid = «output.getName()»_push;
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
-		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»«ENDIF»stream_if_«output.name»_ready;
+		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»~«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
 		'''
 	}
@@ -1134,7 +1134,9 @@ class PulpPrinter {
 			      - rtl/hwpe-engine
 			    files:
 			      «FOR file : new File(hclPath).listFiles.sort»
-			      - rtl/acc_kernel/«file.name»
+			        «IF file.file»
+			          - rtl/acc_kernel/«file.name»
+			        «ENDIF»
 			      «ENDFOR»
 			      - rtl/acc_kernel/multi_dataflow.v
 			      - rtl/acc_kernel/interface_wrapper.sv
@@ -1167,14 +1169,16 @@ class PulpPrinter {
 	
 	def printSrcFiles(String hclPath) {
 		'''
-			hwpe_wrapper:
+			genovApps:
 			  incdirs : [
 			    rtl
 			  ]
 			  files: [
 
 			    «FOR file : new File(hclPath).listFiles.sort»
-			      rtl/acc_kernel/«file.name»,
+			      «IF !file.name.contains(".dat") && file.file»
+			        rtl/acc_kernel/«file.name»,
+			      «ENDIF»
 			    «ENDFOR»
 			    rtl/acc_kernel/multi_dataflow.v,
 			    rtl/acc_kernel/interface_wrapper.sv,
@@ -1200,8 +1204,8 @@ class PulpPrinter {
 		'''
 	}
 	
+	var counterReg = 0;
 	def printPackage() {
-		var counterReg = 0;
 		'''		
 			«printHWPELicense(true, "package")»
 			
@@ -1600,7 +1604,9 @@ class PulpPrinter {
 			$(IP_PATH)/rtl/multi_dataflow_ctrl.sv\
 			$(IP_PATH)/rtl/multi_dataflow_streamer.sv\
 			«FOR file : new File(hclPath).listFiles»
-			$(IP_PATH)/rtl/«file.name»\
+			  «IF file.file»
+			    $(IP_PATH)/rtl/«file.name»\
+			  «ENDIF»
 			«ENDFOR»
 			«IF !luts.empty»
 			$(IP_PATH)/rtl/configurator.v\
@@ -1949,7 +1955,7 @@ class PulpPrinter {
 			    .N_CORES   ( N_CORES  ),
 			    .N_CONTEXT ( 1  ),
 
-			    .N_IO_REGS ( 26 ),
+			    .N_IO_REGS ( «counterReg» ),
 
 			    .ID ( ID )
 			  ) i_ctrl (
@@ -2184,8 +2190,8 @@ class PulpPrinter {
 			  /* multi_dataflow flag signals. */
 
 			  «FOR port : inputMap.keySet»  
-			  	//logic kernel_ready_«port.name»;
-			  	logic kernel_done_«port.name»;  //FIXEME: to be removed
+			  	//logic kernel_ready_«port.name»;  //FIXEME: to be removed
+			  	logic kernel_done_«port.name»;
 			  «ENDFOR»
 
 			  «FOR port : outputMap.keySet»  
@@ -2329,7 +2335,7 @@ class PulpPrinter {
 			      .«param.name»	( «param.name» ),
 			    «ENDFOR» 
 			    «IF !(this.luts.empty)»// Multi-Dataflow Kernel ID
-			      .ID(ID_datapath_top),
+			      .ID(ID),
 			    «ENDIF»
 			      // Global signals.
 			      .clk_i             ( clk_i            ),
@@ -3804,7 +3810,8 @@ class PulpPrinter {
 		'''
 	}
 	
-	def printRiscvArchiHwpe() {
+	// target 0 means overlay, target 1 means standalone
+	def printRiscvArchiHwpe(int target) {
 
 		var counterOffset2 = 64;
 		'''	
@@ -3817,7 +3824,11 @@ class PulpPrinter {
 
 			#define ARCHI_CL_EVT_ACC0 0
 			#define ARCHI_CL_EVT_ACC1 1
-			#define ARCHI_HWPE_ADDR_BASE 0x1b201000
+			«IF target == 0»
+			  #define ARCHI_HWPE_ADDR_BASE 0x1b201000
+			«ELSE»
+			  #define ARCHI_HWPE_ADDR_BASE 0x100000			
+			«ENDIF»
 			#define ARCHI_HWPE_EU_OFFSET 12
 			#define __builtin_bitinsert(a,b,c,d) (a | (((b << (32-c)) >> (32-c)) << d))
 
@@ -4032,14 +4043,14 @@ class PulpPrinter {
 
 			«FOR port : inputMap.keySet»  
 			   // input «port.name»
-			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
+			   static inline void hwpe_«port.name»_addr_set(uint32_t value) {
 			     HWPE_WRITE(value, REG_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
 
 			«FOR port : outputMap.keySet»   
 			   // output «port.name»
-			   static inline void hwpe_«port.name»_addr_set(«it.mdc.tool.utility.TypeConverter.translateToCParameter(port.type)» value) {
+			   static inline void hwpe_«port.name»_addr_set(uint32_t value) {
 			     HWPE_WRITE(value, REG_«port.name.toUpperCase»_ADDR);
 			   }
 			«ENDFOR»  
@@ -4120,7 +4131,10 @@ class PulpPrinter {
 			  // 3. Custom registers
 			  «FOR param : network.parameters»
 			    const unsigned «param.name»_val = ;
-			  «ENDFOR»			  
+			  «ENDFOR»	
+			  «IF !luts.empty»
+			  	const unsigned id_val = ;
+			  «ENDIF»		  
 			
 			  /* General parameters. */
 			
@@ -4276,9 +4290,12 @@ class PulpPrinter {
 			
 			
 			  /* Set user custom registers */
-			  «FOR port : portMap.keySet»
-			    hwpe_«port.name»_set( «port.name»_val );
+			  «FOR parameter : network.parameters»
+			    hwpe_«parameter.name»_set( «parameter.name»_val );
 			  «ENDFOR»	
+			  «IF !luts.empty»
+			  	hwpe_ID_configuration_set(id_val);
+			  «ENDIF»
 			
 			  /* HWPE execution */
 			
@@ -4403,6 +4420,10 @@ class PulpPrinter {
 			  «FOR param : network.parameters»
 			    unsigned «param.name»_val = ;
 			  «ENDFOR»
+			  
+			  «IF !luts.empty»
+			  	unsigned id_val = ;
+			  «ENDIF»
 			
 			  /* General parameters. */
 			
@@ -4556,8 +4577,11 @@ class PulpPrinter {
 			
 			  /* Set user custom registers */
 			  «FOR parameter : network.parameters»
-			  hwpe_«parameter.name»_set( «parameter.name»_val );
+			    hwpe_«parameter.name»_set( «parameter.name»_val );
 			  «ENDFOR»
+			  «IF !luts.empty»
+			  	hwpe_ID_configuration_set(id_val);
+			  «ENDIF»
 			
 			  // Trigger execution
 			  hwpe_trigger_job();

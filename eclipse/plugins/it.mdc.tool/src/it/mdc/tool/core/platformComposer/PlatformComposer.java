@@ -640,6 +640,20 @@ public abstract class PlatformComposer {
 		/// </ol> </ul>
 		/////////////////////////
 
+		/// <ol> <li> Generate package
+		file = hdlDir.getPath() + File.separator +  "multi_dataflow_package.sv";
+		sequence = pulpPrinter.printPackage();
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+		}
+		
+		/// </ol> </ul>
+		/////////////////////////
+
 		/// <ol> <li> Generate top module
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_top.sv";
 		sequence = pulpPrinter.printPulpTop();
@@ -685,20 +699,6 @@ public abstract class PlatformComposer {
 		/// <ol> <li> Generate FSM
 		file = hdlDir.getPath() + File.separator +  "multi_dataflow_fsm.sv";
 		sequence = pulpPrinter.printFSM();
-		try {
-			PrintStream ps = new PrintStream(new FileOutputStream(file));
-			ps.print(sequence.toString());
-			ps.close();
-		} catch (FileNotFoundException e) {
-			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-		}
-		
-		/// </ol> </ul>
-		/////////////////////////
-
-		/// <ol> <li> Generate package
-		file = hdlDir.getPath() + File.separator +  "multi_dataflow_package.sv";
-		sequence = pulpPrinter.printPackage();
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -836,7 +836,7 @@ public abstract class PlatformComposer {
 		FileCopier copier = new FileCopier();
 		/// <ol> <li> Generate archi_hwpe.h
 		file = hdlPath + File.separator + "sw" + File.separator + "hwpe_ov_tb" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + "archi_hwpe.h";
-		sequence = pulpPrinter.printRiscvArchiHwpe();
+		sequence = pulpPrinter.printRiscvArchiHwpe(0);
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(file));
 			ps.print(sequence.toString());
@@ -844,12 +844,15 @@ public abstract class PlatformComposer {
 		} catch (FileNotFoundException e) {
 			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
-		File archiHwpeOrigin = new File(hdlPath + File.separator + "sw" + File.separator + "hwpe_ov_tb" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + "archi_hwpe.h");
-		File archiHwpeDestination = new File(hdlPath + File.separator + "sw" + File.separator + "hwpe_standalone_tb" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + "archi_hwpe.h");
+		/// <ol> <li> Generate archi_hwpe.h
+		file = hdlPath + File.separator + "sw" + File.separator + "hwpe_standalone_tb" + File.separator + "inc" + File.separator + "hwpe_lib" + File.separator + "archi_hwpe.h";
+		sequence = pulpPrinter.printRiscvArchiHwpe(1);
 		try {
-			copier.copy(archiHwpeOrigin, archiHwpeDestination);
-		} catch (IOException e) {
-			OrccLogger.severeln("The archi lib could not have been copied: " + e.getMessage());
+			PrintStream ps = new PrintStream(new FileOutputStream(file));
+			ps.print(sequence.toString());
+			ps.close();
+		} catch (FileNotFoundException e) {
+			OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
 		}
 		
 		/// </ol> </ul>
