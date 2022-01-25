@@ -743,7 +743,7 @@ public class MDCBackend extends AbstractBackend {
 			
 			if(!genCopr && enPulp){
 				hdlWriter.generatePulpStaticFolders(hwpeWrapperGeneratorPath, outputPath);
-				hdlWriter.moveMultiDataflowFile(getOptions());
+				hdlWriter.moveMultiDataflowFile(luts, getOptions());
 				hdlWriter.generatePulpWrapper(luts,networkVertexMap,getOptions());
 			}
 			
@@ -773,8 +773,7 @@ public class MDCBackend extends AbstractBackend {
 			if(enArtico && !genCopr){
 				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + subfolder);
 			} else if(enPulp && !genCopr){
-				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + "deps" + File.separator + "hwpe-multidataflow-wrapper" +
-						File.separator + "rtl" + File.separator + "hwpe-engine" + File.separator + "engine_dev");
+				copier.copyOnlyFiles(hdlCompLib, outputPath + File.separator + "rtl" + File.separator + "acc_kernel");
 			} else {
 				copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
 			}
@@ -1000,9 +999,8 @@ public class MDCBackend extends AbstractBackend {
 		} 
 		
 		if(enPulp && !genCopr) {
-			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "deps" 
-		    + File.separator + "hwpe-multidataflow-wrapper" + File.separator + "rtl" + File.separator + "hwpe-engine"
-		    + File.separator + "engine_dev")));
+			result.merge(FilesManagerMdc.extract("/bundle/copr/pulp/interface_wrapper.sv", (outputPath + File.separator + "rtl" 
+		    + File.separator + "acc_kernel")));
 		}
 				
 		
