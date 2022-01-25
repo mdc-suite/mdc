@@ -1,5 +1,11 @@
 # MDC Release notes
 
+## Release version 0.0.5
+2022.01.25
+
+### New features
+- Added full support for UNIMORE's FPGA overlay. HWPE wrapper generation.
+
 ## Release version 0.0.4
 xxxx.xx.xx
 
