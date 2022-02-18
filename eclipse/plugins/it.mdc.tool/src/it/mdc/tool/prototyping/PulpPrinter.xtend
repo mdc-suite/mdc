@@ -1146,33 +1146,38 @@ class PulpPrinter {
 		'''
 			package:
 			  name: hwpe-multidataflow-wrapper
+			
+			dependencies:
+			  hwpe-ctrl: { git: "git@github.com:gbellocchi/hwpe-ctrl.git", rev: master }
+			  hwpe-stream: { git: "git@github.com:gbellocchi/hwpe-stream.git", rev: master }
+			
+			workspace:
+			  checkout_dir: "./deps"
+			
 			sources:
-			  - include_dirs:
-			      - rtl/hwpe-engine
-			    files:
-			      «FOR file : new File(hclPath).listFiles.sort»
-			        «IF file.file»
-			          «IF !file.name.contains(".dat") && file.file»
-			            - rtl/acc_kernel/«file.name»
-			          «ENDIF»
-			        «ENDIF»
-			      «ENDFOR»
-			      - rtl/acc_kernel/multi_dataflow.v
-			      - rtl/acc_kernel/interface_wrapper.sv
-			      «IF !luts.empty»
-			      - rtl/acc_kernel/configurator.v
-			      - rtl/acc_kernel/sbox1x2.v
-			      - rtl/acc_kernel/sbox2x1.v
+			  «FOR file : new File(hclPath).listFiles.sort»
+			    «IF file.file»
+			      «IF !file.name.contains(".dat") && file.file»
+			        - rtl/acc_kernel/«file.name»
 			      «ENDIF»
-			      - rtl/multi_dataflow_package.sv
-			      - rtl/multi_dataflow_fsm.sv
-			      - rtl/multi_dataflow_ctrl.sv
-			      - rtl/multi_dataflow_streamer.sv
-			      - rtl/multi_dataflow_reconf_datapath_top.sv
-			      - rtl/multi_dataflow_kernel_adapter.sv
-			      - rtl/multi_dataflow_engine.sv
-			      - rtl/multi_dataflow_top.sv
-			      - wrap/multi_dataflow_top_wrapper.sv
+			    «ENDIF»
+			  «ENDFOR»
+			  - rtl/acc_kernel/multi_dataflow.v
+			  - rtl/acc_kernel/interface_wrapper.sv
+			  «IF !luts.empty»
+			    - rtl/acc_kernel/configurator.v
+			    - rtl/acc_kernel/sbox1x2.v
+			    - rtl/acc_kernel/sbox2x1.v
+			  «ENDIF»
+			  - rtl/multi_dataflow_package.sv
+			  - rtl/multi_dataflow_fsm.sv
+			  - rtl/multi_dataflow_ctrl.sv
+			  - rtl/multi_dataflow_streamer.sv
+			  - rtl/multi_dataflow_reconf_datapath_top.sv
+			  - rtl/multi_dataflow_kernel_adapter.sv
+			  - rtl/multi_dataflow_engine.sv
+			  - rtl/multi_dataflow_top.sv
+			  - wrap/multi_dataflow_top_wrapper.sv
 		'''
 	}
 	
