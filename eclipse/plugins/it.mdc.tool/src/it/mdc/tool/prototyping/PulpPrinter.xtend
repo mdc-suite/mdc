@@ -405,21 +405,29 @@ class PulpPrinter {
 		// ----------------------------------------------------------------------------
 		«printTopDatapath()»
 		«FOR input :inputMap.keySet»
-		assign stream_if_«input.name»_ready = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»~«ENDIF»«input.getName()»_full;
+		assign stream_if_«input.name»_ready = «IF isNegMatchingWrapMapping(getFullInChannelWrapCommSignalID())»~«ENDIF»«input.getName()»_full;
 		assign «input.getName()»_data = stream_if_«input.name»_data«IF getDataSize(input)<32» [«getDataSize(input)-1» : 0]«ENDIF»;
 		assign «input.getName()»_push = stream_if_«input.name»_valid;
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
 		assign stream_if_«output.name»_valid = «output.getName()»_push;
 		assign stream_if_«output.name»_data = «IF getDataSize(output)<32»{{«32-getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF getDataSize(output)<32»}«ENDIF»;
-		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullChannelWrapCommSignalID())»~«ENDIF»stream_if_«output.name»_ready;
+		assign «output.getName()»_full = «IF isNegMatchingWrapMapping(getFullOutChannelWrapCommSignalID())»~«ENDIF»stream_if_«output.name»_ready;
 		«ENDFOR»
 		'''
 	}
 	
-	def getFullChannelWrapCommSignalID() {
+	def getFullInChannelWrapCommSignalID() {
 		for(commSigId : wrapCommSignals.keySet) {
-			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("full")) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("fullIn")) {
+				return wrapCommSignals.get(commSigId).get(ProtocolManager.CH);
+			}		
+		}
+	}
+	
+	def getFullOutChannelWrapCommSignalID() {
+		for(commSigId : wrapCommSignals.keySet) {
+			if(wrapCommSignals.get(commSigId).get(ProtocolManager.MAP).equals("fullOut")) {
 				return wrapCommSignals.get(commSigId).get(ProtocolManager.CH);
 			}		
 		}
@@ -875,6 +883,15 @@ class PulpPrinter {
 			);
 
 			  // State signals
+			  typedef enum {
+			  	FSM_IDLE,
+			  	FSM_START,
+			  	FSM_COMPUTE,
+			  	FSM_WAIT,
+			  	FSM_UPDATEIDX,
+			  	FSM_TERMINATE
+			  } state_fsm_t;
+			  
 			  state_fsm_t curr_state, next_state;
 
 			  // State computation
@@ -1135,7 +1152,9 @@ class PulpPrinter {
 			    files:
 			      «FOR file : new File(hclPath).listFiles.sort»
 			        «IF file.file»
-			          - rtl/acc_kernel/«file.name»
+			          «IF !file.name.contains(".dat") && file.file»
+			            - rtl/acc_kernel/«file.name»
+			          «ENDIF»
 			        «ENDIF»
 			      «ENDFOR»
 			      - rtl/acc_kernel/multi_dataflow.v
@@ -1399,15 +1418,6 @@ class PulpPrinter {
 			    «ENDIF»
 
 			  } ctrl_fsm_t;
-
-			  typedef enum {
-			    FSM_IDLE,
-			    FSM_START,
-			    FSM_COMPUTE,
-			    FSM_WAIT,
-			    FSM_UPDATEIDX,
-			    FSM_TERMINATE
-			  } state_fsm_t;
 
 			endpackage
 				'''
