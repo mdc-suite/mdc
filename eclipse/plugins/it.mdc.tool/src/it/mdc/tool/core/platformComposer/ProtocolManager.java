@@ -56,6 +56,7 @@ public class ProtocolManager {
 	public static final String FILTER = "filter";
 	public static final String MAP = "mapping";
 	public static final String INV = "invert";
+	public static final String TAG = "tag_size";
 
 	/**
 	 * System signals of the whole network
@@ -139,6 +140,11 @@ public class ProtocolManager {
 							elemId = reader.getAttributeValue("",ID);
 							elemMap = new HashMap<String,String>();
 							elemMap.put(SIZE,reader.getAttributeValue("",SIZE));
+							if(reader.getAttributeValue("",TAG) != null) {
+								elemMap.put(TAG,reader.getAttributeValue("",TAG));
+							} else {
+								elemMap.put(TAG,"0");	/* if not specified tag_size is 0 */
+							}							
 							if(reader.getAttributeValue("",NETP) != null) {
 								elemMap.put(NETP,reader.getAttributeValue("",NETP));
 							}
@@ -390,7 +396,7 @@ public class ProtocolManager {
 	}
 	
 	/**
-	 * Return the size of the communication signal
+	 * Return the data size of the communication signal
 	 * 
 	 * @param module 
 	 * 			involved module label (actor, predecessor, successor)
@@ -401,9 +407,9 @@ public class ProtocolManager {
 	 * @param port
 	 * 			involved port
 	 * @return
-	 * 			size of the communication signal
+	 * 			data size of the communication signal
 	 */
-	public int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
+	public int getCommSigDataSize(String module, Actor actor, String commSigId, Port port) {
 		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable")) {
 			return port.getType().getSizeInBits();
 		} else if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("broadcast")) {
@@ -435,6 +441,42 @@ public class ProtocolManager {
 			return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(SIZE));
 		}
 		return 1;
+	}
+	
+	/**
+	 * Return the tag size of the communication signal
+	 * 
+	 * @param module 
+	 * 			involved module label (actor, predecessor, successor)
+	 * @param actor
+	 * 			involved actor  
+	 * @param commSigId
+	 * 			communication signal ID
+	 * @param port
+	 * 			involved port
+	 * @return
+	 * 			tag size of the communication signal
+	 */
+	public int getCommSigTagSize(String module, String commSigId) {
+		return Integer.parseInt(modCommSignals.get(module).get(commSigId).get(TAG));
+	}	
+	
+	/**
+	 * Return the size (tag + data) of the communication signal
+	 * 
+	 * @param module 
+	 * 			involved module label (actor, predecessor, successor)
+	 * @param actor
+	 * 			involved actor  
+	 * @param commSigId
+	 * 			communication signal ID
+	 * @param port
+	 * 			involved port
+	 * @return
+	 * 			size (tag + data) of the communication signal
+	 */	
+	public int getCommSigSize(String module, Actor actor, String commSigId, Port port) {
+		return getCommSigTagSize(module,commSigId) + getCommSigDataSize(module,actor,commSigId,port);
 	}
 	
 	/**
