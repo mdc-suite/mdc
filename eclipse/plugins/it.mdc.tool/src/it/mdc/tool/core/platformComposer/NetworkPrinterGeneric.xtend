@@ -686,7 +686,7 @@ class NetworkPrinterGeneric {
 		«IF connection.source instanceof Actor»
 		«IF !connection.sourcePort.hasAttribute("printed")»
 		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =
-		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " ||"»
+		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " |"»
 		«protocolManager.getTargetSignal(broadConn,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
 		«connection.sourcePort.setAttribute("printed","")»
@@ -694,7 +694,7 @@ class NetworkPrinterGeneric {
 		«ELSE»
 		«IF !connection.source.hasAttribute("printed")»
 		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
-		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " ||"»
+		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " |"»
 		«protocolManager.getTargetSignal(broadConn as Connection,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
 		«connection.source.setAttribute("printed","")»
