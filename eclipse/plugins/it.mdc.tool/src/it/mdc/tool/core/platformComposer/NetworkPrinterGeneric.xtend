@@ -535,39 +535,39 @@ class NetworkPrinterGeneric {
 			)
 			«ENDIF»
 			actor_«actor.simpleName» (
-				// Input Signal(s)
-				«FOR input : actor.inputs SEPARATOR ","»
-				«FOR commSigId : protocolManager.getActorInputCommSignals(actor) SEPARATOR ","»
-				.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»)
-				«ENDFOR»
-				«ENDFOR»
-				«IF  !actor.inputs.empty && !protocolManager.getActorInputCommSignals(actor).empty && 
-						!actor.outputs.empty && !protocolManager.getActorOutputCommSignals(actor).empty»,«ENDIF»
-				
-				// Output Signal(s)
-				«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorOutputCommSignals(actor) SEPARATOR ","»
-				.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»)
-				«ENDFOR»
-				«ENDFOR»
-				«IF !getActorDynamicParms(actor).empty && !actor.parameters.empty»,
-				
-				// Dynamic Parameter(s)
-				«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
-				«printActorDynamicParm(parm,actor.parameters.size)»
-				«ENDFOR»
-				«ENDIF»
-				«IF !protocolManager.getActorSysSignals(actor).empty»,«ENDIF»
-				
-				// System Signal(s)
-				«FOR sysSigId : protocolManager.getActorSysSignals(actor) SEPARATOR ","»	
-				«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
-	«««			«IF modSysSignals.get(ACTOR).get(sysSigId).get(ACTP).equals(CLOCK) && (enableClockGating || enablePowerGating)»
-				.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
-				«ELSE»
-				.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»)
-				«ENDIF»
-				«ENDFOR»
-			);
+			// Input Signal(s)
+			«FOR input : actor.inputs SEPARATOR ","»
+			«FOR commSigId : protocolManager.getActorInputCommSignals(actor) SEPARATOR ","»
+			.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»)
+			«ENDFOR»
+			«ENDFOR»
+			«IF  !actor.inputs.empty && !protocolManager.getActorInputCommSignals(actor).empty && 
+					!actor.outputs.empty && !protocolManager.getActorOutputCommSignals(actor).empty»,«ENDIF»
+			
+			// Output Signal(s)
+			«FOR output : actor.outputs SEPARATOR ","»«FOR commSigId : protocolManager.getActorOutputCommSignals(actor) SEPARATOR ","»
+			.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»)
+			«ENDFOR»
+			«ENDFOR»
+			«IF !getActorDynamicParms(actor).empty && !actor.parameters.empty»,
+			
+			// Dynamic Parameter(s)
+			«FOR parm : getActorDynamicParms(actor) SEPARATOR ","»
+			«printActorDynamicParm(parm,actor.parameters.size)»
+			«ENDFOR»
+			«ENDIF»
+			«IF !protocolManager.getActorSysSignals(actor).empty»,«ENDIF»
+			
+			// System Signal(s)
+			«FOR sysSigId : protocolManager.getActorSysSignals(actor) SEPARATOR ","»	
+			«IF protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
+«««			«IF modSysSignals.get(ACTOR).get(sysSigId).get(ACTP).equals(CLOCK) && (enableClockGating || enablePowerGating)»
+			.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
+			«ELSE»
+			.«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.ACTOR).get(sysSigId).get(ProtocolManager.NETP)»)
+			«ENDIF»
+			«ENDFOR»
+		);
 		'''
 		
 	}
@@ -578,25 +578,25 @@ class NetworkPrinterGeneric {
 	def printSuccessor(Actor actor, Port output){	
 		'''
 		// «protocolManager.modNames.get(ProtocolManager.SUCC)»_«actor.simpleName»_«output.label»
-				«protocolManager.modNames.get(ProtocolManager.SUCC)»  «IF protocolManager.modCommParms.containsKey(ProtocolManager.PRED)»#(
-				«FOR commParId : protocolManager.modCommParms.get(ProtocolManager.SUCC).keySet SEPARATOR ","»	.«protocolManager.modCommParms.get(ProtocolManager.SUCC).get(commParId).get(ProtocolManager.NAME)»(«getParameterValue(ProtocolManager.SUCC,actor,output,commParId)»)
+			«protocolManager.modNames.get(ProtocolManager.SUCC)»  «IF protocolManager.modCommParms.containsKey(ProtocolManager.PRED)»#(
+			«FOR commParId : protocolManager.modCommParms.get(ProtocolManager.SUCC).keySet SEPARATOR ","»	.«protocolManager.modCommParms.get(ProtocolManager.SUCC).get(commParId).get(ProtocolManager.NAME)»(«getParameterValue(ProtocolManager.SUCC,actor,output,commParId)»)
+			«ENDFOR»
+			) «ENDIF»«protocolManager.modNames.get(ProtocolManager.SUCC)»_«actor.simpleName»_«output.label»(
+				«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
+				«IF protocolManager.isInputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»),«ENDIF»
+				«IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,output)»),«ENDIF»
 				«ENDFOR»
-				) «ENDIF»«protocolManager.modNames.get(ProtocolManager.SUCC)»_«actor.simpleName»_«output.label»(
-					«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
-					«IF protocolManager.isInputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»),«ENDIF»
-					«IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)».«protocolManager.modCommSignals.get(ProtocolManager.SUCC).get(commSigId).get(ProtocolManager.ACTP)»(«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,output)»),«ENDIF»
-					«ENDFOR»
-					
-					// System Signal(s)
-					«FOR sysSigId : protocolManager.modSysSignals.get(ProtocolManager.SUCC).keySet SEPARATOR ","»
-					«IF protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
-					.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
-					«ELSE»
-					.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»)
-					«ENDIF»
-					«ENDFOR»
-				);		
-				'''
+				
+				// System Signal(s)
+				«FOR sysSigId : protocolManager.modSysSignals.get(ProtocolManager.SUCC).keySet SEPARATOR ","»
+				«IF protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).containsKey(ProtocolManager.CLOCK) && (enableClockGating || enablePowerGating)»
+				.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«IF powerSets.contains(instanceClockDomain.get(actor))»«clockSignal»ck_gated_«clockDomainsIndex.get(instanceClockDomain.get(actor))»«ELSE»«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»«ENDIF»)
+				«ELSE»
+				.«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.ACTP)»(«protocolManager.modSysSignals.get(ProtocolManager.SUCC).get(sysSigId).get(ProtocolManager.NETP)»)
+				«ENDIF»
+				«ENDFOR»
+			);		
+			'''
 	}
 
 	/**
