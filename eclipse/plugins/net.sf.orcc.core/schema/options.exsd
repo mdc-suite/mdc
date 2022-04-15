@@ -1,0 +1,232 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Schema file written by PDE -->
+<schema targetNamespace="net.sf.orcc.core" xmlns="http://www.w3.org/2001/XMLSchema">
+<annotation>
+      <appInfo>
+         <meta.schema plugin="net.sf.orcc.core" id="options" name="options"/>
+      </appInfo>
+      <documentation>
+         [Enter description of this extension point.]
+      </documentation>
+   </annotation>
+
+   <element name="extension">
+      <annotation>
+         <appInfo>
+            <meta.element />
+         </appInfo>
+      </annotation>
+      <complexType>
+         <sequence>
+            <element ref="option" minOccurs="0" maxOccurs="unbounded"/>
+         </sequence>
+         <attribute name="point" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="id" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="option">
+      <complexType>
+         <choice minOccurs="0" maxOccurs="1">
+            <element ref="browseFile"/>
+            <element ref="checkBox"/>
+            <element ref="comboBox"/>
+            <element ref="textBox"/>
+            <element ref="selectNetwork"/>
+            <element ref="selectNetworks"/>
+         </choice>
+         <attribute name="id" type="string" use="required">
+            <annotation>
+               <documentation>
+                  Unique identifier of the &quot;input file&quot; field. This allows back-ends to reference this option.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string" use="required">
+            <annotation>
+               <documentation>
+                  Name of the &quot;input file&quot; field.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="defaultValue" type="string">
+            <annotation>
+               <documentation>
+                  Default value of the &quot;input file&quot; field.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="description" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="browseFile">
+      <complexType>
+         <attribute name="extension" type="string">
+            <annotation>
+               <documentation>
+                  Restrict file choice to files that have the given extension.
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="workspace" type="boolean" use="default" value="true">
+            <annotation>
+               <documentation>
+                  Whether files are selected inside the workspace or outside the workspace
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="folder" type="boolean" use="default" value="false">
+            <annotation>
+               <documentation>
+                  Whether the file that should be selected is a folder or a file
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="optional" type="boolean">
+            <annotation>
+               <documentation>
+                  Whether the file is required for a configuration.
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="checkBox">
+      <complexType>
+         <sequence minOccurs="0" maxOccurs="unbounded">
+            <choice>
+               <element ref="optionRef"/>
+               <element ref="option"/>
+            </choice>
+         </sequence>
+      </complexType>
+   </element>
+
+   <element name="comboBox">
+      <complexType>
+         <sequence minOccurs="1" maxOccurs="unbounded">
+            <element ref="comboBoxItem"/>
+         </sequence>
+      </complexType>
+   </element>
+
+   <element name="comboBoxItem">
+      <complexType>
+         <sequence minOccurs="0" maxOccurs="unbounded">
+            <choice>
+               <element ref="optionRef"/>
+               <element ref="option"/>
+            </choice>
+         </sequence>
+         <attribute name="id" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="textBox" type="string">
+   </element>
+
+   <element name="selectNetwork" type="string">
+      <annotation>
+         <documentation>
+            This option contains the top network of an application
+         </documentation>
+      </annotation>
+   </element>
+
+   <element name="selectNetworks" type="string">
+      <annotation>
+         <documentation>
+            This option contains several networks that can be given to a back-end.
+         </documentation>
+      </annotation>
+   </element>
+
+   <element name="optionRef">
+      <complexType>
+         <attribute name="id" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="identifier" basedOn="net.sf.orcc.core.options/option/@id"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="since"/>
+      </appInfo>
+      <documentation>
+         [Enter the first release in which this extension point appears.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="examples"/>
+      </appInfo>
+      <documentation>
+         [Enter extension point usage example here.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="apiinfo"/>
+      </appInfo>
+      <documentation>
+         [Enter API information here.]
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="implementation"/>
+      </appInfo>
+      <documentation>
+         [Enter information about supplied implementation of this extension point.]
+      </documentation>
+   </annotation>
+
+
+</schema>

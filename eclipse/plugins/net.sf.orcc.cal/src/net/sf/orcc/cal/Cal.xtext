@@ -1,0 +1,400 @@
+grammar net.sf.orcc.cal.Cal with org.eclipse.xtext.common.Terminals
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+generate cal "http://orcc.sf.net/cal/Cal"
+
+///////////////////////////////////////////////////////////////////////////////
+// top-level entity
+///////////////////////////////////////////////////////////////////////////////
+
+AstEntity: 
+	('package' package=QualifiedName ';')?
+	(imports += Import)*
+	
+	(annotations += AstAnnotation)*
+	( ('actor' name=ID actor=AstActor)
+	| ('unit' name=ID unit=AstUnit) );
+
+Import: 'import' importedNamespace=QualifiedNameWithWildCard ';';
+
+QualifiedName:
+	ID ('.' ID)*;
+
+QualifiedNameWithWildCard:
+	QualifiedName '.*'?;
+	
+///////////////////////////////////////////////////////////////////////////////
+// unit
+///////////////////////////////////////////////////////////////////////////////
+
+AstUnit: {AstUnit} ':'
+	
+	(functions += Function
+	| procedures += AstProcedure
+	| variables += ConstantVariable)*
+
+	'end';
+
+ConstantVariable returns Variable:
+	VariableDeclaration (constant ?= '=') value=AstExpression ';';
+
+///////////////////////////////////////////////////////////////////////////////
+// actor
+///////////////////////////////////////////////////////////////////////////////
+
+AstActor: {AstActor}
+		'(' (parameters += ActorParameter (',' parameters += ActorParameter)*)? ')'
+		(inputs += AstPort (',' inputs += AstPort)*)? '==>'
+		(outputs += AstPort (',' outputs += AstPort)*)? ':'
+
+	(functions += Function
+	| procedures += AstProcedure
+	| actions += AstAction
+	| initializes += Initialize
+	| stateVariables += StateVariable
+	| localFsms += LocalFsm)*
+
+	(scheduleFsm=ScheduleFsm | scheduleRegExp=ScheduleRegExp)?
+
+	(priorities += Priority)*
+
+	'end';
+
+AstPort: (annotations += AstAnnotation)* type=AstType name=ID;
+
+Function:
+	(annotations += AstAnnotation)*
+	'function' name=ID
+	'('
+		(parameters += VariableDeclaration (',' parameters += VariableDeclaration)*)?
+	')' '-->' type=AstType
+	// body may be omitted if @native
+	(
+		('var'
+			variables += ValuedVariableDeclaration
+			(',' variables += ValuedVariableDeclaration)*)? ':'
+		expression=AstExpression
+	)?
+	'end';
+
+AstProcedure:
+	(annotations += AstAnnotation)*
+	'procedure' name=ID
+	'('
+		(parameters += VariableDeclaration (',' parameters += VariableDeclaration)*)?
+	')'
+	// body may be omitted if @native
+	(
+		('var'
+			variables += ValuedVariableDeclaration
+			(',' variables += ValuedVariableDeclaration)*)?
+		'begin'
+			(statements += Statement)*
+	)?
+	'end';
+
+ActorParameter returns Variable: VariableDeclaration ('=' value=AstExpression)?;
+
+StateVariable returns Variable: ValuedVariableDeclaration ';';
+
+AstTag: (identifiers += ID) ('.' identifiers += ID)*;
+
+///////////////////////////////////////////////////////////////////////////////
+// priorities
+///////////////////////////////////////////////////////////////////////////////
+
+Inequality:
+	tags += AstTag ('>' tags += AstTag)+ ';';
+	
+Priority:
+	{Priority}
+
+	'priority'
+		(inequalities += Inequality)*
+	'end';
+
+///////////////////////////////////////////////////////////////////////////////
+// schedule
+///////////////////////////////////////////////////////////////////////////////
+
+// FSM schedule
+ScheduleFsm:
+	'schedule' 'fsm' initialState=[AstState] ':'
+		contents=Fsm
+	'end';
+
+Fsm: {Fsm} (transitions += AstTransition)*;
+
+AstTransition:
+	source=[AstState] '(' tag=AstTag ')' '-->'
+	(target=[AstState] | externalTarget=ExternalTarget) ';';
+
+ExternalTarget: fsm=[LocalFsm] '.' state=[AstState] '(' from=[AstState] '=>' to=[AstState] ')';
+
+AstState: name=ID;
+
+// regular expression schedule
+ScheduleRegExp returns RegExp: 'schedule' 'regexp' exp=RegExp 'end';
+
+RegExp:
+	RegExpConcatenation({RegExpBinary.left=current} operator=('|') right=RegExpConcatenation)*;
+RegExpConcatenation returns RegExp:
+	RegExpPostfix({RegExpBinary.left=current} right=RegExpPostfix)*;
+RegExpPostfix returns RegExp:
+	RegExpGrouping({RegExpUnary.child=current} unaryOperator=('*'|'?'))*;
+RegExpGrouping returns RegExp:
+	  RegExpTerminal
+	| '(' RegExp ')';
+
+RegExpTerminal returns RegExp:
+	{RegExpTag} tag=AstTag;
+
+// local FSM
+LocalFsm:
+	'local' 'fsm' name=ID ':'
+		contents=Fsm
+	'end';
+
+///////////////////////////////////////////////////////////////////////////////
+// actions
+///////////////////////////////////////////////////////////////////////////////
+
+AstAction:
+	{AstAction}
+	
+	(annotations += AstAnnotation)*
+	(tag=AstTag ':')?
+	'action'
+	(inputs += InputPattern (',' inputs += InputPattern)*)?
+	'==>'
+	(outputs += OutputPattern (',' outputs += OutputPattern)*)?
+
+	('guard' guard = Guard )?
+	('var'
+		variables += ValuedVariableDeclaration
+		(',' variables += ValuedVariableDeclaration)*)?
+	('do'
+		(statements += Statement)*
+	)?
+	'end';
+
+Initialize returns AstAction:
+	{AstAction}
+
+	(annotations += AstAnnotation)*
+	(tag=AstTag ':')?
+	'initialize'
+	'==>'
+	(outputs += OutputPattern (',' outputs += OutputPattern)*)?
+	('guard' guard = Guard )?
+	('var'
+		variables += ValuedVariableDeclaration
+		(',' variables += ValuedVariableDeclaration)*)?
+	('do'
+		(statements += Statement)*
+	)?
+	'end';
+
+Token returns Variable: name=ID;
+
+InputPattern: port=[AstPort] ':' '[' tokens+=Token (',' tokens+=Token)* ']'
+	('repeat' repeat=AstExpression)?;
+
+OutputPattern: port=[AstPort] ':' '[' values+=AstExpression (',' values+=AstExpression)* ']'
+	('repeat' repeat=AstExpression)?;
+
+Guard:
+	{Guard}
+	expressions += AstExpression (',' expressions += AstExpression)*
+;
+
+///////////////////////////////////////////////////////////////////////////////
+// statements
+///////////////////////////////////////////////////////////////////////////////
+
+StatementAssign:
+	(annotations += AstAnnotation)*
+	target=VariableReference 
+		('[' indexes += AstExpression ']')* ':=' value=AstExpression ';'; 
+
+StatementCall:
+	(annotations += AstAnnotation)*
+	procedure=[AstProcedure|QualifiedName]
+	'(' (arguments += AstExpression (',' arguments += AstExpression)*)? ')' ';';
+
+StatementForeach:
+	(annotations += AstAnnotation)*
+	'foreach' variable=VariableDeclaration 'in' lower=AstExpression '..' higher=AstExpression
+	'do'
+		(statements += Statement)*
+	'end';
+
+StatementIf:
+	(annotations += AstAnnotation)*
+	'if' condition = AstExpression 'then'
+		(then += Statement)*
+	(elsifs += StatementElsif)*
+	('else' (else += Statement)*)?
+	'end';
+
+StatementElsif:
+	'elsif' condition = AstExpression 'then'
+		(then += Statement)*;
+
+StatementWhile:
+	(annotations += AstAnnotation)*
+	'while' condition=AstExpression 'do'
+		(statements += Statement)*
+	'end';
+
+Statement:
+	StatementAssign
+	| StatementCall
+	| StatementForeach
+	| StatementIf
+	| StatementWhile;
+
+///////////////////////////////////////////////////////////////////////////////
+// expressions
+///////////////////////////////////////////////////////////////////////////////
+
+AstExpression:
+	ExpressionAnd ({ExpressionBinary.left=current} operator=('||' | 'or') right=ExpressionAnd)*;
+ExpressionAnd returns AstExpression:
+	ExpressionBitor ({ExpressionBinary.left=current} operator=('&&' | 'and') right=ExpressionBitor)*;
+ExpressionBitor returns AstExpression:
+	ExpressionBitxor ({ExpressionBinary.left=current} operator='|' right=ExpressionBitxor)*;
+ExpressionBitxor returns AstExpression:
+	ExpressionBitand ({ExpressionBinary.left=current} operator='^' right=ExpressionBitand)*;
+ExpressionBitand returns AstExpression:
+	ExpressionEq ({ExpressionBinary.left=current} operator='&' right=ExpressionEq)*;
+ExpressionEq returns AstExpression:
+	ExpressionRelational ({ExpressionBinary.left=current} operator=('=' | '!=') right=ExpressionRelational)*;
+ExpressionRelational returns AstExpression:
+	ExpressionShift ({ExpressionBinary.left=current} operator=('<' | '<=' | '>' | '>=') right=ExpressionShift)*;
+ExpressionShift returns AstExpression:
+	ExpressionAdditive ({ExpressionBinary.left=current} operator=('<<' | '>>') right=ExpressionAdditive)*;
+ExpressionAdditive returns AstExpression:
+	ExpressionMultiplicative ({ExpressionBinary.left=current} operator=('+' | '-') right=ExpressionMultiplicative)*;
+ExpressionMultiplicative returns AstExpression:
+	ExpressionExp ({ExpressionBinary.left=current} operator=('*' | '/' | 'div' | 'mod') right=ExpressionExp)*;
+ExpressionExp returns AstExpression:
+	ExpressionUnary ({ExpressionBinary.left=current} operator='**' right=ExpressionUnary)*;
+
+ExpressionUnary returns AstExpression:
+	{ExpressionUnary} unaryOperator=('~' | 'not' | '-' | '#') expression=ExpressionPostfix
+	| ExpressionPostfix;
+
+ExpressionPostfix returns AstExpression:
+	ExpressionList
+	| ExpressionCall
+	| ExpressionIndex
+	| ExpressionIf
+    | ExpressionLiteral
+    | ExpressionVariable
+    | '(' AstExpression ')';
+
+ExpressionCall:
+	(annotations += AstAnnotation)*
+	function=[Function|QualifiedName] '(' (parameters += AstExpression (',' parameters += AstExpression)*)? ')';
+
+ExpressionIndex:
+	source=VariableReference ('[' indexes += AstExpression ']')+;
+
+ExpressionIf:
+	'if' condition = AstExpression 'then'
+		then = AstExpression
+	(elsifs += ExpressionElsif)*
+	'else'
+		else = AstExpression
+	'end';
+
+ExpressionElsif:
+	'elsif' condition = AstExpression 'then' then = AstExpression;
+
+ExpressionList:
+	'[' expressions+=AstExpression (',' expressions+=AstExpression)*
+	(':' generators+=Generator (',' generators+=Generator)*)? ']';
+
+Generator:
+	'for' variable=VariableDeclaration 'in' lower=AstExpression '..' higher=AstExpression;
+
+ExpressionVariable: value=VariableReference;
+
+///////////////////////////////////////////////////////////////////////////////
+// literal expressions
+///////////////////////////////////////////////////////////////////////////////
+
+ExpressionLiteral:
+	ExpressionBoolean
+	| ExpressionFloat
+	| ExpressionInteger
+	| ExpressionString;
+
+ExpressionBoolean: value=BOOL;
+
+BOOL returns ecore::EBoolean: 'true' | 'false';
+
+ExpressionFloat: value=REAL;
+
+terminal REAL returns ecore::EFloat :
+	('0'..'9')+ '.' ('0'..'9')* (('e'|'E') ('+' | '-')? ('0'..'9')+)?
+|	'.' ('0'..'9')+ (('e'|'E') ('+' | '-')? ('0'..'9')+)?
+|	('0'..'9')+ ('e'|'E') ('+' | '-')? ('0'..'9')+;
+
+ExpressionInteger: value=(DECIMAL | OCTAL | HEX);
+
+terminal DECIMAL returns ecore::EBigInteger : ('1'..'9') ('0'..'9')*;
+
+terminal OCTAL returns ecore::EBigInteger : '0' ('0'..'7')*;
+
+terminal HEX returns ecore::EBigInteger : '0' ('x'|'X') ('0'..'9' | 'a'..'f' | 'A'..'F')+ ;
+
+ExpressionString: value=STRING;
+
+///////////////////////////////////////////////////////////////////////////////
+// types
+///////////////////////////////////////////////////////////////////////////////
+
+AstType: AstTypeBool | AstTypeFloat | AstTypeHalf | AstTypeDouble | AstTypeInt | AstTypeList | AstTypeString | AstTypeUint;
+
+AstTypeBool: {AstTypeBool} 'bool';
+
+AstTypeFloat: {AstTypeFloat} 'float';
+
+AstTypeHalf: {AstTypeHalf} 'half';
+
+AstTypeDouble: {AstTypeDouble} 'double';
+
+AstTypeInt: {AstTypeInt} 'int' ('(' 'size' '=' size = AstExpression ')')?;
+
+AstTypeList: 'List' '(' 'type' ':' type = AstType ',' 'size' '=' size = AstExpression ')';
+
+AstTypeString: {AstTypeString} 'String';
+
+AstTypeUint: {AstTypeUint} 'uint' ('(' 'size' '=' size = AstExpression ')')?;
+
+///////////////////////////////////////////////////////////////////////////////
+// variables
+///////////////////////////////////////////////////////////////////////////////
+
+// any variable declaration may have annotations
+VariableDeclaration returns Variable:
+	(annotations += AstAnnotation)*
+	type = AstType
+	name = ID
+	('[' dimensions += AstExpression ']')*;
+
+ValuedVariableDeclaration returns Variable:
+	VariableDeclaration ((constant ?= '=' | ':=') value=AstExpression)?;
+
+VariableReference: variable=[Variable|QualifiedName];
+
+///////////////////////////////////////////////////////////////////////////////
+// annotations
+///////////////////////////////////////////////////////////////////////////////
+
+AstAnnotation: '@' name=ID ('(' arguments += AnnotationArgument (',' arguments += AnnotationArgument)* ')')?;
+
+AnnotationArgument: name=ID ('=' value=STRING)?;

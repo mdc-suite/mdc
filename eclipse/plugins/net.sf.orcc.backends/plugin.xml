@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension-point id="backends" name="backends" schema="schema/backends.exsd"/>
+   <extension
+         point="net.sf.orcc.backends.backends">
+      <backend
+            class="net.sf.orcc.backends.c.CBackend"
+            name="C">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.newScheduler">
+         </option>
+         <option
+               id="net.sf.orcc.backends.profile">
+         </option>
+         <option
+               id="net.sf.orcc.backends.checkArrayInbounds">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+         <option
+               id="net.sf.orcc.tracing.enable">
+         </option>
+         <option
+               id="net.sf.orcc.backends.inline">
+         </option>
+         <option
+               id="net.sf.orcc.backends.importBXDF">
+         </option>
+         <option
+               id="net.sf.orcc.backends.papify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.genWeights">
+         </option>
+         <option
+               id="net.sf.orcc.backends.linkNativeLibrary">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.c.compa.COMPABackend"
+            name="COMPA (experimental)">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.c.omp.OMPBackend"
+            name="OpenMP (experimental)">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.newScheduler">
+         </option>
+         <option
+               id="net.sf.orcc.backends.profile">
+         </option>
+         <option
+               id="net.sf.orcc.backends.checkArrayInbounds">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+         <option
+               id="net.sf.orcc.tracing.enable">
+         </option>
+         <option
+               id="net.sf.orcc.backends.inline">
+         </option>
+         <option
+               id="net.sf.orcc.backends.importBXDF">
+         </option>
+         <option
+               id="net.sf.orcc.backends.papify">
+         </option>
+      </backend>
+       <backend
+            class="net.sf.orcc.backends.c.dal.DALBackend"
+            name="DAL">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.c.dal.KPNvalidation">
+         </option>
+         <option
+               id="net.sf.orcc.backends.c.dal.inputBuffering">
+         </option>
+         <option
+               id="net.sf.orcc.backends.c.dal.outputBuffering">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.c.hmpp.HMPPBackend"
+            name="HMPP (experimental)">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.newScheduler">
+         </option>
+         <option
+               id="net.sf.orcc.tracing.enable">
+         </option>
+         <option
+               id="net.sf.orcc.backends.hmpp.disablePragma">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.c.hls.HLSBackend"
+            name="HLS (experimental)">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.llvm.jit.JadeBackend"
+            name="Jade">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.llvm.jit.bitaccurate">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.llvm.aot.LLVMBackend"
+            name="LLVM">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.backends.llvm.aot.targetTriple">
+         </option>
+         <option
+               id="net.sf.orcc.backends.llvm.aot.dataLayout">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.llvm.tta.TTABackend"
+            name="TTA">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.backends.inline">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+         <option
+               id="net.sf.orcc.backends.llvm.tta.configuration">
+         </option>
+         <option
+               id="net.sf.orcc.backends.llvm.tta.reduceConnections">
+         </option>
+         <option
+               id="net.sf.orcc.backends.fpga">
+         </option>
+         <option
+               id="net.sf.orcc.backends.importXCF">
+         </option>
+         <option
+               id="net.sf.orcc.dontExportLibrary">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.promela.PromelaBackend"
+            name="PROMELA">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+      </backend>
+      <backend
+            class="net.sf.orcc.backends.c.preesm.PreesmBackend"
+            name="PREESM">
+         <option
+               id="net.sf.orcc.plugins.compileXDF">
+         </option>
+         <option
+               id="net.sf.orcc.core.classify">
+         </option>
+      </backend>
+   </extension>
+   <extension
+         point="net.sf.orcc.core.options">
+         <option
+               defaultValue="false"
+               id="net.sf.orcc.core.classify"
+               description="This option enables optimizations such as transformation to higher-level and actor merging"
+               name="Classify actors">
+            <checkBox>
+               <option
+                     defaultValue="false"
+                     description="When activated, static regions of the network will be merged together"
+                     id="net.sf.orcc.core.mergeActors"
+                     name="Merge static actors together">
+                  <checkBox></checkBox>
+               </option>
+		       <option
+		             defaultValue="false"
+		             description="When activated, static and quasi-static actors are transformed to an higher-level"
+		             id="net.sf.orcc.core.mergeActions"
+		             name="Merge static actions together">
+		          <checkBox></checkBox>
+		       </option>
+            </checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Uses an experimental scheduler instead of using the default round-robin scheduler"
+               id="net.sf.orcc.backends.newScheduler"
+               name="Use a smarter scheduler">
+		    <checkBox></checkBox>
+         </option>
+		 <option
+		       defaultValue="false"
+		       description="Enable runtime profiling (May reduce the performance)."
+		       id="net.sf.orcc.backends.profile"
+		       name="[BETA] Profile the application">
+		    <checkBox></checkBox>
+		 </option>
+         <option
+               defaultValue="false"
+               description="Add C asserts to check array inbounds (need debug compilation)"
+               id="net.sf.orcc.backends.checkArrayInbounds"
+               name="Check array inbounds">
+            <checkBox></checkBox>
+         </option>
+         <option
+               description="Whether Orcc should compile the given hierarchical XDF network"
+               id="net.sf.orcc.plugins.compileXDF"
+               name="Compile XDF Network">
+            <checkBox>
+               <optionRef
+                     id="net.sf.orcc.core.xdfFile">
+               </optionRef>
+            </checkBox>
+         </option>
+         <option
+               description="Whether Orcc should import the given XDF mapping"
+               id="net.sf.orcc.backends.importXCF"
+               name="Import XCF Mapping">
+            <checkBox>
+               <option
+                     description="The file that contains the actor mapping"
+                     id="net.sf.orcc.backends.xcfFile"
+                     name="XCF file">
+                 <browseFile
+                       folder="false"
+                       workspace="false">
+                 </browseFile>
+               </option>
+            </checkBox>
+         </option>
+         <option
+              defaultValue="false"
+              description="Enable tracing of the FIFOs"
+              id="net.sf.orcc.tracing.enable"
+              name="Enable Traces">
+            <checkBox>
+               <option
+                     description="The folder where traces are saved"
+                     id="net.sf.orcc.tracing.folder"
+                     name="Traces folder">
+                 <browseFile
+                       folder="true"
+                       workspace="false">
+                 </browseFile>
+               </option>
+            </checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="If you made changes to the library, check this options to keep them when you regenerate the application."
+               id="net.sf.orcc.dontExportLibrary"
+               name="Don't export library">
+            <checkBox/>
+         </option>
+         <option
+               defaultValue="false"
+               description="Transform the actions with multi-tokens access to mono-token ones"
+               id="net.sf.orcc.backends.multi2mono"
+               name="Multi-tokens to mono-token transformation">
+            <checkBox></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               id="net.sf.orcc.backends.llvm.jit.bitaccurate"
+               name="Generate bit-accurate code">
+            <checkBox></checkBox>
+         </option>
+         <option
+               defaultValue="Stratix III (EP3SL150F1152C2)"
+               description="Name of your FPGA device"
+               id="net.sf.orcc.backends.fpga"
+               name="FPGA board">
+            <comboBox>
+               <comboBoxItem
+                  id="Stratix III (EP3SL150F1152C2)">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Virtex6 (xc6vlx240t)">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="ZedBoard (xc7z020)">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Zc706 (xc7z045)">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Others">
+               </comboBoxItem>
+            </comboBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Force the inlining inside the actors to ease the profiling"
+               id="net.sf.orcc.backends.inline"
+               name="Inline all functions inside the actors">
+            <checkBox>
+               <option
+                     defaultValue="false"
+                     description="Prevent the inlining of actions for deeper profiling"
+                     id="net.sf.orcc.backends.inline.notActions"
+                     name="Do not inline the actions">
+                  <checkBox></checkBox>
+               </option>
+            </checkBox>
+         </option>
+         <option
+               defaultValue="Standard"
+               description="Predefined configurations for the processors"
+               id="net.sf.orcc.backends.llvm.tta.configuration"
+               name="Processor configuration">
+            <comboBox>
+               <comboBoxItem
+                  id="Standard">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Custom">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Fast">
+               </comboBoxItem>
+               <comboBoxItem
+                  id="Huge">
+               </comboBoxItem>
+            </comboBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Map the FIFO channels on an existing memory when it's possible"
+               id="net.sf.orcc.backends.llvm.tta.reduceConnections"
+               name="Reduce the interconnection network">
+            <checkBox></checkBox>
+         </option>
+		<option
+				defaultValue="x86_64"
+				description="Specify the target triple"
+				id="net.sf.orcc.backends.llvm.aot.targetTriple"
+				name="Target triple">
+			<textBox></textBox>
+		</option>
+		<option
+				defaultValue="e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128"
+				description="Specify the Data Layout"
+				id="net.sf.orcc.backends.llvm.aot.dataLayout"
+				name="Data Layout">
+			<textBox></textBox>
+		</option>
+  <option
+        defaultValue="false"
+        description="Generate VTL for all actors"
+        id="net.sf.orcc.backends.compileVTL"
+        name="VTL Code Generation">
+     <checkBox></checkBox>
+  </option>
+  <option
+        defaultValue="false"
+        description="Do not print any HMPP pragma, only valid C code"
+        id="net.sf.orcc.backends.hmpp.disablePragma"
+        name="Disable HMPP pragmas">
+     <checkBox></checkBox>
+  </option>
+         <option
+               defaultValue="false"
+               description="Perform sample buffering on actor inputs"
+               id="net.sf.orcc.backends.c.dal.inputBuffering"
+               name="Input buffering">
+            <checkBox></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Perform sample buffering on actor outputs"
+               id="net.sf.orcc.backends.c.dal.outputBuffering"
+               name="Output buffering">
+            <checkBox></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Validate actors for Kahn process compatibility"
+               id="net.sf.orcc.backends.c.dal.KPNvalidation"
+               name="KPN validation">
+            <checkBox></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Whether Orcc should import the given xml buffer size configuration file"
+               id="net.sf.orcc.backends.importBXDF"
+               name="Import the BXDF Mapping">
+            <checkBox>
+               <option
+                     description="The file that contains the buffer size mapping configuration"
+                     id="net.sf.orcc.backends.bxdfFile"
+                     name="BXDF File">
+                  <browseFile
+                        folder="false"
+                        workspace="false">
+                  </browseFile>
+               </option>
+            </checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Include PAPI code for profiling"
+               id="net.sf.orcc.backends.papify"
+               name="Papify: profile actors using PAPI">
+            <checkBox>
+               <option
+                     defaultValue="false"
+                     description="Use only if there are less counters than events to profile"
+                     id="net.sf.orcc.backends.papify.multiplex"
+                     name="Enable multiplex">
+                  <checkBox></checkBox>
+               </option></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="A xml file is generated giving the min, max and average weights (as number of clock cycles) for each action. These weights are calculated by profiling only computational part of each action using Intel RDTSC/RDTSCP instructions. This output file can be used as weights file needed for various automated analysis options provided by TURNUS."
+               id="net.sf.orcc.backends.genWeights"
+               name="genWeights: Generate execution based weights on Intel platforms.">
+            <checkBox>
+               <option
+                     defaultValue="true"
+                     description="Remove outliers (with a Gaussian filter) from profiling results of each action."
+                     id="net.sf.orcc.backends.genWeightsFltr"
+                     name="Remove outliers (with a Gaussian filter).">
+                  <checkBox></checkBox>
+               </option>
+               <option
+                     defaultValue="false"
+                     description="Dump individual weights for all firings. of all actors/actions."
+                     id="net.sf.orcc.backends.genWeightsDump"
+                     name="Dump individual weights for all firings.">
+                  <checkBox></checkBox>
+               </option></checkBox>
+         </option>
+         <option
+               defaultValue="false"
+               description="Link with a native library containing native functions"
+               id="net.sf.orcc.backends.linkNativeLibrary"
+               name="Link with a native library containing native functions">
+            <checkBox>
+               <option
+                     description="Path to native library folder containing CMakeLists.txt."
+                     id="net.sf.orcc.backends.linkNativeLibraryFolder"
+                     name="Path to native library folder containing CMakeLists.txt.">
+                  <browseFile
+                        folder="true"
+                        workspace="false">
+                  </browseFile>
+               </option>
+               <option
+                     description="Names of the header files (separated by &apos;;&apos;) containing all prototypes."
+                     id="net.sf.orcc.backends.linkNativeLibraryHeaders"
+                     name="Names of the header files (separated by &apos;;&apos;) containing all prototypes.">
+                  <textBox>
+                     textBox body text
+                  </textBox>
+               </option></checkBox>
+         </option>
+   </extension>
+   <extension
+         id="c"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.CBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="tta"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.llvm.tta.TTABackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="llvm"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.llvm.aot.LLVMBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="jade"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.llvm.jit.JadeBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="preesm"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.preesm.PreesmBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="hls"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.hls.HLSBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="promela"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.promela.PromelaBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="dal"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.dal.DALBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="hmpp"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.hmpp.HMPPBackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="compa"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.compa.COMPABackend">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="omp"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.backends.c.omp.OMPBackend">
+         </run>
+      </application>
+   </extension>
+</plugin>

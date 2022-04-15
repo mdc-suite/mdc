@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+
+<plugin>
+  <extension
+        id="cli"
+        point="org.eclipse.core.runtime.applications">
+     <application
+           cardinality="singleton-global"
+           thread="main"
+           visible="true">
+        <run
+              class="net.sf.orcc.frontend.FrontendCli">
+        </run>
+     </application>
+  </extension>
+  <extension
+        id="workspaceSetup"
+        point="org.eclipse.core.runtime.applications">
+     <application
+           cardinality="singleton-global"
+           thread="main"
+           visible="true">
+        <run
+              class="net.sf.orcc.cal.util.WorkspaceCreator">
+        </run>
+     </application>
+  </extension>
+</plugin>

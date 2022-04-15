@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<osal version="0.1">
+
+  <operation>
+    <name>SOURCE_INIT</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_init, IO(1));
+    </trigger-semantics>
+  </operation>
+
+  <operation>
+    <name>SOURCE_READBYTE</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>1</outputs>
+    <side-effects/>
+    <affected-by>
+      <operation name="SOURCE_INIT"/>
+    </affected-by>
+    <in id="1" type="UIntWord"/>
+    <out id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_readbyte, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+
+  <operation>
+    <name>SOURCE_SIZEOFFILE</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>1</outputs>
+    <side-effects/>
+    <affected-by>
+      <operation name="SOURCE_INIT"/>
+    </affected-by>
+    <in id="1" type="UIntWord"/>
+    <out id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_sizeoffile, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+
+  <operation>
+    <name>SOURCE_REWIND</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <affected-by>
+      <operation name="SOURCE_INIT"/>
+    </affected-by>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_rewind, IO(1));
+    </trigger-semantics>
+  </operation>
+
+  <operation>
+    <name>SOURCE_DECREMENTNBLOOPS</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <affected-by>
+      <operation name="SOURCE_INIT"/>
+    </affected-by>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_decrementnbloops, IO(1));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>DISPLAY_GETNBFRAMES</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>1</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <out id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(display_getnbframes, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>SOURCE_EXIT</name>
+    <description></description>
+    <inputs>2</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <in id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(source_exit, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>DISPLAY_CHECKSUM</name>
+    <description></description>
+    <inputs>2</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <in id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(display_checksum, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>THROW_AWAY</name>
+    <description></description>
+    <inputs>2</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <in id="2" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(throw_away, IO(1), IO(2));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>FPSPRINTINIT</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(fpsPrintInit, IO(1));
+    </trigger-semantics>
+  </operation>
+
+  <operation>
+    <name>FPSPRINTNEWPICDECODED</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(fpsPrintNewPicDecoded, IO(1));
+    </trigger-semantics>
+  </operation>
+  
+  <operation>
+    <name>PRINT_CYCLECOUNT</name>
+    <description></description>
+    <inputs>1</inputs>
+    <outputs>0</outputs>
+    <side-effects/>
+    <in id="1" type="UIntWord"/>
+    <trigger-semantics>
+      EXEC_OPERATION(print_cyclecount, IO(1));
+    </trigger-semantics>
+  </operation>
+</osal>

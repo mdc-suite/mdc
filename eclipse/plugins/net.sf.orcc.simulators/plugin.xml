@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension-point id="simulators" name="simulators" schema="schema/simulators.exsd"/>
+   <extension
+         point="net.sf.orcc.core.options">
+      <option
+            defaultValue="false"
+            description="Enable tracing of the FIFOs"
+            id="net.sf.orcc.tracing.enable"
+            name="Enable Traces">
+         <checkBox>
+            <option
+                  description="The folder where traces are saved"
+                  id="net.sf.orcc.tracing.folder"
+                  name="Traces folder">
+               <browseFile
+                     folder="true"
+                     workspace="false">
+               </browseFile>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Golden reference to be compared with ouput data"
+            id="net.sf.orcc.simulators.goldenReference"
+            name="Golden Reference">
+         <checkBox>
+            <option
+                  description="Golden reference file to be compared"
+                  id="net.sf.orcc.simulators.goldenReferenceFile"
+                  name="Golden Reference File">
+               <browseFile
+                     folder="false"
+                     workspace="false">
+               </browseFile>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            description="Input data to be pushed to the CAL network we want to simulate"
+            id="net.sf.orcc.simulators.inputStimulus"
+            name="Input stimulus">
+         <browseFile
+               folder="false"
+               workspace="false">
+         </browseFile>
+      </option>
+      <option
+            description="Output data to be pushed from the CAL network we want to simulate"
+            id="net.sf.orcc.simulators.outputFile"
+            name="Output file directory">
+         <browseFile
+               folder="true"
+               workspace="false"
+               optional="true">
+         </browseFile>
+      </option>
+      <option
+            defaultValue="false"
+            description="Shanges size of variable to fit types of general-purpose programming language such as C, C++ or Java"
+            id="net.sf.orcc.core.transform.typeResizer"
+            name="Type Resizer">
+         <checkBox>
+            <option
+                  defaultValue="true"
+                  id="net.sf.orcc.core.transform.typeResizer.to2nbits"
+                  name="Cast To 2^n bits">
+               <checkBox></checkBox>
+            </option>
+            <option
+                  defaultValue="false"
+                  id="net.sf.orcc.core.transform.typeResizer.to32bits"
+                  name="Cast To 32bits">
+               <checkBox></checkBox>
+            </option>
+            <option
+                  defaultValue="true"
+                  id="net.sf.orcc.core.transform.typeResizer.nativePorts"
+                  name="Cast Native Ports">
+               <checkBox></checkBox>
+            </option>
+            <option
+                  defaultValue="false"
+                  id="net.sf.orcc.core.transform.typeResizer.booltoint"
+                  name="Cast Boolean To Integer">
+               <checkBox></checkBox>
+            </option>
+         </checkBox>
+      </option>
+      <option
+            defaultValue="false"
+            description="Golden reference to be compared with ouput data"
+            id="net.sf.orcc.simulators.profile"
+            name="Enable profiling">
+         <checkBox>            
+            <option
+                  description="Where the profiling results are saved"
+                  id="net.sf.orcc.simulators.profileFolder"
+                  name="Profiling folder">
+               <browseFile
+                     folder="true"
+                     workspace="false">
+               </browseFile>
+            </option>
+         </checkBox>
+      </option>
+   </extension>
+   <extension
+         point="net.sf.orcc.simulators.simulators">
+      <simulator
+            class="net.sf.orcc.simulators.slow.SlowSimulator"
+            name="Visitor interpreter and debugger">
+         <option
+               id="net.sf.orcc.core.xdfFile">
+         </option>
+         <option
+               id="net.sf.orcc.simulators.inputStimulus">
+         </option>
+         <option
+               id="net.sf.orcc.simulators.outputFile">
+         </option>
+         <option
+               id="net.sf.orcc.simulators.goldenReference">
+         </option>
+         <option
+               id="net.sf.orcc.core.transform.typeResizer">
+         </option>
+         <option
+               id="net.sf.orcc.simulators.profile">
+         </option>
+         <option
+               id="net.sf.orcc.tracing.enable">
+         </option>
+      </simulator>
+   </extension>
+   <extension
+         id="cli"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="net.sf.orcc.simulators.SimulatorCli">
+         </run>
+      </application>
+   </extension>
+</plugin>
