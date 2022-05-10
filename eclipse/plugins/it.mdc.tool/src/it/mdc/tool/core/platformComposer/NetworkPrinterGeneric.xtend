@@ -87,6 +87,10 @@ class NetworkPrinterGeneric {
 	var Map<Connection, List<Integer>> connectionsClockDomain;
 	
 	var String DEFAULT_CLOCK_DOMAIN = "CLK";
+	
+	public static final String ACTOR = "actor";
+	public static final String PRED = "predecessor";
+	public static final String SUCC = "successor";
 	/**********************************************************/
 	
 	/**
@@ -331,7 +335,29 @@ class NetworkPrinterGeneric {
 	def Map<String, Integer> getClockDomainIndex(){ //deve diventare getLogicRegionIndex
 		return clockDomainsIndex; //deve diventare logicRegionIndex
 	}
-	
+
+	/**
+	 * Return the first module type (PRED or ACTOR)
+	 */
+	 def getFirstModType(Vertex actor, Connection conn){
+	 	if(isSourceSbox2x1(conn)){
+	 		return ACTOR;
+	 	}
+	 	else{
+	 		if(actor.hasAttribute("sbox")){
+	 			if(getSboxType(actor).equals("2x1")){
+	 				return protocolManager.getFirstMod();
+	 			}
+	 			else{
+	 				return ACTOR;
+	 			}
+	 		}
+	 		else{
+	 			return protocolManager.getFirstMod();
+	 		}
+	 	}
+	 }
+	 	
 	/**
 	 * Return network parameter matching with the passed variable
 	 */
@@ -353,7 +379,29 @@ class NetworkPrinterGeneric {
 		}
 		return null
 	}
-	
+
+	/**
+	 * Return the last module type (ACTOR or SUCC)
+	 */
+	 def getLastModType(Vertex actor, Connection conn){
+	 	if(isTargetSbox1x2(conn)){
+	 		return ACTOR;
+	 	}
+	 	else{
+	 		if(actor.hasAttribute("sbox")){
+	 			if(getSboxType(actor).equals("1x2")){
+	 				return protocolManager.getLastMod();
+	 			}
+	 			else{
+	 				return ACTOR;
+	 			}
+	 		}
+	 		else{
+	 			return protocolManager.getLastMod();
+	 		}
+	 	}
+	 }
+	 	
 	/**
 	 *	Return the value of the parameter with the given ID for the given module, actor and port
 	 */
@@ -436,10 +484,13 @@ class NetworkPrinterGeneric {
 	/**
 	 * Return the SBox type (1x2 or 2x1)
 	 */
-	def String getSboxType(Actor actor) {
+	def String getSboxType(Vertex actor) {
 		return actor.getAttribute("type").getStringValue();
 	}
-	
+
+	/**
+	 * Return the source signal 
+	 */	
 	def String getSourceSignal(Connection connection, String succ, String targetChannel) {
 		
 		var String prefix = ""
@@ -493,7 +544,30 @@ class NetworkPrinterGeneric {
 		}
 	}	
 	
-	
+	/**
+	 * Return whether the source is a sbox2x1
+	 */	
+	def boolean isSourceSbox2x1(Connection conn){
+		if(conn.getSource().hasAttribute("sbox")){
+			return conn.getSource().getAttribute("type").getStringValue().equals("2x1");
+		}
+		else{
+			return false;
+		}
+	}
+
+	/**
+	 * Return whether the target is a sbox1x2
+	 */	
+	def boolean isTargetSbox1x2(Connection conn){
+		if(conn.getTarget().hasAttribute("sbox")){
+			return conn.getTarget().getAttribute("type").getStringValue().equals("1x2");
+		}
+		else{
+			return false;
+		}
+	}
+		
 	/**
 	 * Print the instantiation of the predecessor of an actor in top module 
 	 */		
@@ -636,28 +710,26 @@ class NetworkPrinterGeneric {
 	def printActors(Map<String,Set<String>> clockSets) {
 	 	
 		// @TODO here an additional control is needed since after modifications instanceClockDomain will contain only actors belonging to CG domains, then get(actor) could be null
+
 		'''
 		«FOR actor : network.getChildren().filter(typeof(Actor))»
-		«IF !actor.hasAttribute("sbox")»
-		«IF protocolManager.modNames.containsKey(ProtocolManager.PRED)»
-		«FOR input : actor.inputs»
-			«printPredecessor(actor, input)»
-		«ENDFOR»
+		«FOR inputConnection: actor.getIncoming()»
+		«IF getFirstModType(actor, inputConnection as Connection).equals(PRED)»
+			«printPredecessor(actor, (inputConnection as Connection).getTargetPort())»
 		«ENDIF»
-		
-		«printActor(actor)»
-		
-		«IF protocolManager.modNames.containsKey(ProtocolManager.SUCC)»
-		«FOR output : actor.outputs»
-			«printSuccessor(actor, output)»
 		«ENDFOR»
-		«ENDIF»		
-		
-		«ELSE»		
-			«printSboxInst(actor)»
+
+		«IF actor.hasAttribute("sbox")»
+		«printSboxInst(actor)»
+		«ELSE»
+		«printActor(actor)»
 		«ENDIF»	
 		
-
+		«FOR outputConnection: actor.getOutgoing()»
+		«IF getLastModType(actor, outputConnection as Connection).equals(SUCC)»
+			«printSuccessor(actor, (outputConnection as Connection).getSourcePort())»
+		«ENDIF»
+		«ENDFOR»	
 		«ENDFOR»
 		'''
 	}
@@ -707,11 +779,30 @@ class NetworkPrinterGeneric {
 	/**
 	 * Print assignments to connect instances.
 	 */
-	def printAssignments() {
-		
+/*	def printAssignmentsnew() {	
+		'''
+		// Module(s) Assignments	
+		«FOR connection: network.connections»
+		«FOR commSigId : protocolManager.modCommSignals.get(getFirstModType(connection.getTarget(), connection)).keySet»
+		«IF protocolManager.isInputSide(getFirstModType(connection.getTarget(), connection),commSigId)»
+		«IF protocolManager.modCommSignals.get(getFirstModType(connection.getTarget(), connection)).get(commSigId).get(ProtocolManager.KIND).equals("input")»
+		«printInputSignal(connection, commSigId)»
+		«ELSE»
+		«IF connection.hasAttribute("broadcast")»
+		«IF connection.source instanceof Actor»
+		«ENDIF»
+		«ENDIF»
+		«ENDFOR»
+		«ENDFOR»
+		'''
+	}	*/
+	/**
+	 * Print assignments to connect instances.
+	 */
+	def printAssignments() {	
 		'''
 		// Module(s) Assignments
-		«FOR connection : network.connections»
+		«FOR connection: network.connections»	
 		«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
 		«IF protocolManager.isInputSide(protocolManager.getFirstMod(),commSigId)»
 		«IF protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.KIND).equals("input")»
@@ -720,7 +811,7 @@ class NetworkPrinterGeneric {
 		«IF connection.hasAttribute("broadcast")»
 		«IF connection.source instanceof Actor»
 		«IF !connection.sourcePort.hasAttribute("printed")»
-		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =
+		assign 1 «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =
 		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " |"»
 		«protocolManager.getTargetSignal(broadConn,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
@@ -728,7 +819,7 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		«ELSE»
 		«IF !connection.source.hasAttribute("printed")»
-		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
+		assign 2 «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
 		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " |"»
 		«protocolManager.getTargetSignal(broadConn as Connection,protocolManager.getFirstMod(),commSigId)» 
 		«ENDFOR»;
@@ -736,7 +827,7 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		«ENDIF»
 		«ELSE»
-		assign «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» = «protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)»;
+		assign 3 «getSourceSignal(connection,protocolManager.getLastMod(),protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» = «protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)»;
 		«ENDIF»
 		«ENDIF»
 		«ENDIF»
