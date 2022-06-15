@@ -26,6 +26,7 @@
    	</extension>
 
    <extension
+         id="it.mdc.tool.enMT"
          point="net.sf.orcc.core.options">
     
     <option
@@ -114,6 +115,9 @@
             </optionRef>
             <optionRef
                 id="it.mdc.tool.sysGen">
+            </optionRef>
+            <optionRef
+                  id="it.unica.diee.mdc.enMT">
             </optionRef>
         </checkBox>
     </option>
@@ -462,6 +466,23 @@
           name="Pulp Backend">
        <checkBox></checkBox>
     </option>
+    <option
+          defaultValue="false"
+          id="it.unica.diee.mdc.enMT"
+          name="Enable multithreading">
+       <checkBox>
+          <optionRef
+                id="it.unica.diee.mdc.nThreads"></optionRef></checkBox>
+    </option>
+    <option
+          defaultValue="1"
+          description="Number of threads supported by the accelerator"
+          id="it.unica.diee.mdc.nThreads"
+          name="Number of Threads">
+       <textBox>
+          textBox body text
+       </textBox>
+    </option>
    	</extension>
 
    	<extension
@@ -481,21 +502,5 @@
       	</product>
    	</extension>
 
-   	<extension
-         id="product"
-         point="org.eclipse.core.runtime.products">
-      	<product
-            application="org.eclipse.ui.ide.workbench"
-            name="mdc">
-         	<property
-               	name="windowImages"
-               	value="mdc-suite_256.png">
-         	</property>
-         	<property
-               	name="appName"
-               	value="mdc">
-         	</property>
-      	</product>
-   	</extension>
 
 </plugin>
