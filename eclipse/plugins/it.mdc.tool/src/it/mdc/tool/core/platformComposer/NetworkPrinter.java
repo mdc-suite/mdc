@@ -292,7 +292,12 @@ public class NetworkPrinter extends PlatformComposer {
 					&& (options.get("it.unica.diee.mdc.lrPowerSaving").equals("POWER_GATING")
 						|| (options.get("it.unica.diee.mdc.lrPowerSaving").equals("HYBRID")) );
 		}
-
+		
+		boolean enMT = ((Boolean) options.get("it.unica.diee.mdc.enMT"));
+		int nThreads = 1;
+		if(enMT) {
+			nThreads = Integer.parseInt((String) options.get("it.unica.diee.mdc.nThreads"));
+		}
 		
 		File dir= new File(hdlPath);
 		// If directory doesn't exist, create it
@@ -306,7 +311,8 @@ public class NetworkPrinter extends PlatformComposer {
 		NetworkPrinterGeneric printer  = new NetworkPrinterGeneric();
 		CharSequence sequence = printer.printNetwork(network,luts,logicRegions,
 				enableClockGating,enablePowerGating,
-				logicRegions, netRegions, powerSets, powerSetsIndex, logicRegionsSeqMap, protocolManager);
+				logicRegions, netRegions, powerSets, powerSetsIndex, logicRegionsSeqMap, 
+				enMT, nThreads, protocolManager);
 		logicRegionID = printer.getClockDomainIndex();
 		
 		try {

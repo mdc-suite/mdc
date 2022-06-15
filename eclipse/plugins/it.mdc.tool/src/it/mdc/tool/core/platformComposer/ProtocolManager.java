@@ -801,6 +801,46 @@ public class ProtocolManager {
 		}
 	}
 	
+	/**
+	 * Return the target signal for the given communication signal, connection and predecessor
+	 * 
+	 * @param connection
+	 * 				involved connection
+	 * @param pred
+	 * 				predecessor
+	 * @param commSigId
+	 * 				communication signal ID
+	 * @return
+	 * 				target signal
+	 */
+	/* @TODO Remove this method
+	 * In the multithread implementation this method has been modified and moved to NetworkPrinterGeneric
+	 * to make it consistent with getSourceSignal.
+	 * I keep it also here to avoid breaking other code.
+	 */
+	public String getTargetSignal(Connection connection, String pred, String commSigId) {
+		
+		String prefix = "";
+		if (connection.getTarget() instanceof Actor) {
+			if(!(connection.getTarget().getAdapter(Actor.class)).hasAttribute("sbox")) {
+				if(getModName(pred) != "") {
+					prefix = getModName(pred);
+				}	
+			}
+		}
+
+		String suffix = "";
+		if(!modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH).equals("")) {
+			suffix = "_" + modCommSignals.get(pred).get(commSigId).get(ProtocolManager.CH);	
+		}
+		
+		if (connection.getTargetPort() == null) {
+			
+			return prefix + connection.getTarget().getLabel() + suffix;
+		} else {
+			return prefix + connection.getTarget().getLabel() + "_" + connection.getTargetPort().getLabel() + suffix;
+		}	
+	}	
 
 	/**
 	 * Return true if the communication signal is an input

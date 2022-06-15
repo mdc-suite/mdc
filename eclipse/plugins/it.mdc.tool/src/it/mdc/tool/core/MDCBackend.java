@@ -262,6 +262,16 @@ public class MDCBackend extends AbstractBackend {
 	 *Co-processing layer generation type
 	 */
 	private String coprType;
+	
+	/**
+	 * Enable multithread support generation
+	 */
+	private boolean enMT;	
+	
+	/**
+	 *Number of supported threads
+	 */
+	private int nThreads;	
 	////////////////////////////////////////////////////////
 	
 	
@@ -854,6 +864,7 @@ public class MDCBackend extends AbstractBackend {
 		genHDL = false;	
 		lrEn = false;
 		genCopr = false;
+		enMT = false;
 
 		///////////////////////////////
 		// CAL generation attributes //
@@ -902,6 +913,10 @@ public class MDCBackend extends AbstractBackend {
 			enMon = getOption("it.unica.diee.mdc.monitoring", false);			
 			enArtico = getOption("it.unica.diee.mdc.artico", false);			
 			enPulp = getOption("it.unica.diee.mdc.pulp", false);
+			enMT = getOption("it.unica.diee.mdc.enMT", false);
+			if(enMT) {
+				nThreads = getOption("it.unica.diee.mdc.nThreads",1);
+			}			
 		}
 		
 
@@ -1288,7 +1303,7 @@ public class MDCBackend extends AbstractBackend {
 		options.addOption(opt);
 
 		// Optional command line arguments
-		options.addOption("n", "numNets", false, "Number of networks");
+		options.addOption("n", "numNets", false, "Number of nets");
 		options.addOption("g", "mergeAlgo", false, "Merging process algorithm");
 		options.addOption("x", "sboxCal", false, "Generate sbox Cal");
 		options.addOption("y", "calType", false, "Sbox Cal type");
@@ -1309,7 +1324,11 @@ public class MDCBackend extends AbstractBackend {
 		options.addOption("r", "profEffort", false, "Profiling effort");
 		options.addOption("z", "partname", false, "Xilinx Board partname");
 		options.addOption("d", "boardpart", false, "Xilinx Board boardpart");
-
+/* 
+ * 		@TODO serve???
+ * 		options.addOption("j", "enMT", false, "Enable multithreading");
+ * 		options.addOption("u", "nThreads", false, "Number of supported threads");
+ */
 		try {
 			
 			CommandLineParser parser = new PosixParser();
@@ -1350,6 +1369,8 @@ public class MDCBackend extends AbstractBackend {
 			optionMap.put("it.unica.diee.mdc.powerFile", line.getOptionValue('w'));
 			optionMap.put("it.unica.diee.mdc.timingFile", line.getOptionValue('t'));
 			optionMap.put("it.unica.diee.mdc.effort", line.getOptionValue('r'));
+//			optionMap.put("it.unica.diee.mdc.enMT", line.getOptionValue('j'));
+//			optionMap.put("it.unica.diee.mdc.nThreads", line.getOptionValue('u'));
 			
 			try {
 				///<li> set options

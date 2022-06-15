@@ -61,8 +61,6 @@ class NetworkPrinterGeneric {
 	 */
 	var Map<String, Integer> clockDomainsIndex;
 	
-
-	
 	var ProtocolManager protocolManager;
 	
 	/**********************************************************/
@@ -72,7 +70,11 @@ class NetworkPrinterGeneric {
 	
 	var Boolean enablePowerGating;
 	
-	var Map<String,Object> options
+	var Boolean enableMT;
+	
+	var Integer nThreads;
+	
+	var Map<String,Object> options;
 	
 	var Map<String,Set<String>> logicRegions;
 	
@@ -501,7 +503,7 @@ class NetworkPrinterGeneric {
 			prefix = protocolManager.getModName(last)
 		}
 
-		var String bitSelect = getSourceSignalBitSelect(connection, commSigId, last);
+		var String bitSelect = getSourceSignalBitSelect(connection, commSigId, last)
 		
 		var String suffix = "";
 		if(!protocolManager.modCommSignals.get(last).get(commSigId).get(ProtocolManager.CH).equals("")) {
@@ -689,8 +691,16 @@ class NetworkPrinterGeneric {
 	}
 
 	/**
-	 * Print the instantiation of an actor in top module 
-	 */			
+	 * Print the instantiation of a sbox in top module
+	 */	
+	 
+	 /*
+	  * @TODO I created separate methods for sbox1x2 and sbox2x1
+	  * but they work only with the FIFOs place to be compliant with multithread
+	  * There should be a discussion on how to manage this optimization
+	  * e.g. use less FIFOs when multithreading is not supported
+	  */
+	
 	def printSboxInst(Actor actor){
 		'''
 		// actor «actor.simpleName»
@@ -715,7 +725,15 @@ class NetworkPrinterGeneric {
 			«ENDFOR»
 			
 			// Selector
+			«IF !enableMT»
 			.sel(sel[«actor.simpleName.split("_").get(1)»])	
+			«ELSE»
+			.sel(
+				«FOR i : (nThreads-1)..0SEPARATOR ","»
+				sel_«i»[«actor.simpleName.split("_").get(1)»]
+				«ENDFOR»
+				)
+			«ENDIF»
 		);
 		'''
 	}
@@ -837,33 +855,11 @@ class NetworkPrinterGeneric {
 		
 	}
 
-	/**
-	 * Print assignments to connect instances.
-	 */
-/*	def printAssignmentsnew() {	
-		'''
-		// Module(s) Assignments	
-		«FOR connection: network.connections»
-		«FOR commSigId : protocolManager.modCommSignals.get(getFirstModType(connection.getTarget(), connection)).keySet»
-		«IF protocolManager.isInputSide(getFirstModType(connection.getTarget(), connection),commSigId)»
-		«IF protocolManager.modCommSignals.get(getFirstModType(connection.getTarget(), connection)).get(commSigId).get(ProtocolManager.KIND).equals("input")»
-		«printInputSignal(connection, commSigId)»
-		«ELSE»
-		«IF connection.hasAttribute("broadcast")»
-		«IF connection.source instanceof Actor»
-		«ENDIF»
-		«ENDIF»
-		«ENDFOR»
-		«ENDFOR»
-		'''
-	}	*/
+
 	/**
 	 * Print assignments to connect instances.
 	 */
 	def printAssignments() {	
-		/* 
-		 * @TODO 
-		 */
 		'''
 		// Module(s) Assignments
 		«FOR connection: network.connections»	
@@ -909,7 +905,7 @@ class NetworkPrinterGeneric {
 	 */	
 	def printBroadcastedInputPortOutput(Connection connection, String commSigId){	
 		'''
-		assign «getSourceSignal(connection, protocolManager.modCommSignals.get(protocolManager.getFirstMod()).get(commSigId).get(ProtocolManager.CH))» =		
+		assign «getSourceSignal(connection, commSigId)» =	
 		«FOR broadConn : (connection.source as Port).outgoing SEPARATOR " |"»
 		«getTargetSignal(connection, commSigId)» 
 		«ENDFOR»; // Broadcasted input port
@@ -951,15 +947,25 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * Print the configurator
+	 * Print the configurator(s)
 	 */
 	def printConfig(List<SboxLut> luts) {
 		'''
+		«IF !enableMT»
 		// Network Configurator
 		configurator config_0 (
 			.sel(sel),
 			.ID(ID)
 		);
+		«ELSE»
+		«FOR i : 0..(nThreads-1)»
+		// Network Configurator «i»
+		configurator config_«i» (
+			.sel(sel_«i»),
+			.ID(ID_«i»)
+		);
+		«ENDFOR»
+		«ENDIF»
 		'''
 	}
 	
@@ -1028,7 +1034,6 @@ class NetworkPrinterGeneric {
 	 * Print top module interface.
 	 */
 	def printInterface(List<SboxLut> luts) {
-		
 		'''
 		module multi_dataflow «IF !network.variables.empty»#(
 			// Static Parameter(s)
@@ -1064,12 +1069,12 @@ class NetworkPrinterGeneric {
 			// Monitoring
 			«FOR connection : network.connections»
 			«IF connection.hasAttribute("monitor_in")»
-			«FOR commSigId : protocolManager.modCommSignals.get(protocolManager.getFirstMod()).keySet»
-			«IF protocolManager.isInputSide(protocolManager.getFirstMod(), commSigId)»
+			«FOR commSigId : protocolManager.modCommSignals.get(getFirstModType(connection.getTarget(), connection)).keySet»
+			«IF protocolManager.isInputSide(getFirstModType(connection.getTarget(), connection), commSigId)»
 			«IF connection.target instanceof Port»
-			output «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),null,commSigId,connection.target.getAdapter(Port))»«protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)», // «connection»
+			output «protocolManager.getCommSigPrintRange(getFirstModType(connection.getTarget(), connection),null,commSigId,connection.target.getAdapter(Port))»«getTargetSignal(connection, commSigId)», // «connection»
 			«ELSE»
-			output «protocolManager.getCommSigPrintRange(protocolManager.getFirstMod(),connection.target.getAdapter(Actor),commSigId,connection.targetPort)»«protocolManager.getTargetSignal(connection,protocolManager.getFirstMod(),commSigId)», // «connection»
+			output «protocolManager.getCommSigPrintRange(getFirstModType(connection.getTarget(), connection),connection.target.getAdapter(Actor),commSigId,connection.targetPort)»«getTargetSignal(connection, commSigId)», // «connection»
 			«ENDIF»
 			«ENDIF»
 			«ENDFOR»
@@ -1078,9 +1083,15 @@ class NetworkPrinterGeneric {
 			
 			// Configuration ID
 			«IF !luts.empty»
+			«IF !enableMT»
 			input [7:0] ID,
+			«ELSE»
+			«FOR i : 0..(nThreads-1)»
+			input [7:0] ID_«i»,
+			«ENDFOR»
 			«ENDIF»
-			
+			«ENDIF»
+		
 			«IF enablePowerGating»
 			input [17:0] reference_count, //to set the time necessary for be sure power is off or on
 			
@@ -1214,7 +1225,13 @@ class NetworkPrinterGeneric {
 	 	'''
 		«IF !luts.empty»
 		// Sboxes Config Wire(s)
+		«IF !enableMT»
 		wire [«luts.size - 1» : 0] sel;
+		«ELSE»
+		«FOR i : 0..(nThreads-1)»
+		wire [«luts.size - 1» : 0] sel_«i»;
+		«ENDFOR»
+		«ENDIF»
 		«ENDIF»
 		'''
 	}
@@ -1278,6 +1295,8 @@ class NetworkPrinterGeneric {
 		 Set<String> powerSets,
 		 Map<String,Integer> powerSetsIndex,
 		 Map<String,Boolean> logicRegionsSeqMap,
+		 boolean enMT, 
+		 int nThreads,
 		 ProtocolManager protocolManager){
 		 	
 		 
@@ -1295,6 +1314,8 @@ class NetworkPrinterGeneric {
 		this.netRegions = netRegions;
 		this.powerSetsIndex = powerSetsIndex;
 		this.logicRegionsSeqMap = logicRegionsSeqMap;
+		this.enableMT = enMT;
+		this.nThreads = nThreads;
 		this.protocolManager = protocolManager;
 		
 		
@@ -1308,8 +1329,10 @@ class NetworkPrinterGeneric {
 		
 		
 		computeNetworkClockDomains(network,clockSets);
+
 		
-		'''
+		// @TODO
+		'''	
 		«printHeaderComments()»
 «««		«printClockInformation()»
 
