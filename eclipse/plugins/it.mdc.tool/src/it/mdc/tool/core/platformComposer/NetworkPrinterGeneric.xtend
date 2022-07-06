@@ -361,6 +361,25 @@ class NetworkPrinterGeneric {
 	 }
 	 	
 	/**
+	 * Return the interface type used in a connection (PRED or ACTOR)
+	 */
+	 /*
+	  * Basically this is necesssary in the printAssignment function
+	  * because sboxes expose a different interface when fifos are moved to be compliant with multithreading.
+	  * E.g., a sbox1x2 may not have a FIFO as predecessor but still have FIFO-side interface.
+	  * In other words, writing to a sbox1x2 is like writing to a FIFO (there are write and full signals)
+	  * because the FIFO is instantiated after the sbox.
+	  * But the getFirstModType would return ACTOR (and not PRED).
+	   */
+	 def getInterfaceType(Vertex actor, Connection conn){	 	
+	 	if(conn.getTarget().hasAttribute("sbox") && conn.getTarget().getAttribute("type").getStringValue().equals("1x2")){
+			return protocolManager.getFirstMod();
+		} else {
+			return getFirstModType(conn.getTarget(), conn);
+		}
+	}
+
+	/**
 	 * Return network parameter matching with the passed variable
 	 */
 	def Var getMatchingParameter(Var actVar) {
@@ -495,7 +514,13 @@ class NetworkPrinterGeneric {
 	 * Return the name of the signal with id commSigId in the source of the connection
 	 */	
 	def String getSourceSignal(Connection connection, String commSigId) {
-				 
+		
+		/*
+		 * @XXX There may be an issue here with multithreading
+		 * when the FIFO is a successor getLastModType must be substituted with something 
+		 * analogous to getInterfaceType...
+		 */
+	 
 		var String last = getLastModType(connection.getSource(), connection)
 		
 		var String prefix = ""		
@@ -692,15 +717,7 @@ class NetworkPrinterGeneric {
 
 	/**
 	 * Print the instantiation of a sbox in top module
-	 */	
-	 
-	 /*
-	  * @TODO I created separate methods for sbox1x2 and sbox2x1
-	  * but they work only with the FIFOs place to be compliant with multithread
-	  * There should be a discussion on how to manage this optimization
-	  * e.g. use less FIFOs when multithreading is not supported
-	  */
-	
+	 */		
 	def printSboxInst(Actor actor){
 		'''
 		// actor «actor.simpleName»
@@ -737,13 +754,100 @@ class NetworkPrinterGeneric {
 		);
 		'''
 	}
+	
+	/**
+	 * Print the instantiation of a 1x2 sbox in top module when multithreading is enable
+	 */		
+	def printSbox1x2Inst(Actor actor){
+		'''
+		// actor «actor.simpleName»
+		«getSboxActorName(actor)» #(
+			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)
+			«IF enableMT»
+			,
+			.NTHREADS(«nThreads»)
+			«ENDIF»
+		)
+		«actor.simpleName» (
+			// Input Signal(s)
+			«FOR input : actor.inputs»
+			«FOR commSigId : protocolManager.getActorOutputCommSignals(actor)»
+			«IF !input.label.equals("sel")»
+			«««.«input.label»«protocolManager.getChannelPrintSuffix(protocolManager.getFirstMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»),«ENDIF»
+			.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»),
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Output Signal(s)
+			«FOR output : actor.outputs»
+			«FOR commSigId : protocolManager.getActorOutputCommSignals(actor)»
+			«««.«output.label»«protocolManager.getChannelPrintSuffix(protocolManager.getLastMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»),
+			.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»),
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Selector
+			.sel({«FOR i : (nThreads-1)..0SEPARATOR ","»sel_«i»[«actor.simpleName.split("_").get(1)»]«ENDFOR»})
+		);
+		'''
+	}
+	
+	
+	/**
+	 * Print the instantiation of a 1x2 sbox in top module when multithreading is enable
+	 */		
+	def printSbox2x1Inst(Actor actor){
+		'''
+		// actor «actor.simpleName»
+		«getSboxActorName(actor)» #(
+			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)
+			«IF enableMT»
+			,
+			.NTHREADS(«nThreads»)
+			«ENDIF»
+		)
+		«actor.simpleName» (
+			// Input Signal(s)
+			«FOR input : actor.inputs»
+			«FOR commSigId : protocolManager.getActorInputCommSignals(actor)»
+			«IF !input.label.equals("sel")»
+			«««.«input.label»«protocolManager.getChannelPrintSuffix(protocolManager.getFirstMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getFirstMod(),commSigId,input)»),«ENDIF»
+			.«protocolManager.getActorPortPrintSignal(commSigId,input)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,input)»),
+			«ENDIF»
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Output Signal(s)
+			«FOR output : actor.outputs»
+			«FOR commSigId : protocolManager.getActorInputCommSignals(actor)»
+			«««.«output.label»«protocolManager.getChannelPrintSuffix(protocolManager.getLastMod(),commSigId)»(«actor.label»_«protocolManager.getSigPrintName(protocolManager.getLastMod(),commSigId,output)»),
+			.«protocolManager.getActorPortPrintSignal(commSigId,output)»(«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,output)»),
+			«ENDFOR»
+			«ENDFOR»
+			
+			// Selector
+			.sel({
+				«FOR i : (nThreads-1)..0SEPARATOR ","»
+				sel_«i»[«actor.simpleName.split("_").get(1)»]
+				«ENDFOR»
+				})
+		);
+		'''
+	}
+	
 	/**
 	 * Print actors instantiation in top module.
 	 */	
 	def printActors(Map<String,Set<String>> clockSets) {
 	 	
 		// here an additional control is needed since after modifications instanceClockDomain will contain only actors belonging to CG domains, then get(actor) could be null
-
+		/*
+		  * @TODO I created separate methods for sbox1x2 and sbox2x1
+		  * but they work only with the FIFOs place to be compliant with multithread
+		  * There should be a discussion on how to manage this optimization
+		  * e.g. use less FIFOs when multithreading is not supported
+		  */
 		'''
 		«FOR actor : network.getChildren().filter(typeof(Actor))»
 		«FOR inputConnection: actor.getIncoming()»
@@ -753,7 +857,16 @@ class NetworkPrinterGeneric {
 		«ENDFOR»
 
 		«IF actor.hasAttribute("sbox")»
+		«IF !enableMT»
 		«printSboxInst(actor)»
+		«ELSE»
+		«IF actor.getAttribute("type").getStringValue().equals("2x1")»
+		«printSbox2x1Inst(actor)»
+		«ENDIF»
+		«IF actor.getAttribute("type").getStringValue().equals("1x2")»
+		«printSbox1x2Inst(actor)»
+		«ENDIF»
+		«ENDIF»
 		«ELSE»
 		«printActor(actor)»
 		«ENDIF»	
@@ -789,12 +902,23 @@ class NetworkPrinterGeneric {
 	}
 	
 	/**
-	 * Print input ports signals of an actor (also for sboxes!)
+	 * Print input ports signals of an actor
 	 */
 	def printActorInputPortsSignals(Actor actor) {
+		/*
+		 * @TODO 
+		 * There "wire ..." line should become a method 
+		  */
 		'''
 		«FOR inputConnection: actor.getIncoming()»
 		«var Port inputPort = (inputConnection as Connection).getTargetPort()»
+		«IF actor.hasAttribute("sbox") && actor.getAttribute("type").getStringValue().equals("1x2")»
+		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+		«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)  && !inputPort.label.equals("sel")»
+		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
+		«ENDIF»		
+		«ENDFOR»
+		«ELSE»
 		«IF getFirstModType(actor, inputConnection as Connection).equals(ProtocolManager.PRED)»
 		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.PRED).keySet»
 		«IF protocolManager.isInputSide(ProtocolManager.PRED,commSigId)  && !inputPort.label.equals("sel")»
@@ -807,17 +931,25 @@ class NetworkPrinterGeneric {
 		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
 		«ENDIF»
 		«ENDFOR»
+		«ENDIF»
 		«ENDFOR»
 		'''
 		}
 
 	/**
-	 * Print output ports signals of an actor (also for sboxes!)
+	 * Print output ports signals of an actor
 	 */
 	def printActorOutputPortsSignals(Actor actor) {
 		'''
 		«FOR outputConnection : actor.getOutgoing»
 		«var Port outputPort = (outputConnection as Connection).getSourcePort()»
+		«IF actor.hasAttribute("sbox") && actor.getAttribute("type").getStringValue().equals("2x1")»
+		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+		«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)»		
+		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
+		«ENDIF»
+		«ENDFOR»
+		«ELSE»		
 		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
 		«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)»
 		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
@@ -829,6 +961,7 @@ class NetworkPrinterGeneric {
 		wire «protocolManager.getCommSigPrintRange(ProtocolManager.SUCC,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,outputPort)»;
 		«ENDIF»
 		«ENDFOR»
+		«ENDIF»
 		«ENDIF»
 		«ENDFOR»
 		'''
@@ -860,13 +993,15 @@ class NetworkPrinterGeneric {
 	 * Print assignments to connect instances.
 	 */
 	def printAssignments() {	
+		// @FIXME doesn't work with sbox1x2 that have the write interface on the input port
 		'''
 		// Module(s) Assignments
-		«FOR connection: network.connections»	
-		«var first = getFirstModType(connection.getTarget(), connection)»
-		«FOR commSigId : protocolManager.modCommSignals.get(first).keySet»
-		«IF protocolManager.isInputSide(first, commSigId)»
-		«IF protocolManager.modCommSignals.get(first).get(commSigId).get(ProtocolManager.KIND).equals("input")»
+		«FOR connection: network.connections»
+			
+		«var String int_type = getInterfaceType(connection.getTarget(), connection)»
+		«FOR commSigId : protocolManager.modCommSignals.get(int_type).keySet»
+		«IF protocolManager.isInputSide(int_type, commSigId)»
+		«IF protocolManager.modCommSignals.get(int_type).get(commSigId).get(ProtocolManager.KIND).equals("input")»
 		assign «getTargetSignal(connection, commSigId)» = «getSourceSignal(connection, commSigId)»; // Input signal
 		«ELSE»
 		«IF connection.hasAttribute("broadcast")»
@@ -878,7 +1013,7 @@ class NetworkPrinterGeneric {
 		«ENDIF»
 		«ENDIF»
 		«ELSE»
-		assign 3 «getSourceSignal(connection, commSigId)» = «getTargetSignal(connection, commSigId)»; // Output signal
+		assign «getSourceSignal(connection, commSigId)» = «getTargetSignal(connection, commSigId)»; // Output signal
 		«ENDIF»
 		«ENDIF»
 		«ENDIF»
@@ -1112,7 +1247,7 @@ class NetworkPrinterGeneric {
 	 * print top module internal signals
 	 */
 	def printInternalSignals(List<SboxLut> luts) {
-	
+		// @FIXME sboxes have a different interface
 		'''	
 		«printSboxLutSignals(luts)»
 		
@@ -1359,6 +1494,7 @@ class NetworkPrinterGeneric {
 		
 		«printActors(clockSets)»
 		«printAssignments()»
+		
 		endmodule
 		'''
 	}

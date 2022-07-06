@@ -13,7 +13,7 @@ import java.util.Map
  * 
  * @author Carlo Sau
  */
-class SBoxPrinterGeneric {
+class SboxPrinterGeneric {
 	
 	var String pred;
 	var String succ;
@@ -31,6 +31,11 @@ class SBoxPrinterGeneric {
 	private static final String SIZE = "size";
 	
 	var Map<String,Map<String,Map<String,String>>> modCommSignals;
+	
+	
+	new (Map<String,Map<String,Map<String,String>>> modCommSignals){
+		this.modCommSignals = modCommSignals
+	}
 	
 	def headerComments(String type){
 				
@@ -78,6 +83,75 @@ class SBoxPrinterGeneric {
 		''' 
 	}
 	
+	def printBody1x2MT() {
+		'''
+		parameter TAG_WIDTH = $clog2(NTHREADS);
+		
+		wire [TAG_WIDTH-1 : 0] tag;
+		
+		reg in1_full;
+		
+		assign tag = in1_data[TAG_WIDTH + SIZE -1 : SIZE];
+		
+		assign out1_data = sel[tag] ? '0 : in1_data;
+		assign out2_data = sel[tag] ? in1_data : '0;
+		assign out1_wr = sel[tag] ? '0: in1_wr;
+		assign out2_wr = sel[tag] ? in1_wr : '0;
+		
+		integer i;
+		always @(*)
+			for(i = 0; i < NTHREADS; i = i+1)
+				begin
+				if(sel[i])
+				  in1_full[i] = out2_full[i];
+				else
+				  in1_full[i] = out1_full[i];
+				end
+		'''	
+	}
+	
+	
+	def printBody2x1MT() {
+		'''
+		parameter TAG_WIDTH = $clog2(NTHREADS);
+			
+		logic [TAG_WIDTH-1 : 0] tag;
+		
+		reg out1_empty;
+		reg in1_rd;
+		reg in2_rd;
+		
+		««« Lo posso anche individuare con il for come negli attori
+		always_comb
+		    case(out1_rd)
+		        2'b01: tag = 0;
+		        2'b10: tag = 1;
+		        default: tag = 'x;
+		    endcase 
+		
+		assign out1_data = sel[tag] ? in2_data : in1_data;
+		
+		integer i;
+		always @(*)
+			for(i = 0; i < NTHREADS; i = i+1)
+				begin
+				if(sel[i])
+				  begin
+				  in2_rd[i] = out1_rd[i];
+				  in1_rd[i] = '0;
+				  out1_empty[i] = in2_empty[i];
+				  end
+				else
+				  begin
+				  in2_rd[i] = '0;
+				  in1_rd[i] = out1_rd[i];
+				  out1_empty[i] = in1_empty[i];
+				  end
+				end
+		'''	
+	}
+	
+	
 	def boolean isInputSide(String module, String commSigId) {
 		if( (modCommSignals.get(module).get(commSigId).get(KIND).equals("input")
 			&& modCommSignals.get(module).get(commSigId).get(DIR).equals("direct"))
@@ -102,7 +176,7 @@ class SBoxPrinterGeneric {
 	
 	def String reverseKind(String module, String commSigId) {
 		if(modCommSignals.get(module).get(commSigId).get(KIND).equals("input")) {
-			return "output"
+			return "output logic"
 		} else {
 			return "input"
 		}
@@ -163,9 +237,54 @@ class SBoxPrinterGeneric {
 		'''
 	}
 	
-	def printSbox(String type, Map<String,Map<String,Map<String,String>>> modCommSignals){
-				
-		this.modCommSignals = modCommSignals;
+	def printInterface1x2MT(){
+		'''	
+		module sbox1x2 #(
+			parameter SIZE = 32,
+			parameter NTHREADS = 0
+		)(
+			«FOR commSigId : modCommSignals.get(pred).keySet»
+			«IF isInputSide(pred,commSigId)»
+			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out2«getChannelSuffix(pred,commSigId)»,
+			«ENDIF»
+			«ENDFOR»
+			«FOR commSigId : modCommSignals.get(succ).keySet»
+			«IF isOutputSide(succ,commSigId)»
+			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
+			«ENDIF»
+			«ENDFOR»
+			input [NTHREADS-1 : 0] sel
+		);
+		
+		'''	
+	}
+	
+	
+	def printInterface2x1MT(){
+		'''	
+		module sbox2x1 #(
+			parameter SIZE = 32,
+			parameter NTHREADS = 0
+		)(
+			«FOR commSigId : modCommSignals.get(pred).keySet»
+			«IF isInputSide(pred,commSigId)»
+			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
+			«ENDIF»
+			«ENDFOR»
+			«FOR commSigId : modCommSignals.get(succ).keySet»
+			«IF isOutputSide(succ,commSigId)»
+			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in2«getChannelSuffix(succ,commSigId)»,
+			«ENDIF»
+			«ENDFOR»
+			input [NTHREADS-1 : 0] sel
+		);
+		
+		'''	
+	}
+	
+	def printSbox(String type){
 
 		if (this.modCommSignals.containsKey(PRED)) {
 			pred = PRED;
@@ -189,6 +308,36 @@ class SBoxPrinterGeneric {
 		'''
 	}
 	
+	
+	def printSbox1x2MT(){
+		pred = PRED;
+		succ = ACTOR;
+	
+		'''		
+		«headerComments("1x2")»
+		
+		«printInterface1x2MT()»
+		
+		«printBody1x2MT()»
+		
+		endmodule
+		'''
+	}
+	
+	def printSbox2x1MT(){
+		pred = ACTOR;
+		succ = PRED;
+	
+		'''		
+		«headerComments("2x1")»
+		
+		«printInterface2x1MT()»
+		
+		«printBody2x1MT()»
+		
+		endmodule
+		'''
+	}	
 	
 	
 

@@ -10,7 +10,7 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.NetworkPrinterGeneric;
-import it.mdc.tool.core.platformComposer.SBoxPrinterGeneric;
+import it.mdc.tool.core.platformComposer.SboxPrinterGeneric;
 import it.mdc.tool.powerSaving.CpfPrinter;
 import it.mdc.tool.powerSaving.PowerController;
 import it.mdc.tool.core.sboxManagement.*;
@@ -364,13 +364,20 @@ public class NetworkPrinter extends PlatformComposer {
 		// Print sbox modules
 		if(!luts.isEmpty())
 		{
-			String sbox1x2File = dir.getPath() + File.separator + "sbox1x2.v";
-			String sbox2x1File = dir.getPath() + File.separator + "sbox2x1.v";
+			String sbox1x2File = dir.getPath() + File.separator + "sbox1x2.sv";
+			String sbox2x1File = dir.getPath() + File.separator + "sbox2x1.sv";
 			
-			SBoxPrinterGeneric sboxPrinter  = new SBoxPrinterGeneric();
-			CharSequence sequence1x2 = sboxPrinter.printSbox("1x2",modCommSignals);
-			CharSequence sequence2x1 = sboxPrinter.printSbox("2x1",modCommSignals);
+			SboxPrinterGeneric sboxPrinter  = new SboxPrinterGeneric(modCommSignals);
 			
+			CharSequence sequence1x2, sequence2x1;
+			
+			if(!enMT) {
+				sequence1x2 = sboxPrinter.printSbox("1x2");
+				sequence2x1 = sboxPrinter.printSbox("2x1");
+			} else {
+				sequence1x2 = sboxPrinter.printSbox1x2MT();
+				sequence2x1 = sboxPrinter.printSbox2x1MT();				
+			}
 			try {
 				PrintStream ps1x2 = new PrintStream(new FileOutputStream(sbox1x2File));
 				ps1x2.print(sequence1x2.toString());
