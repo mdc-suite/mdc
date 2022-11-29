@@ -13,7 +13,7 @@ import java.util.Map
  * 
  * @author Carlo Sau
  */
-class SboxPrinterGeneric {
+class SBoxPrinterGeneric {
 	
 	var String pred;
 	var String succ;
@@ -89,14 +89,12 @@ class SboxPrinterGeneric {
 		
 		wire [TAG_WIDTH-1 : 0] tag;
 		
-		reg in1_full;
+		assign tag = in1_din[TAG_WIDTH + SIZE -1 : SIZE];
 		
-		assign tag = in1_data[TAG_WIDTH + SIZE -1 : SIZE];
-		
-		assign out1_data = sel[tag] ? '0 : in1_data;
-		assign out2_data = sel[tag] ? in1_data : '0;
-		assign out1_wr = sel[tag] ? '0: in1_wr;
-		assign out2_wr = sel[tag] ? in1_wr : '0;
+		assign out1_din = sel[tag] ? '0 : in1_din;
+		assign out2_din = sel[tag] ? in1_din : '0;
+		assign out1_write = sel[tag] ? '0: in1_write;
+		assign out2_write = sel[tag] ? in1_write : '0;
 		
 		integer i;
 		always @(*)
@@ -117,34 +115,36 @@ class SboxPrinterGeneric {
 			
 		logic [TAG_WIDTH-1 : 0] tag;
 		
-		reg out1_empty;
-		reg in1_rd;
-		reg in2_rd;
-		
-		««« Lo posso anche individuare con il for come negli attori
+		integer j;
 		always_comb
-		    case(out1_rd)
-		        2'b01: tag = 0;
-		        2'b10: tag = 1;
-		        default: tag = 'x;
-		    endcase 
+			begin                          
+			for(j = 0; j < NTHREADS; j = j+1)
+				if(out1_read == (1 << j)) 
+					begin
+						tag=j; 
+						break;
+					end
+				else
+					tag = 0;
+			  end
+
 		
-		assign out1_data = sel[tag] ? in2_data : in1_data;
+		assign out1_dout = sel[tag] ? in2_dout : in1_dout;
 		
 		integer i;
-		always @(*)
+		always_comb
 			for(i = 0; i < NTHREADS; i = i+1)
 				begin
 				if(sel[i])
 				  begin
-				  in2_rd[i] = out1_rd[i];
-				  in1_rd[i] = '0;
+				  in2_read[i] = out1_read[i];
+				  in1_read[i] = '0;
 				  out1_empty[i] = in2_empty[i];
 				  end
 				else
 				  begin
-				  in2_rd[i] = '0;
-				  in1_rd[i] = out1_rd[i];
+				  in2_read[i] = '0;
+				  in1_read[i] = out1_read[i];
 				  out1_empty[i] = in1_empty[i];
 				  end
 				end
@@ -191,7 +191,17 @@ class SboxPrinterGeneric {
 			return modCommSignals.get(module).get(commSigId).get(SIZE)
 		}
 	}
-	
+
+	def String getCommSigSizeMT(String module, String commSigId) {
+		if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("variable") ) {
+			return "$clog2(NTHREADS) + SIZE"
+		} else if (modCommSignals.get(module).get(commSigId).get(SIZE).equals("broadcast") ) {
+			return "1"
+		} else {
+			return modCommSignals.get(module).get(commSigId).get(SIZE)
+		}
+	}
+		
 	def String getCommSigDimension(String module, String commSigId) {
 		if ( !getCommSigSize(module,commSigId).equals("1") ) {
 			return "[" + getCommSigSize(module,commSigId) + "-1 : 0] " 
@@ -199,7 +209,15 @@ class SboxPrinterGeneric {
 			return ""
 		}
 	}
-	
+
+	def String getCommSigDimensionMT(String module, String commSigId) {
+		if ( !getCommSigSizeMT(module,commSigId).equals("1") ) {
+			return "[" + getCommSigSizeMT(module,commSigId) + "-1 : 0] " 
+		} else {
+			return ""
+		}
+	}
+		
 	def String getChannelSuffix(String module, String commSigId) {
 		if(modCommSignals.get(module).get(commSigId).get(CH).equals("")) {
 			""
@@ -245,16 +263,16 @@ class SboxPrinterGeneric {
 		)(
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId)»
-			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
-			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out2«getChannelSuffix(pred,commSigId)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimensionMT(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimensionMT(pred,commSigId)»out2«getChannelSuffix(pred,commSigId)»,
 			«ENDIF»
 			«ENDFOR»
 			«FOR commSigId : modCommSignals.get(succ).keySet»
 			«IF isOutputSide(succ,commSigId)»
-			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimensionMT(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
 			«ENDIF»
 			«ENDFOR»
-			input [NTHREADS-1 : 0] sel
+			input logic [NTHREADS-1 : 0] sel
 		);
 		
 		'''	
@@ -269,16 +287,16 @@ class SboxPrinterGeneric {
 		)(
 			«FOR commSigId : modCommSignals.get(pred).keySet»
 			«IF isInputSide(pred,commSigId)»
-			«reverseKind(pred,commSigId)» «getCommSigDimension(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
+			«reverseKind(pred,commSigId)» «getCommSigDimensionMT(pred,commSigId)»out1«getChannelSuffix(pred,commSigId)»,
 			«ENDIF»
 			«ENDFOR»
 			«FOR commSigId : modCommSignals.get(succ).keySet»
 			«IF isOutputSide(succ,commSigId)»
-			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
-			«reverseKind(succ,commSigId)» «getCommSigDimension(succ,commSigId)»in2«getChannelSuffix(succ,commSigId)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimensionMT(succ,commSigId)»in1«getChannelSuffix(succ,commSigId)»,
+			«reverseKind(succ,commSigId)» «getCommSigDimensionMT(succ,commSigId)»in2«getChannelSuffix(succ,commSigId)»,
 			«ENDIF»
 			«ENDFOR»
-			input [NTHREADS-1 : 0] sel
+			input logic [NTHREADS-1 : 0] sel
 		);
 		
 		'''	
