@@ -650,6 +650,9 @@ class NetworkPrinterGeneric {
 			«ENDFOR»
 			)
 			«ENDIF»
+			«IF protocolManager.modCommParms.containsKey(ProtocolManager.ACTOR)»#(
+			«FOR commParId : protocolManager.modCommParms.get(ProtocolManager.ACTOR).keySet SEPARATOR ","»	.«protocolManager.modCommParms.get(ProtocolManager.ACTOR).get(commParId).get(ProtocolManager.NAME)»(«protocolManager.modCommParms.get(ACTOR).get(commParId).get(ProtocolManager.VAL)»)
+			«ENDFOR»)«ENDIF»
 			actor_«actor.simpleName» (
 			// Input Signal(s)
 			«FOR input : actor.inputs SEPARATOR ","»
@@ -913,24 +916,24 @@ class NetworkPrinterGeneric {
 		«FOR inputConnection: actor.getIncoming()»
 		«var Port inputPort = (inputConnection as Connection).getTargetPort()»
 		«IF actor.hasAttribute("sbox") && actor.getAttribute("type").getStringValue().equals("1x2")»
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
-		«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)  && !inputPort.label.equals("sel")»
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
-		«ENDIF»		
-		«ENDFOR»
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+				«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)  && !inputPort.label.equals("sel")»
+				wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
+				«ENDIF»		
+			«ENDFOR»
 		«ELSE»
-		«IF getFirstModType(actor, inputConnection as Connection).equals(ProtocolManager.PRED)»
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.PRED).keySet»
-		«IF protocolManager.isInputSide(ProtocolManager.PRED,commSigId)  && !inputPort.label.equals("sel")»
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.PRED,actor,commSigId, inputPort)»«protocolManager.getModName(ProtocolManager.PRED)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.PRED,commSigId,inputPort)»;
-		«ENDIF»
-		«ENDFOR»
-		«ENDIF»
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
-		«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)  && !inputPort.label.equals("sel")»
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
-		«ENDIF»
-		«ENDFOR»
+			«IF getFirstModType(actor, inputConnection as Connection).equals(ProtocolManager.PRED)»
+				«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.PRED).keySet»
+					«IF protocolManager.isInputSide(ProtocolManager.PRED,commSigId)  && !inputPort.label.equals("sel")»
+					wire «protocolManager.getCommSigPrintRange(ProtocolManager.PRED,actor,commSigId, inputPort)»«protocolManager.getModName(ProtocolManager.PRED)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.PRED,commSigId,inputPort)»;
+					«ENDIF»
+				«ENDFOR»
+			«ENDIF»
+			«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+				«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)  && !inputPort.label.equals("sel")»
+					wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,inputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,inputPort)»;
+				«ENDIF»
+			«ENDFOR»
 		«ENDIF»
 		«ENDFOR»
 		'''
@@ -940,28 +943,34 @@ class NetworkPrinterGeneric {
 	 * Print output ports signals of an actor
 	 */
 	def printActorOutputPortsSignals(Actor actor) {
+		// @FIXME It prints broadcasted signals many times
+		// should differentiate between actors and sbox
 		'''
 		«FOR outputConnection : actor.getOutgoing»
 		«var Port outputPort = (outputConnection as Connection).getSourcePort()»
-		«IF actor.hasAttribute("sbox") && actor.getAttribute("type").getStringValue().equals("2x1")»
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
-		«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)»		
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
-		«ENDIF»
-		«ENDFOR»
-		«ELSE»		
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
-		«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)»
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
-		«ENDIF»
-		«ENDFOR»
-		«IF getLastModType(actor, outputConnection as Connection).equals(ProtocolManager.SUCC)»
-		«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
-		«IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)»
-		wire «protocolManager.getCommSigPrintRange(ProtocolManager.SUCC,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,outputPort)»;
-		«ENDIF»
-		«ENDFOR»
-		«ENDIF»
+		«IF !outputPort.hasAttribute("inst")»
+			«IF actor.hasAttribute("sbox") && actor.getAttribute("type").getStringValue().equals("2x1")»
+				«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+					«IF protocolManager.isInputSide(ProtocolManager.ACTOR,commSigId)»		
+						wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
+					«ENDIF»
+				«ENDFOR»
+			«ELSE»		
+				«FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.ACTOR).keySet»
+					«IF protocolManager.isOutputSide(ProtocolManager.ACTOR,commSigId)»
+						wire «protocolManager.getCommSigPrintRange(ProtocolManager.ACTOR,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.ACTOR)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.ACTOR,commSigId,outputPort)»;
+					«ENDIF»
+				«ENDFOR»
+			«ENDIF»
+			«outputPort.setAttribute("inst", "")»
+		«««« FOR THE MOMENT THE SUCCESOR OPTION IS NOT MANAGED
+		««««IF getLastModType(actor, outputConnection as Connection).equals(ProtocolManager.SUCC)»
+		««««FOR commSigId : protocolManager.modCommSignals.get(ProtocolManager.SUCC).keySet»
+		««««IF protocolManager.isOutputSide(ProtocolManager.SUCC,commSigId)»
+		««««wire «protocolManager.getCommSigPrintRange(ProtocolManager.SUCC,actor,commSigId,outputPort)»«protocolManager.getModName(ProtocolManager.SUCC)»«actor.label»_«protocolManager.getSigPrintName(ProtocolManager.SUCC,commSigId,outputPort)»;
+		«««««ENDIF»
+		«««««ENDFOR»
+		«««««ENDIF»
 		«ENDIF»
 		«ENDFOR»
 		'''
@@ -1004,11 +1013,13 @@ class NetworkPrinterGeneric {
 		«IF protocolManager.modCommSignals.get(int_type).get(commSigId).get(ProtocolManager.KIND).equals("input")»
 		assign «getTargetSignal(connection, commSigId)» = «getSourceSignal(connection, commSigId)»; // Input signal
 		«ELSE»
-		«IF connection.hasAttribute("broadcast")»
-		«IF !connection.source.hasAttribute("printed")»
+		«IF connection.hasAttribute("broadcast")»		
 		«IF connection.source instanceof Actor»
-		«printBroadcastedActorOutput(connection, commSigId)»	
+		«IF !connection.sourcePort.hasAttribute("printed")»
+		«printBroadcastedActorOutput(connection, commSigId)»
+		«ENDIF»
 		«ELSE»
+		«IF !connection.source.hasAttribute("printed")»
 		«printBroadcastedInputPortOutput(connection, commSigId)»
 		«ENDIF»
 		«ENDIF»
@@ -1029,7 +1040,7 @@ class NetworkPrinterGeneric {
 		'''
 		assign «getSourceSignal(connection, commSigId)» =
 		«FOR broadConn : (connection.source as Actor).outgoingPortMap.get(connection.sourcePort) SEPARATOR " |"»
-		«getTargetSignal(connection, commSigId)» 
+		«getTargetSignal(broadConn, commSigId)» 
 		«ENDFOR»; // Broadcasted actor port
 		«connection.sourcePort.setAttribute("printed","")»
 		'''

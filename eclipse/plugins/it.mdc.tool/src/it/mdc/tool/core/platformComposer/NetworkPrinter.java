@@ -10,7 +10,7 @@ import net.sf.orcc.util.OrccLogger;
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.core.platformComposer.NetworkPrinterGeneric;
-import it.mdc.tool.core.platformComposer.SboxPrinterGeneric;
+import it.mdc.tool.core.platformComposer.SBoxPrinterGeneric;
 import it.mdc.tool.powerSaving.CpfPrinter;
 import it.mdc.tool.powerSaving.PowerController;
 import it.mdc.tool.core.sboxManagement.*;
@@ -367,7 +367,7 @@ public class NetworkPrinter extends PlatformComposer {
 			String sbox1x2File = dir.getPath() + File.separator + "sbox1x2.sv";
 			String sbox2x1File = dir.getPath() + File.separator + "sbox2x1.sv";
 			
-			SboxPrinterGeneric sboxPrinter  = new SboxPrinterGeneric(modCommSignals);
+			SBoxPrinterGeneric sboxPrinter  = new SBoxPrinterGeneric(modCommSignals);
 			
 			CharSequence sequence1x2, sequence2x1;
 			
@@ -391,12 +391,19 @@ public class NetworkPrinter extends PlatformComposer {
 		}
 		
 		// Print test bench module
+		
 		String tbFile = dir.getPath() + File.separator + "tb_multi_dataflow.v";	
+		CharSequence tbSequence;
 		
+		if(!enMT) {
 		TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
-		CharSequence tbSequence = testBenchPrinter.printTestBench(network,luts,protocolManager,configManager.getConfigMap());
+		tbSequence = testBenchPrinter.printTestBench(network,luts,protocolManager,configManager.getConfigMap());
 		logicRegionID = printer.getClockDomainIndex();
-		
+		}
+		else
+		{
+			tbSequence = "/* Sorry, testbench generation is not yet supported for multithread accelerators :( */";	
+		}
 		try {
 			PrintStream ps = new PrintStream(new FileOutputStream(tbFile));
 			ps.print(tbSequence.toString());
