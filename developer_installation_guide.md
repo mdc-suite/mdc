@@ -8,7 +8,8 @@
       * Help > Install New Software … >
       * search Graphiti on all available sites (Work with tab menu: -- All available sites)
       * Select all available options (Modeling and Testing)
-         * ![Eclipe new software installation atb](https://github.com/mdc-suite/mdc/blob/cps24/screenshoot-eclipse.jpeg?raw=true)  
+         <img src="https://github.com/mdc-suite/mdc/blob/cps24/blob/screenshoot-eclipse.jpeg" alt="" width="500"/>
+
 
 ### Clone the MDC repository
 * git clone --recurse-submodules --branch cps24 https://github.com/mdc-suite/mdc.git 
@@ -23,7 +24,7 @@
    * Right-click on net.sf.orcc.core -> Run as -> Run Configurations...
    * Double click on Eclipse Application (it will create a new configuration)
    * Select the Plug-ins tab and tick "Validate Plug-ins automatically prior to launching"
-      * ![ORCC plugins configuration](https://github.com/mdc-suite/mdc/blob/cps24/screenshoot-eclipse2.jpeg?raw=true)
+       <img src="https://github.com/mdc-suite/mdc/blob/cps24/blob/screenshoot-eclipse2.jpeg" alt="" width="500">
    * Click Apply and close the tab
 * Import MDC plugins:
    * File -> Import ... -> General -> Existing project into workspace
