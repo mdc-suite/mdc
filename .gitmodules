@@ -1,0 +1,3 @@
+[submodule "orcc"]
+	path = orcc
+	url = https://github.com/mdc-suite/orcc.git
