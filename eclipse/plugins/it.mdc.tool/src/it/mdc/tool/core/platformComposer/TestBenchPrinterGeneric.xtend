@@ -137,9 +137,7 @@ class TestBenchPrinterGeneric {
 		reg «IF netParm.type.sizeInBits != 1»[«netParm.type.sizeInBits-1»:0] «ENDIF»«netParm.name»;
 	 	«ENDFOR»
 		
-		«IF !luts.empty»
 		reg [7:0] ID;
-		«ENDIF»	
 		
 		«FOR sysSigId : protocolManager.getNetSysSignals.keySet»
 		«printNetSysSigKind(sysSigId)» «protocolManager.getSysSigPrintRange(null,sysSigId)»«protocolManager.getNetSysSignals.get(sysSigId).get(ProtocolManager.NETP)»;
