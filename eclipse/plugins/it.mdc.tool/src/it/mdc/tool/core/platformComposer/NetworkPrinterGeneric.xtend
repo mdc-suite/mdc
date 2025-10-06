@@ -502,6 +502,7 @@ class NetworkPrinterGeneric {
 		// @TODO here an additional control is needed since after modifications instanceClockDomain will contain only actors belonging to CG domains, then get(actor) could be null
 		'''
 		«FOR actor : network.getChildren().filter(typeof(Actor))»
+		
 		«IF !actor.hasAttribute("sbox")»
 		«IF protocolManager.modNames.containsKey(ProtocolManager.PRED)»
 		«FOR input : actor.inputs»
@@ -571,7 +572,7 @@ class NetworkPrinterGeneric {
 		);
 		
 		«ELSE»		
-		
+		«OrccLogger.traceln("sbox type: " + getSboxActorName(actor))»
 		// actor «actor.simpleName»
 		«getSboxActorName(actor)» #(
 			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)

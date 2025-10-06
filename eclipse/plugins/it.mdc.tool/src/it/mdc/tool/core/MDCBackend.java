@@ -13,7 +13,9 @@ import it.mdc.tool.core.platformComposer.LogicRegionFinder;
 import it.mdc.tool.core.platformComposer.LogicRegionMerger;
 import it.mdc.tool.core.platformComposer.NetworkPrinter;
 import it.mdc.tool.core.platformComposer.PlatformComposer;
+import it.mdc.tool.core.sboxManagement.SboxActorManager;
 import it.mdc.tool.core.sboxManagement.SboxLut;
+import it.mdc.tool.core.sboxManagement.SboxLutManager;
 import it.mdc.tool.profiling.CombinationsGenerator;
 import it.mdc.tool.profiling.Profiler;
 import it.mdc.tool.utility.*;
@@ -29,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.sf.orcc.OrccException;
 import net.sf.orcc.OrccRuntimeException;
 import net.sf.orcc.backends.AbstractBackend;
@@ -575,7 +578,18 @@ public class MDCBackend extends AbstractBackend {
       } else {
         lutsToGen = luts;
         OrccLogger.traceln("*\t\tLUTs to be generated: " + lutsToGen.size());
-
+        // Add in MDCBackend.compile(), before doHdlCodeGeneration
+        if (!lutsToGen.isEmpty()) {
+          OrccLogger.traceln(
+              "Debug: SboxLut Features (Total LUTs: " + lutsToGen.size() + ")");
+          int lutIndex = 0;
+          for (SboxLut lut : lutsToGen) {
+            OrccLogger.traceln("  SboxLut[" + lutIndex++ +
+                               "]: " + lut.toString());
+          }
+        } else {
+          OrccLogger.traceln("Debug: No SboxLuts found (luts is empty)");
+        }
         netInstancesToGen = netInstances;
         powerMap = null;
       }

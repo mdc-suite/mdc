@@ -836,24 +836,48 @@ public class EmpiricMerger extends Merger {
         networkSectionVertices.add(nextChild);
       }
     }
+    // all fetures of sbox there is not in xdf file, I should check the above to
+    // add required features to the following
     if (mergedBefore) {
       for (Vertex candidate2 : currentNetwork.getChildren()) {
         String vertexName = candidate2.getLabel();
         if (vertexName.startsWith("sbox")) {
           Instance sboxInstance = candidate2.getAdapter(Instance.class);
+
           if (sboxInstance != null) {
             Actor actor = sboxInstance.getAdapter(Actor.class);
-            OrccLogger.traceln("class: " + actor.getName());
+            OrccLogger.traceln(
+                "Debug: Actor=" + actor.getName() + ", Type=" +
+                (actor.hasAttribute("type")
+                     ? actor.getAttribute("type").getStringValue()
+                     : "none"));
+            // Explicitly set "sbox" attribute on both Instance and Actor
+            sboxInstance.setAttribute("sbox", true);
+            actor.setAttribute("sbox", true);
+
             if (actor.getName().contains("1x2")) {
-              OrccLogger.traceln("we want to add placeSbox1x2 for " +
+              OrccLogger.traceln("Debug: Setting type=1x2 for " +
                                  candidate2.getLabel());
+              sboxInstance.setAttribute("type", "1x2");
+              actor.setAttribute("type", "1x2");
+              sboxInstance.setAttribute("count",
+                                        sboxActorManager.getSboxCount());
+              actor.setAttribute("count", sboxActorManager.getSboxCount());
               sboxActorManager.incrementSboxCount();
+
               sboxLutManager.setLutValue(sboxInstance, currentNetwork,
                                          ALL_SECTIONS);
               networksInstances.get(currentNetwork.getSimpleName())
                   .add(sboxInstance.getLabel());
             }
           }
+          OrccLogger.traceln("Debug: Actor2=" + vertexName +
+                             ", IsSbox=" + candidate2.hasAttribute("sbox"));
+          OrccLogger.traceln("Debug: sboxInstance=" + vertexName +
+                             ", IsSbox=" + sboxInstance.hasAttribute("sbox"));
+          OrccLogger.traceln(
+              "Debug: Actor=" + vertexName + ", IsSbox=" +
+              sboxInstance.getAdapter(Actor.class).hasAttribute("sbox"));
         } else {
           OrccLogger.traceln("Skipping sbox instance: '" + vertexName +
                              "' in network '" + currentNetwork.getSimpleName() +

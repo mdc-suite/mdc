@@ -25,7 +25,6 @@ import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.util.OrccLogger;
 
-
 /**
  *
  * This class write HDL modules of the multi-dataflow
