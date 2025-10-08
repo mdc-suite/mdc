@@ -14,9 +14,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -45,6 +48,7 @@ public class NetworkPrinter extends PlatformComposer {
    */
   private Map<String, Map<String, String>> netSysSignals;
 
+  private boolean enPreMerge = false; // Default value
   /**
    * TODO add description
    * */
@@ -225,7 +229,9 @@ public class NetworkPrinter extends PlatformComposer {
       }
     }
   }
-
+  public void setEnPreMerge(boolean enPreMerge) {
+    this.enPreMerge = enPreMerge;
+  }
   /**
    * This method initializes the NetworkPrinter Class attributes.
    *
@@ -422,9 +428,26 @@ public class NetworkPrinter extends PlatformComposer {
     // Print test bench module
     String tbFile = dir.getPath() + File.separator + "tb_multi_dataflow.v";
 
+    Map<Integer, String> ConfigMap;
+    if (enPreMerge) {
+
+      Set<Network> originalNetworks = new LinkedHashSet<>();
+      // Collect all unique networks from all SBox LUTs
+      for (SboxLut lut : luts) {
+        originalNetworks.addAll(lut.getNetworks());
+      }
+      ConfigManager configManager2 = new ConfigManager(
+          configManager.getOutPath(), configManager.getRvcCalOutputFolder());
+      configManager2.setNetworkList(new ArrayList<>(originalNetworks));
+      ConfigMap = configManager2.getConfigMap();
+
+    } else {
+      ConfigMap = configManager.getConfigMap();
+    }
+    OrccLogger.severeln("config map" + ConfigMap + enPreMerge);
     TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
     CharSequence tbSequence = testBenchPrinter.printTestBench(
-        network, luts, protocolManager, configManager.getConfigMap());
+        network, luts, protocolManager, ConfigMap);
     logicRegionID = printer.getClockDomainIndex();
 
     try {

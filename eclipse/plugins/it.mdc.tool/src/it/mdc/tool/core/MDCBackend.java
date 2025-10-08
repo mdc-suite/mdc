@@ -572,6 +572,7 @@ public class MDCBackend extends AbstractBackend {
       // get the platform composer for the selected language
       PlatformComposer hdlWriter = new NetworkPrinter(
           hdlDir.getPath(), configManager, network, protocolFile);
+      ((NetworkPrinter)hdlWriter).setEnPreMerge(enPreMerge);
       List<SboxLut> lutsToGen;
       Map<String, Set<String>> netInstancesToGen;
       Map<String, Double> powerMap;
@@ -906,7 +907,7 @@ public class MDCBackend extends AbstractBackend {
   protected void doInitializeOptions() {
 
     doInitializeInternalVariables();
-    enPreMerge = true;
+    enPreMerge = getOption("it.unica.diee.mdc.acceptMergedNetwork", false);
 
     printer = new Printer();
 

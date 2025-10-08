@@ -39,6 +39,13 @@
             <optionRef
                 id="it.unica.diee.mdc.xdfList">
             </optionRef>
+	        <option
+	            defaultValue="false"
+	            description="Accept the merged network"
+	            id="it.unica.diee.mdc.acceptMergedNetwork"
+	            name="Accept Merged Network">
+	            <checkBox></checkBox>
+	        </option>           
             <optionRef
                 id="it.unica.diee.mdc.mergingAlgorithm">
             </optionRef>
@@ -187,7 +194,15 @@
             </comboBoxItem>
         </comboBox>
      </option>
-
+	<option
+	    defaultValue="false"
+	    description="Accept the merged network configuration"
+	    id="it.unica.diee.mdc.acceptMergedNetwork"
+	    name="Accept Merged Network">
+	    <checkBox>
+	        checkBox body text
+	    </checkBox>
+	</option>
     <option
         defaultValue="EMPIRIC"
         description="Algorithm adopted for the dataflow networks merging process."

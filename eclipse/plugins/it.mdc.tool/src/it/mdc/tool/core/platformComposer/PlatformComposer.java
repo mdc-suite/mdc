@@ -209,7 +209,6 @@ public abstract class PlatformComposer {
       ConfigManager configManager2 = new ConfigManager(
           configManager.getOutPath(), configManager.getRvcCalOutputFolder());
       configManager2.setNetworkList(new ArrayList<>(originalNetworks));
-      Set<Network> networks = new HashSet<>();
       sequence = new ConfigPrinter().printConfig(network, luts, configManager2);
     } else {
       sequence = new ConfigPrinter().printConfig(network, luts, configManager);
