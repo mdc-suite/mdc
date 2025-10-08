@@ -18,6 +18,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +32,6 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.util.ExpressionEvaluator;
 import net.sf.orcc.util.OrccLogger;
-
 
 /**
  *
@@ -189,20 +189,31 @@ public abstract class PlatformComposer {
    * 		configuration Look-Up Tables
    * @throws IOException
    */
-  public void generateConfig(boolean genCopr, List<SboxLut> luts)
-      throws IOException {
+  public void generateConfig(boolean genCopr, List<SboxLut> luts,
+                             boolean enPreMerge) throws IOException {
 
     File dir = new File(hdlPath);
     // If directory doesn't exist, create it
     if (!dir.exists()) {
       dir.mkdirs();
     }
-
+    CharSequence sequence;
     String file = dir.getPath() + File.separator + "configurator.v";
+    if (enPreMerge) {
 
-    CharSequence sequence =
-        new ConfigPrinter().printConfig(network, luts, configManager);
-
+      Set<Network> originalNetworks = new LinkedHashSet<>();
+      // Collect all unique networks from all SBox LUTs
+      for (SboxLut lut : luts) {
+        originalNetworks.addAll(lut.getNetworks());
+      }
+      ConfigManager configManager2 = new ConfigManager(
+          configManager.getOutPath(), configManager.getRvcCalOutputFolder());
+      configManager2.setNetworkList(new ArrayList<>(originalNetworks));
+      Set<Network> networks = new HashSet<>();
+      sequence = new ConfigPrinter().printConfig(network, luts, configManager2);
+    } else {
+      sequence = new ConfigPrinter().printConfig(network, luts, configManager);
+    }
     try {
       PrintStream ps = new PrintStream(new FileOutputStream(file));
       ps.print(sequence.toString());

@@ -152,6 +152,11 @@ public class MDCBackend extends AbstractBackend {
    * MDC printer instance
    */
   private Printer printer;
+
+  /**
+   * Enable pre merging flag
+   */
+  private boolean enPreMerge;
   ////////////////////////////////////////////////////////
 
   //  Profiling attributes
@@ -579,17 +584,6 @@ public class MDCBackend extends AbstractBackend {
         lutsToGen = luts;
         OrccLogger.traceln("*\t\tLUTs to be generated: " + lutsToGen.size());
         // Add in MDCBackend.compile(), before doHdlCodeGeneration
-        if (!lutsToGen.isEmpty()) {
-          OrccLogger.traceln(
-              "Debug: SboxLut Features (Total LUTs: " + lutsToGen.size() + ")");
-          int lutIndex = 0;
-          for (SboxLut lut : lutsToGen) {
-            OrccLogger.traceln("  SboxLut[" + lutIndex++ +
-                               "]: " + lut.toString());
-          }
-        } else {
-          OrccLogger.traceln("Debug: No SboxLuts found (luts is empty)");
-        }
         netInstancesToGen = netInstances;
         powerMap = null;
       }
@@ -659,9 +653,7 @@ public class MDCBackend extends AbstractBackend {
         /// <li> generate network configurator
         /// PlatformComposer.generateConfig()</ol>
         if (!luts.isEmpty()) {
-          hdlWriter.generateConfig(genCopr, lutsToGen);
-          OrccLogger.traceln("*\t\tLUTs to be generated !lrEn: " +
-                             lutsToGen.size());
+          hdlWriter.generateConfig(genCopr, lutsToGen, enPreMerge);
         }
 
       } else if (!luts.isEmpty()) { /// <li> if logic regions computing is
@@ -752,7 +744,7 @@ public class MDCBackend extends AbstractBackend {
 
         /// <li> generate top module and network configurator
         hdlWriter.generateTop(lutsToGen, getOptions());
-        hdlWriter.generateConfig(genCopr, lutsToGen);
+        hdlWriter.generateConfig(genCopr, lutsToGen, enPreMerge);
 
         // OrccLogger.traceln(netRegions);
 
@@ -888,6 +880,7 @@ public class MDCBackend extends AbstractBackend {
     enArtico = false;
     enPulp = false;
     profileEn = false;
+    enPreMerge = false;
     bestInputMap = new LinkedHashMap<Network, Integer>();
     bestValues = new ArrayList<Float>();
     bestLuts = new ArrayList<SboxLut>();
@@ -913,6 +906,7 @@ public class MDCBackend extends AbstractBackend {
   protected void doInitializeOptions() {
 
     doInitializeInternalVariables();
+    enPreMerge = true;
 
     printer = new Printer();
 
@@ -1169,7 +1163,7 @@ public class MDCBackend extends AbstractBackend {
       OrccLogger.traceln("[DBG]\t ID: " + id);
 
       /// <li> merge networks
-      resultNetwork = merger.merge(currentList, outputPath);
+      resultNetwork = merger.merge(currentList, outputPath, enPreMerge);
       // printer.printNetwork(resultNetwork);
 
       /// <li> set result network name with the don't merge trace

@@ -321,8 +321,8 @@ public class EmpiricMerger extends Merger {
    * 		the mutli-dataflow network
    */
   @Override
-  public Network merge(List<Network> mergingNetworks, String path)
-      throws IOException {
+  public Network merge(List<Network> mergingNetworks, String path,
+                       boolean mergedBefore) throws IOException {
     /// <b>Merging steps: </b>
     // sboxActorManager.initializeSboxCalFiles(path + ".cal_gen");
 
@@ -331,13 +331,13 @@ public class EmpiricMerger extends Merger {
 
     /// <li> loop on the input set of networks
     for (int i = 0; i < mergingNetworks.size(); i++) {
-
+      OrccLogger.traceln("DBG: mergingNetworks = " + mergingNetworks.size());
       /// <ol> <li> set current network to be combined
       if (mergingNetworks.get(i) != null)
         currentNetwork = mergingNetworks.get(i);
 
       ///< li> combine the current network
-      mergeNetwork();
+      mergeNetwork(mergedBefore);
 
       ///< li> merge network variables (static parameters)
       Boolean mergeThisVar = true;
@@ -354,6 +354,7 @@ public class EmpiricMerger extends Merger {
         }
         mergeThisVar = true;
       }
+
       for (Var parm : mergingVars) {
         multiDataflow.getVariables().add(parm);
       }
@@ -716,7 +717,7 @@ public class EmpiricMerger extends Merger {
   /**
    * Combine the current combining network with the multi-dataflow network
    */
-  private void mergeNetwork() {
+  private void mergeNetwork(boolean mergedBefore) {
     /// <ul>
     // OrccLogger.traceln("mgd net " + currentNetwork.getName());
 
@@ -738,8 +739,8 @@ public class EmpiricMerger extends Merger {
     networksInstances.put(
         currentNetwork.getSimpleName(),
         new HashSet<String>()); // instantiate a new network instance set
-    boolean mergedBefore = true;
-    // boolean mergedBefore = false;
+    // boolean mergedBefore = true;
+    //  boolean mergedBefore = false;
 
     for (Vertex candidate : currentNetwork.getChildren()) {
       // DEBUG: Log the candidate vertex details
@@ -839,6 +840,8 @@ public class EmpiricMerger extends Merger {
     // all fetures of sbox there is not in xdf file, I should check the above to
     // add required features to the following
     if (mergedBefore) {
+      String[] networkName = {null, null};
+      boolean[] cnfgTable = {true, false};
       for (Vertex candidate2 : currentNetwork.getChildren()) {
         String vertexName = candidate2.getLabel();
         if (vertexName.startsWith("sbox")) {
@@ -846,29 +849,62 @@ public class EmpiricMerger extends Merger {
 
           if (sboxInstance != null) {
             Actor actor = sboxInstance.getAdapter(Actor.class);
-            OrccLogger.traceln(
-                "Debug: Actor=" + actor.getName() + ", Type=" +
-                (actor.hasAttribute("type")
-                     ? actor.getAttribute("type").getStringValue()
-                     : "none"));
             // Explicitly set "sbox" attribute on both Instance and Actor
             sboxInstance.setAttribute("sbox", true);
             actor.setAttribute("sbox", true);
 
             if (actor.getName().contains("1x2")) {
-              OrccLogger.traceln("Debug: Setting type=1x2 for " +
-                                 candidate2.getLabel());
               sboxInstance.setAttribute("type", "1x2");
               actor.setAttribute("type", "1x2");
               sboxInstance.setAttribute("count",
                                         sboxActorManager.getSboxCount());
               actor.setAttribute("count", sboxActorManager.getSboxCount());
               sboxActorManager.incrementSboxCount();
+              int attr_num = 0;
+              for (Attribute attr : sboxInstance.getAttributes()) {
+                if (attr.getStringValue() != null)
+                  if (attr.getStringValue().startsWith("{")) {
 
-              sboxLutManager.setLutValue(sboxInstance, currentNetwork,
-                                         ALL_SECTIONS);
-              networksInstances.get(currentNetwork.getSimpleName())
-                  .add(sboxInstance.getLabel());
+                    OrccLogger.traceln("  Attribute: " + attr.getName() +
+                                       " = " + attr.getStringValue());
+                    networkName[attr_num] =
+                        attr.getName().replace("baseline.", "");
+                    cnfgTable[attr_num] =
+                        attr.getStringValue().contains("true");
+                    attr_num++;
+                    if (attr_num > 2) {
+                      OrccLogger.traceln(
+                          " ERROR: Attribute networks numbers is over: " +
+                          attr_num);
+                      break;
+                    }
+                  }
+              }
+              if (!cnfgTable[0] && cnfgTable[1]) {
+                String tmp = networkName[0];
+                networkName[0] = networkName[1];
+                networkName[1] = tmp;
+              }
+              if (networkName[0] != null) {
+                networksInstances.put(networkName[0], new HashSet<String>());
+                Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
+                virtualNetwork.setName(networkName[0]);
+                sboxLutManager.setLutValue(sboxInstance, virtualNetwork,
+                                           ALL_SECTIONS);
+                networksInstances.get(networkName[0])
+                    .add(sboxInstance.getLabel());
+
+                Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
+                virtualNetwork2.setName(networkName[1]);
+                sectionMap.put(virtualNetwork2, currentSection);
+
+              } else {
+                sboxLutManager.setLutValue(sboxInstance, currentNetwork,
+                                           ALL_SECTIONS);
+                networksInstances.get(currentNetwork.getSimpleName())
+                    .add(sboxInstance.getLabel());
+                sectionMap.put(currentNetwork, currentSection);
+              }
             }
           }
           OrccLogger.traceln("Debug: Actor2=" + vertexName +
@@ -878,6 +914,9 @@ public class EmpiricMerger extends Merger {
           OrccLogger.traceln(
               "Debug: Actor=" + vertexName + ", IsSbox=" +
               sboxInstance.getAdapter(Actor.class).hasAttribute("sbox"));
+          OrccLogger.traceln("Debug: sbox instance: '" + vertexName +
+                             "' in network '" + currentNetwork.getSimpleName() +
+                             "'");
         } else {
           OrccLogger.traceln("Skipping sbox instance: '" + vertexName +
                              "' in network '" + currentNetwork.getSimpleName() +
@@ -887,12 +926,17 @@ public class EmpiricMerger extends Merger {
     }
     // save the number of sections of the network (useful for future works about
     // networks internal reconfiguration)
-    sectionMap.put(currentNetwork, currentSection);
-
+    if (!mergedBefore) {
+      sectionMap.put(currentNetwork, currentSection);
+    }
     // complete sbox LUTs (useful for future works about networks internal
     // reconfiguration)
     sboxLutManager.completeLutsMultiple(sectionMap);
-
+    int lutIndex = 0;
+    for (SboxLut lut : sboxLutManager.getLuts()) {
+      OrccLogger.traceln("DBG: SboxLut3[" + lutIndex++ +
+                         "]: " + lut.toString());
+    }
     /// </ul>
   }
 
@@ -1016,6 +1060,10 @@ public class EmpiricMerger extends Merger {
 
     // update sbox lut
     sboxLutManager.setLutValue(sboxInstance, currentNetwork, ALL_SECTIONS);
+    OrccLogger.traceln("Debug: number luts=" + sboxActorManager.getSboxCount() +
+                       ", currentNetwork=" + currentNetwork.getSimpleName());
+    OrccLogger.traceln("Debug: sbox instance: '" + sboxInstance.getLabel() +
+                       "' in network '" + currentNetwork.getSimpleName() + "'");
     networksInstances.get(currentNetwork.getSimpleName())
         .add(sboxInstance.getLabel());
 
@@ -1122,7 +1170,8 @@ public class EmpiricMerger extends Merger {
         }
       } else {
         inConn.setAttribute(
-            "bufferSize", getBufferSizeValue(candidate)); // for network editor
+            "bufferSize",
+            getBufferSizeValue(candidate)); // for network editor
         inConn.getAttribute("bufferSize")
             .setContainedValue(
                 getBufferSizeValue(candidate)); // for platform-composer
@@ -1130,7 +1179,8 @@ public class EmpiricMerger extends Merger {
     } else {
       if (hasBufferSize(collision)) {
         inConn.setAttribute(
-            "bufferSize", getBufferSizeValue(collision)); // for network editor
+            "bufferSize",
+            getBufferSizeValue(collision)); // for network editor
         inConn.getAttribute("bufferSize")
             .setContainedValue(
                 getBufferSizeValue(collision)); // for platform-composer
@@ -1265,7 +1315,8 @@ public class EmpiricMerger extends Merger {
         }
       } else {
         outConn.setAttribute(
-            "bufferSize", getBufferSizeValue(candidate)); // for network editor
+            "bufferSize",
+            getBufferSizeValue(candidate)); // for network editor
         outConn.getAttribute("bufferSize")
             .setContainedValue(
                 getBufferSizeValue(candidate)); // for platform-composer
@@ -1273,7 +1324,8 @@ public class EmpiricMerger extends Merger {
     } else {
       if (hasBufferSize(collision)) {
         outConn.setAttribute(
-            "bufferSize", getBufferSizeValue(collision)); // for network editor
+            "bufferSize",
+            getBufferSizeValue(collision)); // for network editor
         outConn.getAttribute("bufferSize")
             .setContainedValue(
                 getBufferSizeValue(collision)); // for platform-composer
