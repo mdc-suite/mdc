@@ -29,7 +29,6 @@ import net.sf.orcc.df.transform.NetworkFlattener;
 import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.util.OrccLogger;
 
-
 /**
  *
  * This class write HDL modules of the multi-dataflow
@@ -444,7 +443,6 @@ public class NetworkPrinter extends PlatformComposer {
     } else {
       ConfigMap = configManager.getConfigMap();
     }
-    OrccLogger.severeln("config map" + ConfigMap + enPreMerge);
     TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
     CharSequence tbSequence = testBenchPrinter.printTestBench(
         network, luts, protocolManager, ConfigMap);
