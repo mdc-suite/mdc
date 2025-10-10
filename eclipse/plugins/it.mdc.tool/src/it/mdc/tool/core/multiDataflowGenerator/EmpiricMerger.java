@@ -852,9 +852,17 @@ public class EmpiricMerger extends Merger {
             // Explicitly set "sbox" attribute on both Instance and Actor
             sboxInstance.setAttribute("sbox", true);
             actor.setAttribute("sbox", true);
+            boolean isSbox = false;
             if (actor.getName().contains("1x2")) {
+              isSbox = true;
               sboxInstance.setAttribute("type", "1x2");
               actor.setAttribute("type", "1x2");
+            } else if (actor.getName().contains("2x1")) {
+              isSbox = true;
+              sboxInstance.setAttribute("type", "2x1");
+              actor.setAttribute("type", "2x1");
+            }
+            if (isSbox) {
               sboxInstance.setAttribute("count",
                                         sboxActorManager.getSboxCount());
               actor.setAttribute("count", sboxActorManager.getSboxCount());
