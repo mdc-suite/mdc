@@ -344,6 +344,8 @@ public class EmpiricMerger extends Merger {
       List<Var> mergingVars = new ArrayList<Var>();
       for (Var currVar : currentNetwork.getVariables()) {
         for (Var mergedVar : multiDataflow.getVariables()) {
+          OrccLogger.traceln("currVar: " + currVar.getName() +
+                             " mergedVar: " + mergedVar.getName());
           if (currVar.getName().equals(mergedVar.getName())) {
             mergeThisVar = false;
             break;
@@ -357,6 +359,7 @@ public class EmpiricMerger extends Merger {
 
       for (Var parm : mergingVars) {
         multiDataflow.getVariables().add(parm);
+        OrccLogger.traceln("added var: " + parm.getName());
       }
 
       ///< li> merge network parameters (dynamic parameters)
@@ -597,78 +600,79 @@ public class EmpiricMerger extends Merger {
         }
       }
     }
-
+    //
     /// <li> add new connection(s) to the result network
     for (Connection candidate : candidates) {
 
       if (!connectionsMap.containsKey(candidate)) {
+        if (!mergedBefore) {
 
-        /// <ol> <li> collision connections that have same source or target than
-        /// candidate
-        Connection collisionSrc = null;
-        Connection collisionTgt = null;
+          /// <ol> <li> collision connections that have same source or target
+          /// than candidate
+          Connection collisionSrc = null;
+          Connection collisionTgt = null;
 
-        boolean sameBroadcast = false;
+          boolean sameBroadcast = false;
 
-        /// <li> search source collision connections
-        for (Connection connection : multiDataflow.getConnections()) {
+          /// <li> search source collision connections
+          for (Connection connection : multiDataflow.getConnections()) {
 
-          if (candidate.hasAttribute("broadcast"))
-            if (connection.hasAttribute("broadcast")) {
-              if (candidate.getAttribute("broadcast")
-                      .getStringValue()
-                      .equals(connection.getAttribute("broadcast")
-                                  .getStringValue()))
-                if (matcher.matchSourcesMultiple(candidate, connection))
-                  sameBroadcast = true;
+            if (candidate.hasAttribute("broadcast"))
+              if (connection.hasAttribute("broadcast")) {
+                if (candidate.getAttribute("broadcast")
+                        .getStringValue()
+                        .equals(connection.getAttribute("broadcast")
+                                    .getStringValue()))
+                  if (matcher.matchSourcesMultiple(candidate, connection))
+                    sameBroadcast = true;
+              }
+
+            if (!sameBroadcast)
+              if (matcher.matchSourcesMultiple(candidate, connection)) {
+                collisionSrc = connection;
+              }
+          }
+          /// <li> source collision found: place a 1x2 sbox: placeSbox1x2()
+
+          if (collisionSrc != null) {
+            //	if(sboxActorManager.getSboxCount()==6) {
+            //		OrccLogger.debugln("1x2 " + candidate + " vs " +
+            // collisionSrc); 		OrccLogger.debugln("1x2b " +
+            // collisionSrc.getAttribute("bufferSize") + " " +
+            // collisionSrc.getAttribute("bufferSize").getContainedValue() + " "
+            // + collisionSrc.getAttribute("bufferSize").getReferencedValue());
+
+            //	}
+            candidate = placeSbox1x2(candidate, collisionSrc);
+            //		if(sboxActorManager.getSboxCount()==7) {
+            //			OrccLogger.debugln("1x2 " + candidate + " vs " +
+            // collisionSrc);
+            //		}
+            collisionSrc = null;
+          }
+
+          /// <li> search target collision connections
+          for (Connection nextC : multiDataflow.getConnections()) {
+            if (matcher.matchTargetsMultiple(candidate, nextC)) {
+              collisionTgt = nextC;
             }
-
-          if (!sameBroadcast)
-            if (matcher.matchSourcesMultiple(candidate, connection)) {
-              collisionSrc = connection;
-            }
-        }
-        /// <li> source collision found: place a 1x2 sbox: placeSbox1x2()
-
-        if (collisionSrc != null) {
-          //	if(sboxActorManager.getSboxCount()==6) {
-          //		OrccLogger.debugln("1x2 " + candidate + " vs " +
-          // collisionSrc); 		OrccLogger.debugln("1x2b " +
-          // collisionSrc.getAttribute("bufferSize") + " " +
-          // collisionSrc.getAttribute("bufferSize").getContainedValue() + " " +
-          // collisionSrc.getAttribute("bufferSize").getReferencedValue());
-
-          //	}
-          candidate = placeSbox1x2(candidate, collisionSrc);
-          //		if(sboxActorManager.getSboxCount()==7) {
-          //			OrccLogger.debugln("1x2 " + candidate + " vs " +
-          // collisionSrc);
-          //		}
-          collisionSrc = null;
-        }
-
-        /// <li> search target collision connections
-        for (Connection nextC : multiDataflow.getConnections()) {
-          if (matcher.matchTargetsMultiple(candidate, nextC)) {
-            collisionTgt = nextC;
+          }
+          /// <li> target collision founded: place a  2x1 sbox: placeSbox2x1()
+          if (collisionTgt != null) {
+            //		if(sboxActorManager.getSboxCount()==5) {
+            //		OrccLogger.debugln("2x1 " + candidate + " vs " +
+            // collisionTgt);
+            //	}
+            candidate = placeSbox2x1(candidate, collisionTgt);
+            //		if(sboxActorManager.getSboxCount()==6) {
+            //			OrccLogger.debugln("2x1 " + candidate + " vs " +
+            // collisionTgt); 			OrccLogger.debugln("2x1b " +
+            // collisionTgt.getAttribute("bufferSize") + " " +
+            // collisionTgt.getAttribute("bufferSize").getContainedValue() + " "
+            // + collisionTgt.getAttribute("bufferSize").getReferencedValue());
+            //		}
           }
         }
-        /// <li> target collision founded: place a  2x1 sbox: placeSbox2x1()
-        if (collisionTgt != null) {
-          //		if(sboxActorManager.getSboxCount()==5) {
-          //		OrccLogger.debugln("2x1 " + candidate + " vs " +
-          // collisionTgt);
-          //	}
-          candidate = placeSbox2x1(candidate, collisionTgt);
-          //		if(sboxActorManager.getSboxCount()==6) {
-          //			OrccLogger.debugln("2x1 " + candidate + " vs " +
-          // collisionTgt); 			OrccLogger.debugln("2x1b " +
-          // collisionTgt.getAttribute("bufferSize") + " " +
-          // collisionTgt.getAttribute("bufferSize").getContainedValue() + " " +
-          // collisionTgt.getAttribute("bufferSize").getReferencedValue());
-          //		}
-        }
-
         /// <li> add current candidate connection to the result network:
         /// addConnection()
         addConnection(candidate);
@@ -676,6 +680,7 @@ public class EmpiricMerger extends Merger {
 
       /// </ol>
     }
+
     /// </ul>
   }
 
@@ -739,8 +744,6 @@ public class EmpiricMerger extends Merger {
     networksInstances.put(
         currentNetwork.getSimpleName(),
         new HashSet<String>()); // instantiate a new network instance set
-    // boolean mergedBefore = true;
-    //  boolean mergedBefore = false;
 
     for (Vertex candidate : currentNetwork.getChildren()) {
       // DEBUG: Log the candidate vertex details
@@ -762,21 +765,17 @@ public class EmpiricMerger extends Merger {
                          currentNetwork.getSimpleName() + "': '" + vertexName +
                          "' (Label: '" + candidate.getLabel() + "')");
     }
+
     for (Vertex candidate : currentNetwork.getChildren()) {
       String vertexName = candidate.getLabel();
-      if (!vertexName.startsWith("QQQsbox")) {
-        mergeVertex(candidate, mergedBefore);
-      } else {
-        OrccLogger.traceln("Skipping sbox instance: '" + vertexName +
-                           "' in network '" + currentNetwork.getSimpleName() +
-                           "'");
-      }
+      mergeVertex(candidate, mergedBefore);
     }
 
     Map<String, String> newMap = new HashMap<String, String>();
     for (Vertex vertex : verticesMap.keySet()) {
       newMap.put(vertex.getLabel(), verticesMap.get(vertex).getLabel());
     }
+
     networkVertexMap.put(currentNetwork.getSimpleName(), newMap);
 
     // assign broadcast attribute to the connections
@@ -814,8 +813,8 @@ public class EmpiricMerger extends Merger {
         // list of child vertex predecessors
         List<Vertex> predecessors = nextChild.getPredecessors();
 
-        // add combined child to the network section vertices (useful for future
-        // works about networks internal reconfiguration)
+        // add combined child to the network section vertices (useful for
+        // future works about networks internal reconfiguration)
         networkSectionVertices.add(nextChild);
 
         // update section number (useful for future works about networks
@@ -837,6 +836,7 @@ public class EmpiricMerger extends Merger {
         networkSectionVertices.add(nextChild);
       }
     }
+
     // all fetures of sbox there is not in xdf file, I should check the above to
     // add required features to the following
     if (mergedBefore) {
@@ -844,15 +844,14 @@ public class EmpiricMerger extends Merger {
       boolean[] cnfgTable = {true, false};
       for (Vertex candidate2 : currentNetwork.getChildren()) {
         String vertexName = candidate2.getLabel();
+        OrccLogger.severeln("vertexName: " + vertexName);
         if (vertexName.startsWith("sbox")) {
           Instance sboxInstance = candidate2.getAdapter(Instance.class);
-
           if (sboxInstance != null) {
             Actor actor = sboxInstance.getAdapter(Actor.class);
             // Explicitly set "sbox" attribute on both Instance and Actor
             sboxInstance.setAttribute("sbox", true);
             actor.setAttribute("sbox", true);
-
             if (actor.getName().contains("1x2")) {
               sboxInstance.setAttribute("type", "1x2");
               actor.setAttribute("type", "1x2");
@@ -897,6 +896,10 @@ public class EmpiricMerger extends Merger {
                 Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
                 virtualNetwork2.setName(networkName[1]);
                 sectionMap.put(virtualNetwork2, currentSection);
+                Map<Integer, Boolean> valueMap =
+                    new HashMap<Integer, Boolean>();
+                sboxLutManager.getLut(sboxInstance)
+                    .setLutValue(virtualNetwork2, ALL_SECTIONS, false);
 
               } else {
                 sboxLutManager.setLutValue(sboxInstance, currentNetwork,
@@ -914,7 +917,7 @@ public class EmpiricMerger extends Merger {
           OrccLogger.traceln(
               "Debug: Actor=" + vertexName + ", IsSbox=" +
               sboxInstance.getAdapter(Actor.class).hasAttribute("sbox"));
-          OrccLogger.traceln("Debug: sbox instance: '" + vertexName +
+          OrccLogger.traceln("Debug0: sbox instance: '" + vertexName +
                              "' in network '" + currentNetwork.getSimpleName() +
                              "'");
         } else {
@@ -924,17 +927,18 @@ public class EmpiricMerger extends Merger {
         }
       }
     }
+
     // save the number of sections of the network (useful for future works about
     // networks internal reconfiguration)
     if (!mergedBefore) {
       sectionMap.put(currentNetwork, currentSection);
+      sboxLutManager.completeLutsMultiple(sectionMap);
     }
     // complete sbox LUTs (useful for future works about networks internal
     // reconfiguration)
-    sboxLutManager.completeLutsMultiple(sectionMap);
     int lutIndex = 0;
     for (SboxLut lut : sboxLutManager.getLuts()) {
-      OrccLogger.traceln("DBG: SboxLut3[" + lutIndex++ +
+      OrccLogger.traceln("DBG: SboxLut2[" + lutIndex++ +
                          "]: " + lut.toString());
     }
     /// </ul>
@@ -987,28 +991,31 @@ public class EmpiricMerger extends Merger {
     // merged before mrg=1
     Vertex unifiable = null;
     List<Vertex> unifiables = new ArrayList<Vertex>();
+    if (!mergedBefore) {
+      if (!(candidate.getAdapter(Instance.class).hasAttribute("don't merge"))) {
 
-    if (!(candidate.getAdapter(Instance.class).hasAttribute("don't merge"))) {
+        /// <li> search all the sharable vertices
+        for (Vertex existing : multiDataflow.getChildren()) {
+          if (unifier.canUnifyMultiple(candidate, existing) &&
+              !existing.hasAttribute(currentNetwork.getName()) &&
+              !existing.getAdapter(Instance.class)
+                   .hasAttribute("don't merge")) {
 
-      /// <li> search all the sharable vertices
-      for (Vertex existing : multiDataflow.getChildren()) {
-        if (unifier.canUnifyMultiple(candidate, existing) &&
-            !existing.hasAttribute(currentNetwork.getName()) &&
-            !existing.getAdapter(Instance.class).hasAttribute("don't merge")) {
-          unifiables.add(existing);
+            unifiables.add(existing);
+          }
         }
-      }
 
-      /// <li> find best sharable vertex
-      if (!unifiables.isEmpty()) {
-        if (unifiables.size() != 1) {
-          unifiable = searcher.findBestVertex(candidate, unifiables);
-        } else {
-          unifiable = unifiables.get(0);
+        /// <li> find best sharable vertex
+        if (!unifiables.isEmpty()) {
+          if (unifiables.size() != 1) {
+            unifiable = searcher.findBestVertex(candidate, unifiables);
+          } else {
+            unifiable = unifiables.get(0);
+          }
+          unifiable.setAttribute(currentNetwork.getName(), (Object)null);
+          candidate.setAttribute(
+              "count", unifiable.getAttribute("count").getObjectValue());
         }
-        unifiable.setAttribute(currentNetwork.getName(), (Object)null);
-        candidate.setAttribute(
-            "count", unifiable.getAttribute("count").getObjectValue());
       }
     }
 

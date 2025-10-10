@@ -12,6 +12,7 @@ import net.sf.orcc.df.Network
 import it.mdc.tool.core.sboxManagement.SboxLut
 import it.mdc.tool.core.ConfigManager
 import java.util.ArrayList
+import net.sf.orcc.util.OrccLogger
 
 /**
  * A Verilog Network Configurator printer
@@ -49,6 +50,10 @@ class ConfigPrinter {
 	}
 	
 	def printBody() {
+		    OrccLogger.traceln("DEBUG: Entering printBody method");
+		    OrccLogger.traceln("DEBUG: Number of LUTs: " + luts.size);
+		    OrccLogger.traceln("DEBUG: Number of networks: " + networks.size);
+		    
 		'''
 		
 		reg [«luts.size - 1»:0] sel;
@@ -57,6 +62,7 @@ class ConfigPrinter {
 		always@(ID)
 		case(ID)
 		«FOR network : networks»
+		
 			8'd«configManager.getNetworkId(network.getSimpleName())»:	begin	// «network.getSimpleName()»
 			«FOR lut : luts»
 							sel[«lut.getCount()»]=«IF lut.getLutValue(network,0)»1'b1«ELSE»1'b0«ENDIF»;
@@ -99,9 +105,23 @@ class ConfigPrinter {
 		this.luts = luts; 
 		this.configManager = configManager;
 		networks = new ArrayList<Network>();
-				
+    OrccLogger.traceln("DEBUG: ===== Starting printConfig =====");
+    OrccLogger.traceln("DEBUG: Input network: " + (network != null ? network.getSimpleName() : "null"));
+    OrccLogger.traceln("DEBUG: Number of LUTs received: " + luts.size);
+    OrccLogger.traceln("DEBUG: ConfigManager: " + (configManager != null ? "valid" : "null"));
+    OrccLogger.traceln("DEBUG: Before computeNets - networks list size: " + networks.size());    				
 		computeNets();
-
+	OrccLogger.traceln("DEBUG: After computeNets - networks list size: " + networks.size());
+    OrccLogger.traceln("DEBUG: Networks found:");
+    for(Network net : networks) {
+        OrccLogger.traceln("DEBUG:   - " + net.getSimpleName());
+        OrccLogger.traceln("DEBUG:   - " + configManager.getNetworkId(net.getSimpleName()));
+        for (SboxLut lut : luts) {
+          OrccLogger.traceln("DEBUG:   - lut: " + lut.getCount() + " - " + lut.getLutValue(net, 0));
+        }
+    }
+    
+ 
 		'''
 		«headerComments()»
 		

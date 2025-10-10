@@ -1166,7 +1166,10 @@ public class MDCBackend extends AbstractBackend {
       /// <li> merge networks
       resultNetwork = merger.merge(currentList, outputPath, enPreMerge);
       // printer.printNetwork(resultNetwork);
-
+      OrccLogger.traceln("Vertices (actors/modules) in res network:");
+      for (Vertex v : resultNetwork.getChildren()) {
+        OrccLogger.severeln("  - " + v.getLabel());
+      }
       /// <li> set result network name with the don't merge trace
       if (prifileCount < 10)
         resultNetwork.setName(0 + "" + prifileCount + "_" + id);

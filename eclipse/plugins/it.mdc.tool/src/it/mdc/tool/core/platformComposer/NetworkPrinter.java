@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -429,15 +430,18 @@ public class NetworkPrinter extends PlatformComposer {
 
     Map<Integer, String> ConfigMap;
     if (enPreMerge) {
-
-      Set<Network> originalNetworks = new LinkedHashSet<>();
+      Map<String, Network> originalNetworks = new LinkedHashMap<>();
       // Collect all unique networks from all SBox LUTs
       for (SboxLut lut : luts) {
-        originalNetworks.addAll(lut.getNetworks());
+        for (Network net : lut.getNetworks()) {
+          String netName = net.getName();
+          // Only add if not already seen
+          originalNetworks.putIfAbsent(netName, net);
+        }
       }
       ConfigManager configManager2 = new ConfigManager(
           configManager.getOutPath(), configManager.getRvcCalOutputFolder());
-      configManager2.setNetworkList(new ArrayList<>(originalNetworks));
+      configManager2.setNetworkList(new ArrayList<>(originalNetworks.values()));
       ConfigMap = configManager2.getConfigMap();
 
     } else {
