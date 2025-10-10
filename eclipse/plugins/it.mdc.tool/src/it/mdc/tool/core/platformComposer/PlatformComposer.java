@@ -293,34 +293,34 @@ public abstract class PlatformComposer {
 
       ConfigManager configManager2 = new ConfigManager(
           configManager.getOutPath(), configManager.getRvcCalOutputFolder());
-      configManager2.setNetworkList(new ArrayList<>(originalNetworks.values()));
+      configManager.setNetworkList(new ArrayList<>(originalNetworks.values()));
       int idCounter = 1;
-      for (Network net : configManager2.getNetworkList()) {
-        configManager2.getConfigMap().put(idCounter++, net.getSimpleName());
+      for (Network net : configManager.getNetworkList()) {
+        configManager.getConfigMap().put(idCounter++, net.getSimpleName());
         OrccLogger.severeln("Network in config2: " + net.getName() + " - " +
                             luts.get(0).getNetworkByName(net.getSimpleName()));
         OrccLogger.severeln("Network in lut: " +
-                            configManager2.getNetworkId(net.getSimpleName()));
+                            configManager.getNetworkId(net.getSimpleName()));
         for (SboxLut lut : luts) {
           OrccLogger.traceln("lut2: " + lut);
         }
       }
       List<Network> networks = new ArrayList<>();
-      for (Network net : configManager2.getNetworkList()) {
+      for (Network net : configManager.getNetworkList()) {
         networks.add(luts.get(0).getNetworkByName(net.getSimpleName()));
       }
       for (Network networkn : networks) {
-        OrccLogger.severeln("Network in lut: " + configManager2.getNetworkId(
+        OrccLogger.severeln("Network in lut: " + configManager.getNetworkId(
                                                      networkn.getSimpleName()));
         for (SboxLut lut : luts) {
           OrccLogger.traceln("lut: " + lut.getCount() + " - " +
                              lut.getLutValue(networkn, 0));
         }
       }
-      sequence = new ConfigPrinter().printConfig(network, luts, configManager2);
-    } else {
-      sequence = new ConfigPrinter().printConfig(network, luts, configManager);
     }
+
+    sequence = new ConfigPrinter().printConfig(network, luts, configManager);
+
     try {
       PrintStream ps = new PrintStream(new FileOutputStream(file));
       ps.print(sequence.toString());
