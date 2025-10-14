@@ -1,5 +1,4 @@
 package it.mdc.tool.core.platformComposer;
-
 import it.mdc.tool.core.ConfigManager;
 import it.mdc.tool.core.platformComposer.NetworkPrinterGeneric;
 import it.mdc.tool.core.platformComposer.SBoxPrinterGeneric;
@@ -24,6 +23,8 @@ import java.util.Set;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import net.sf.orcc.df.Connection;
+import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.transform.Instantiator;
 import net.sf.orcc.df.transform.NetworkFlattener;
@@ -305,42 +306,6 @@ public class NetworkPrinter extends PlatformComposer {
     if (!dir.exists()) {
       dir.mkdirs();
     }
-    // === DEBUG: Print merged network info before HDL generation ===
-    OrccLogger.traceln("-------------------------------------------------");
-    OrccLogger.traceln("DEBUG: Printing merged network information...");
-    OrccLogger.traceln("Network name: " + network.getName());
-    OrccLogger.traceln("Number of vertices (actors): " +
-                       network.getChildren().size());
-    OrccLogger.traceln("Number of connections: " +
-                       network.getConnections().size());
-    OrccLogger.traceln("Number of inputs: " + network.getInputs().size());
-    OrccLogger.traceln("Number of outputs: " + network.getOutputs().size());
-    OrccLogger.traceln("-------------------------------------------------");
-
-    // Print vertex list
-    OrccLogger.traceln("Vertices (actors/modules) in network:");
-    for (Vertex v : network.getChildren()) {
-      OrccLogger.traceln("  - " + v.getLabel());
-    }
-
-    // Try to print original networks from ConfigManager (if available)
-    try {
-      List<Network> originalNetworks = configManager.getNetworkList();
-      if (originalNetworks != null && !originalNetworks.isEmpty()) {
-        OrccLogger.traceln("-------------------------------------------------");
-        OrccLogger.traceln("Original networks merged:");
-        for (Network orig : originalNetworks) {
-          OrccLogger.traceln("  > " + orig.getSimpleName());
-          OrccLogger.traceln("  ID > " +
-                             configManager.getNetworkId(orig.getSimpleName()));
-        }
-      }
-    } catch (Exception e) {
-      OrccLogger.traceln("Could not retrieve original network list: " +
-                         e.getMessage());
-    }
-
-    OrccLogger.traceln("-------------------------------------------------");
 
     String file =
         dir.getPath() + File.separator + network.getSimpleName() + ".v";
@@ -430,24 +395,6 @@ public class NetworkPrinter extends PlatformComposer {
 
     Map<Integer, String> ConfigMap;
 
-    if (enPreMerge) {
-      Map<String, Network> originalNetworks = new LinkedHashMap<>();
-      // Collect all unique networks from all SBox LUTs
-      for (SboxLut lut : luts) {
-        for (Network net : lut.getNetworks()) {
-          String netName = net.getName();
-          // Only add if not already seen
-          originalNetworks.putIfAbsent(netName, net);
-        }
-      }
-      ConfigManager configManager2 = new ConfigManager(
-          configManager.getOutPath(), configManager.getRvcCalOutputFolder());
-      configManager2.setNetworkList(new ArrayList<>(originalNetworks.values()));
-      ConfigMap = configManager2.getConfigMap();
-
-    } else {
-      ConfigMap = configManager.getConfigMap();
-    }
     ConfigMap = configManager.getConfigMap();
 
     TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();

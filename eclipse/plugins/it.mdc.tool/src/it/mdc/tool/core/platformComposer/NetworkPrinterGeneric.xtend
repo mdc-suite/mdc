@@ -572,7 +572,6 @@ class NetworkPrinterGeneric {
 		);
 		
 		«ELSE»		
-		«OrccLogger.traceln("sbox type: " + getSboxActorName(actor))»
 		// actor «actor.simpleName»
 		«getSboxActorName(actor)» #(
 			.SIZE(«actor.getInput("in1").getType.getSizeInBits»)

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import net.sf.orcc.df.Actor;
 import net.sf.orcc.df.Connection;
+import net.sf.orcc.df.DfFactory;
 import net.sf.orcc.df.Instance;
 import net.sf.orcc.df.Network;
 import net.sf.orcc.df.Port;
@@ -202,118 +203,36 @@ public abstract class PlatformComposer {
     String file = dir.getPath() + File.separator + "configurator.v";
     if (enPreMerge) {
 
-      Map<String, Network> originalNetworks = new LinkedHashMap<>();
-      // STEP 1 — Collect all unique canonical networks from all LUTs
+      // STEP 1 — Build canonical map of networks by name
+      Map<String, Network> canonicalNetworks = new LinkedHashMap<>();
       for (SboxLut lut : luts) {
-        for (Network lutNet : lut.getNetworks()) {
-          String name = lutNet.getSimpleName();
-          if (!originalNetworks.containsKey(name)) {
-            originalNetworks.put(name, lutNet);
-            OrccLogger.traceln("DBG: canonical added for " + name +
-                               " (from LUT " +
-                               lut.getSboxInstance().getLabel() + ")");
-          }
-        }
-      }
-      for (SboxLut lut : luts) {
-        for (Network lutNet : new ArrayList<>(lut.getNetworks())) {
-          String name = lutNet.getSimpleName();
-          Network canonicalNet = originalNetworks.get(name);
-          OrccLogger.traceln("DBG: LUT '" + lut.getSboxInstance().getLabel() +
-                             "' uses network " + lutNet.getSimpleName());
-          if (canonicalNet != null)
-            OrccLogger.traceln("DBG: canonicalNet network " +
-                               canonicalNet.getSimpleName());
-          if (canonicalNet == null) {
-            OrccLogger.traceln("DBG:not found canonical for " + name);
-            // No canonical recorded (shouldn't happen if originalNetworks was
-            // populated from the luts themselves), so skip
-            continue;
-          }
-          // If the LUT already uses the canonical reference, nothing to do
-          if (lutNet == canonicalNet) {
-            continue;
-          }
-          // Copy all section values from the lutNet into the canonicalNet
-          Map<Integer, Boolean> existingValues =
-              lut.getAllNetworkValues(lutNet);
-          if (existingValues != null && !existingValues.isEmpty()) {
-            // Ensure canonicalNet has a map: set each section value
-            for (Map.Entry<Integer, Boolean> e : existingValues.entrySet()) {
-              int section = e.getKey();
-              boolean val = e.getValue();
-              // write into canonicalNet
-              lut.setLutValue(canonicalNet, section, val);
-            }
-          }
-          // Erase the old network's values (so it won't interfere)
-          lut.clearNetworkValues(lutNet);
-          OrccLogger.traceln("DBG: normalized LUT '" +
-                             lut.getSboxInstance().getLabel() +
-                             "' : moved values from " + lutNet.getSimpleName() +
-                             " -> " + canonicalNet.getSimpleName());
-        }
-      }
-      // STEP 3 — Cleanup: deduplicate LUT networks by name
-      for (SboxLut lut : luts) {
-        Map<String, Network> seenByName = new LinkedHashMap<>();
-        List<Network> toRemove = new ArrayList<>();
-
         for (Network net : lut.getNetworks()) {
-          String name = net.getSimpleName();
-          if (!seenByName.containsKey(name)) {
-            seenByName.put(name, net);
-          } else {
-            // Another network with same name -> check which one has values
-            Map<Integer, Boolean> values = lut.getAllNetworkValues(net);
-            if (values == null || values.isEmpty()) {
-              // Remove the empty duplicate
-              toRemove.add(net);
-            } else {
-              // Keep the one with actual data, remove the older one
-              Network existing = seenByName.get(name);
-              Map<Integer, Boolean> existingValues =
-                  lut.getAllNetworkValues(existing);
-              if (existingValues == null || existingValues.isEmpty()) {
-                toRemove.add(existing);
-                seenByName.put(name, net);
-              }
-            }
-          }
-        }
-
-        // Actually remove duplicates from the LUT
-        for (Network n : toRemove) {
-          lut.removeNetwork(n);
-          OrccLogger.traceln("DBG: Removed empty/duplicate network " +
-                             n.getSimpleName() + " from LUT " +
-                             lut.getSboxInstance().getLabel());
+          canonicalNetworks.putIfAbsent(net.getSimpleName(), net);
         }
       }
 
-      configManager.setNetworkList(new ArrayList<>(originalNetworks.values()));
+      // STEP 2 — Normalize all LUTs to reuse canonical networks
+      for (SboxLut lut : luts) {
+        for (Network net : new ArrayList<>(lut.getNetworks())) {
+          Network canonical = canonicalNetworks.get(net.getSimpleName());
+          if (canonical == null || canonical == net)
+            continue;
+
+          Map<Integer, Boolean> values = lut.getAllNetworkValues(net);
+          if (values != null && !values.isEmpty()) {
+            for (Map.Entry<Integer, Boolean> e : values.entrySet())
+              lut.setLutValue(canonical, e.getKey(), e.getValue());
+          }
+
+          lut.removeNetwork(net); // remove the non-canonical one
+        }
+      }
+
+      // STEP 3 — Update ConfigManager with canonical networks
+      configManager.setNetworkList(new ArrayList<>(canonicalNetworks.values()));
       int idCounter = 1;
       for (Network net : configManager.getNetworkList()) {
         configManager.getConfigMap().put(idCounter++, net.getSimpleName());
-        OrccLogger.severeln("Network in config: " + net.getName() + " - " +
-                            luts.get(0).getNetworkByName(net.getSimpleName()));
-        OrccLogger.severeln("Network ID: " +
-                            configManager.getNetworkId(net.getSimpleName()));
-        for (SboxLut lut : luts) {
-          OrccLogger.traceln("lut2: " + lut);
-        }
-      }
-      List<Network> networks = new ArrayList<>();
-      for (Network net : configManager.getNetworkList()) {
-        networks.add(luts.get(0).getNetworkByName(net.getSimpleName()));
-      }
-      for (Network networkn : networks) {
-        OrccLogger.severeln("Network in lut: " + configManager.getNetworkId(
-                                                     networkn.getSimpleName()));
-        for (SboxLut lut : luts) {
-          OrccLogger.traceln("lut: " + lut.getCount() + " - " +
-                             lut.getLutValue(networkn, 0));
-        }
       }
     }
 

@@ -238,8 +238,6 @@ public class SboxLut {
       if (!lutMap.containsKey(nextNet)) {
         valueMap.put(0, false);
         lutMap.put(nextNet, valueMap);
-        OrccLogger.traceln("DBG: Complete LUT for network " +
-                           nextNet.getSimpleName() + lutMap.toString());
       }
     }
   }

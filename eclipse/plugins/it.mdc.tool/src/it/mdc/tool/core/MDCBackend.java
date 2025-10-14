@@ -690,7 +690,6 @@ public class MDCBackend extends AbstractBackend {
         /// <ol><li> generate top module
         hdlWriter.initClockDomains(clockDomains);
         OrccLogger.traceln("call generateTop2");
-        OrccLogger.traceln("*\t\tLUTs to be generated2: " + lutsToGen.size());
 
         hdlWriter.generateTop(lutsToGen, getOptions());
 
@@ -1211,9 +1210,6 @@ public class MDCBackend extends AbstractBackend {
       resultNetwork = merger.merge(currentList, outputPath, enPreMerge);
       // printer.printNetwork(resultNetwork);
       OrccLogger.traceln("Vertices (actors/modules) in res network:");
-      for (Vertex v : resultNetwork.getChildren()) {
-        OrccLogger.severeln("  - " + v.getLabel());
-      }
       /// <li> set result network name with the don't merge trace
       if (prifileCount < 10)
         resultNetwork.setName(0 + "" + prifileCount + "_" + id);
@@ -1273,7 +1269,6 @@ public class MDCBackend extends AbstractBackend {
     // netInstances = merger.getNetworksClkInstances();
     netInstances = merger.getNetworksInstances();
     networkVertexMap = merger.getNetworksVertexMap();
-
     if (!profileEn)
       OrccLogger.traceln("*\tEnd merging process...");
 

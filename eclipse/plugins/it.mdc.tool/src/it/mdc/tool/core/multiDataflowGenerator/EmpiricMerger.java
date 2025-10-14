@@ -328,7 +328,6 @@ public class EmpiricMerger extends Merger {
 
     /// <ul> <li> set the name of the result network
     multiDataflow.setName("multi_dataflow");
-    OrccLogger.traceln("DBG: mergingNetworks = " + mergingNetworks.size());
 
     /// <li> loop on the input set of networks
     for (int i = 0; i < mergingNetworks.size(); i++) {
@@ -414,48 +413,59 @@ public class EmpiricMerger extends Merger {
           target.equals(existingConnection.getTarget()))
         candidates.add(existingConnection);
     }
+    if (!mergedBefore) {
 
-    /// <li> search matching connection(s) on the result network
-    for (Connection candidate : candidates) {
+      /// <li> search matching connection(s) on the result network
+      for (Connection candidate : candidates) {
 
-      // OrccLogger.traceln("cand attr " + candidate.getAttributes());
-
-      if (!connectionsMap.containsKey(candidate)) {
-        Connection unifiable;
-        if (candidate.hasAttribute("broadcast")) {
-          unifiable = searcher.getConnection(
-              verticesMap.get(source), candidate.getSourcePort(),
-              verticesMap.get(target), candidate.getTargetPort(), multiDataflow,
-              Integer.parseInt(
-                  candidate.getAttribute("broadcastSize").getStringValue()));
-        } else {
-          unifiable = searcher.getConnection(
-              verticesMap.get(source), candidate.getSourcePort(),
-              verticesMap.get(target), candidate.getTargetPort(), multiDataflow,
-              0);
-        }
-        if (unifiable != null) {
-          OrccLogger.traceln("we have a match: " + candidate + " vs " +
-                             unifiable);
-          if (!candidate.hasAttribute("broadcast")) {
-            connectionsMap.put(candidate, unifiable);
-            sboxLutManager.addLutsExistingSboxes(matcher.getLuts(),
-                                                 currentNetwork, ALL_SECTIONS);
-            for (Instance sbox : matcher.getLuts().keySet()) {
-              networksInstances.get(currentNetwork.getSimpleName())
-                  .add(sbox.getLabel());
-              OrccLogger.traceln("added sbox " + sbox.getLabel());
-            }
-            // update bufferSize parameter (worst case)
-            if (hasBufferSize(candidate)) {
-              if (hasBufferSize(unifiable)) {
-                //			OrccLogger.debugln("connection " +
-                // candidate
-                //+ " vs " + unifiable + "(" + getBufferSizeValue(candidate) +
-                //"," + getBufferSizeValue(unifiable) + ")");
-                if (getBufferSizeIntegerValue(candidate) >
-                    getBufferSizeIntegerValue(unifiable)) {
-                  //				OrccLogger.debugln("UPD");
+        // OrccLogger.traceln("cand attr " + candidate.getAttributes());
+        if (!connectionsMap.containsKey(candidate)) {
+          Connection unifiable;
+          if (candidate.hasAttribute("broadcast")) {
+            unifiable = searcher.getConnection(
+                verticesMap.get(source), candidate.getSourcePort(),
+                verticesMap.get(target), candidate.getTargetPort(),
+                multiDataflow,
+                Integer.parseInt(
+                    candidate.getAttribute("broadcastSize").getStringValue()));
+          } else {
+            unifiable = searcher.getConnection(
+                verticesMap.get(source), candidate.getSourcePort(),
+                verticesMap.get(target), candidate.getTargetPort(),
+                multiDataflow, 0);
+          }
+          if (unifiable != null) {
+            OrccLogger.traceln("we have a match: " + candidate + " vs " +
+                               unifiable);
+            if (!candidate.hasAttribute("broadcast")) {
+              connectionsMap.put(candidate, unifiable);
+              sboxLutManager.addLutsExistingSboxes(
+                  matcher.getLuts(), currentNetwork, ALL_SECTIONS);
+              for (Instance sbox : matcher.getLuts().keySet()) {
+                networksInstances.get(currentNetwork.getSimpleName())
+                    .add(sbox.getLabel());
+                OrccLogger.traceln("added sbox " + sbox.getLabel());
+              }
+              // update bufferSize parameter (worst case)
+              if (hasBufferSize(candidate)) {
+                if (hasBufferSize(unifiable)) {
+                  //			OrccLogger.debugln("connection " +
+                  // candidate
+                  //+ " vs " + unifiable + "(" + getBufferSizeValue(candidate) +
+                  //"," + getBufferSizeValue(unifiable) + ")");
+                  if (getBufferSizeIntegerValue(candidate) >
+                      getBufferSizeIntegerValue(unifiable)) {
+                    //				OrccLogger.debugln("UPD");
+                    unifiable.getAttribute("bufferSize")
+                        .setEObjectValue(getBufferSizeValue(
+                            candidate)); // for network editor
+                    unifiable.getAttribute("bufferSize")
+                        .setContainedValue(getBufferSizeValue(
+                            candidate)); // for platform-composer
+                  }
+                } else {
+                  //			OrccLogger.debugln("UPD");
+                  unifiable.addAttribute("bufferSize");
                   unifiable.getAttribute("bufferSize")
                       .setEObjectValue(
                           getBufferSizeValue(candidate)); // for network editor
@@ -463,138 +473,135 @@ public class EmpiricMerger extends Merger {
                       .setContainedValue(getBufferSizeValue(
                           candidate)); // for platform-composer
                 }
-              } else {
-                //			OrccLogger.debugln("UPD");
-                unifiable.addAttribute("bufferSize");
-                unifiable.getAttribute("bufferSize")
-                    .setEObjectValue(
-                        getBufferSizeValue(candidate)); // for network editor
-                unifiable.getAttribute("bufferSize")
-                    .setContainedValue(
-                        getBufferSizeValue(candidate)); // for platform-composer
+                //		OrccLogger.debugln("cbs " +
+                // getBufferSizeValue(unifiable) + "   " +
+                // unifiable.getAttribute("bufferSize").getReferencedValue());
               }
-              //		OrccLogger.debugln("cbs " +
-              // getBufferSizeValue(unifiable) + "   " +
-              // unifiable.getAttribute("bufferSize").getReferencedValue());
-            }
-            matcher.deleteLuts();
-          } else {
-            OrccLogger.traceln("we have a match (broadcast): " + candidate +
-                               " vs " + unifiable);
-            boolean isNotUnifiable = false;
-            Map<Connection, Connection> unifiableBroadcast =
-                new HashMap<Connection, Connection>(); /// <ol> <li> try to find
-                                                       /// a unifiable broadcast
-            unifiableBroadcast.put(
-                candidate,
-                unifiable); /// <li> add the already found unifiable connection
-            Map<Connection, EObject> unifiableBufferSize =
-                new HashMap<Connection, EObject>();
+              matcher.deleteLuts();
+            } else {
+              OrccLogger.traceln("we have a match (broadcast): " + candidate +
+                                 " vs " + unifiable);
+              boolean isNotUnifiable = false;
+              Map<Connection, Connection> unifiableBroadcast =
+                  new HashMap<Connection,
+                              Connection>(); /// <ol> <li> try to find
+                                             /// a unifiable broadcast
+              unifiableBroadcast.put(candidate,
+                                     unifiable); /// <li> add the already found
+                                                 /// unifiable connection
+              Map<Connection, EObject> unifiableBufferSize =
+                  new HashMap<Connection, EObject>();
 
-            // update bufferSize parameter (worst case)
-            if (hasBufferSize(candidate)) {
-              if (hasBufferSize(unifiable)) {
-                if (getBufferSizeIntegerValue(candidate) >
-                    getBufferSizeIntegerValue(unifiable)) {
+              // update bufferSize parameter (worst case)
+              if (hasBufferSize(candidate)) {
+                if (hasBufferSize(unifiable)) {
+                  if (getBufferSizeIntegerValue(candidate) >
+                      getBufferSizeIntegerValue(unifiable)) {
+                    unifiableBufferSize.put(unifiable,
+                                            getBufferSizeValue(candidate));
+                  }
+                } else {
                   unifiableBufferSize.put(unifiable,
                                           getBufferSizeValue(candidate));
                 }
-              } else {
-                unifiableBufferSize.put(unifiable,
-                                        getBufferSizeValue(candidate));
               }
-            }
-            Map<Instance, Boolean> unifBroadLuts =
-                matcher.getLuts(); /// <li> get the luts of unifiable broadcast
-            matcher.deleteLuts();  /// <li> reset matcher luts
+              Map<Instance, Boolean> unifBroadLuts =
+                  matcher
+                      .getLuts();   /// <li> get the luts of unifiable broadcast
+              matcher.deleteLuts(); /// <li> reset matcher luts
 
-            for (Connection otherCandidate :
-                 currentNetwork
-                     .getConnections()) { /// <li> for each other candidate
-              if (otherCandidate.hasAttribute(
-                      "broadcast") && /// <ol> <li>  if the other candidate is a
-                                      /// broadcast
-                  matcher.matchSourcesMultiple(
-                      candidate,
-                      otherCandidate) && ///< b>and</b> its source matches with
-                                         ///< the candidate
-                  !otherCandidate.equals(
-                      candidate)) { ///< b>and</b> it isn't the candidate
-                Connection otherUnifiable =
-                    searcher.getConnection( /// <b> search the other candidate
-                                            /// unifiable </b> </ol>
-                        verticesMap.get(source), candidate.getSourcePort(),
-                        verticesMap.get(otherCandidate.getTarget()),
-                        otherCandidate.getTargetPort(), multiDataflow,
-                        Integer.parseInt(
-                            otherCandidate.getAttribute("broadcastSize")
-                                .getStringValue()));
-                if (otherUnifiable !=
-                    null) { /// <li> for each other candidate
-                            /// <ol> <li> if an other unifiable has been found
-                  for (Instance sbox :
-                       matcher.getLuts().keySet()) { /// <b> get the luts of the
-                                                     /// other unifiable </b>
-                    if (unifBroadLuts.containsKey(
-                            sbox)) /// <li> if the unifiable has the same lut
-                      if (!matcher.getLuts().get(sbox).equals(unifBroadLuts.get(
-                              sbox))) { /// <b>and</b> if the related values are
-                                        /// not equal
-                        isNotUnifiable = true;
-                        break; /// <b> the broadcast is not unifiable </b>
-                      }
-                  }
+              for (Connection otherCandidate :
+                   currentNetwork
+                       .getConnections()) { /// <li> for each other candidate
+                if (otherCandidate.hasAttribute(
+                        "broadcast") && /// <ol> <li>  if the other candidate is
+                                        /// a broadcast
+                    matcher.matchSourcesMultiple(
+                        candidate,
+                        otherCandidate) && ///< b>and</b> its source matches
+                                           ///< with the candidate
+                    !otherCandidate.equals(
+                        candidate)) { ///< b>and</b> it isn't the candidate
+                  Connection otherUnifiable =
+                      searcher.getConnection( /// <b> search the other candidate
+                                              /// unifiable </b> </ol>
+                          verticesMap.get(source), candidate.getSourcePort(),
+                          verticesMap.get(otherCandidate.getTarget()),
+                          otherCandidate.getTargetPort(), multiDataflow,
+                          Integer.parseInt(
+                              otherCandidate.getAttribute("broadcastSize")
+                                  .getStringValue()));
+                  if (otherUnifiable !=
+                      null) { /// <li> for each other candidate
+                              /// <ol> <li> if an other unifiable has been found
+                    for (Instance sbox :
+                         matcher.getLuts()
+                             .keySet()) { /// <b> get the luts of the
+                                          /// other unifiable </b>
+                      if (unifBroadLuts.containsKey(
+                              sbox)) /// <li> if the unifiable has the same lut
+                        if (!matcher.getLuts().get(sbox).equals(
+                                unifBroadLuts.get(
+                                    sbox))) { /// <b>and</b> if the related
+                                              /// values are not equal
+                          isNotUnifiable = true;
+                          break; /// <b> the broadcast is not unifiable </b>
+                        }
+                    }
 
-                  if (!isNotUnifiable) {
+                    if (!isNotUnifiable) {
 
-                    // update bufferSize parameter (worst case)
-                    if (hasBufferSize(otherCandidate)) {
-                      if (hasBufferSize(otherUnifiable)) {
-                        if (getBufferSizeIntegerValue(otherCandidate) >
-                            getBufferSizeIntegerValue(otherUnifiable)) {
+                      // update bufferSize parameter (worst case)
+                      if (hasBufferSize(otherCandidate)) {
+                        if (hasBufferSize(otherUnifiable)) {
+                          if (getBufferSizeIntegerValue(otherCandidate) >
+                              getBufferSizeIntegerValue(otherUnifiable)) {
+                            unifiableBufferSize.put(
+                                otherUnifiable,
+                                getBufferSizeValue(otherCandidate));
+                          }
+                        } else {
                           unifiableBufferSize.put(
                               otherUnifiable,
                               getBufferSizeValue(otherCandidate));
                         }
-                      } else {
-                        unifiableBufferSize.put(
-                            otherUnifiable, getBufferSizeValue(otherCandidate));
                       }
+                      unifiableBroadcast.put(
+                          otherCandidate,
+                          otherUnifiable); /// <li> add the other unifiable
+                                           /// </ol>
+                                           /// </ol>
+                      unifBroadLuts.putAll(matcher.getLuts());
                     }
-                    unifiableBroadcast.put(
-                        otherCandidate,
-                        otherUnifiable); /// <li> add the other unifiable </ol>
-                                         /// </ol>
-                    unifBroadLuts.putAll(matcher.getLuts());
+                    matcher.deleteLuts();
+                    isNotUnifiable = false;
+                  } else {
+                    unifiableBroadcast = new HashMap<Connection, Connection>();
+                    unifiableBufferSize = new HashMap<Connection, EObject>();
+                    break;
                   }
-                  matcher.deleteLuts();
-                  isNotUnifiable = false;
-                } else {
-                  unifiableBroadcast = new HashMap<Connection, Connection>();
-                  unifiableBufferSize = new HashMap<Connection, EObject>();
-                  break;
                 }
               }
-            }
-            if (unifiableBroadcast.size() <= 1) {
-              matcher.deleteLuts();
-            } else {
-              connectionsMap.putAll(unifiableBroadcast);
-              sboxLutManager.addLutsExistingSboxes(
-                  unifBroadLuts, currentNetwork, ALL_SECTIONS);
-              for (Connection toBeUpdated : unifiableBufferSize.keySet()) {
-                toBeUpdated.getAttribute("bufferSize")
-                    .setEObjectValue(unifiableBufferSize.get(
-                        toBeUpdated)); // for network editor
-                toBeUpdated.getAttribute("bufferSize")
-                    .setContainedValue(unifiableBufferSize.get(
-                        toBeUpdated)); // for platform-composer
+              if (unifiableBroadcast.size() <= 1) {
+                matcher.deleteLuts();
+              } else {
+                connectionsMap.putAll(unifiableBroadcast);
+                sboxLutManager.addLutsExistingSboxes(
+                    unifBroadLuts, currentNetwork, ALL_SECTIONS);
+                for (Connection toBeUpdated : unifiableBufferSize.keySet()) {
+                  toBeUpdated.getAttribute("bufferSize")
+                      .setEObjectValue(unifiableBufferSize.get(
+                          toBeUpdated)); // for network editor
+                  toBeUpdated.getAttribute("bufferSize")
+                      .setContainedValue(unifiableBufferSize.get(
+                          toBeUpdated)); // for platform-composer
+                }
+                for (Instance sbox : matcher.getLuts().keySet()) {
+                  networksInstances.get(currentNetwork.getSimpleName())
+                      .add(sbox.getLabel());
+                }
+                matcher.deleteLuts();
               }
-              for (Instance sbox : matcher.getLuts().keySet()) {
-                networksInstances.get(currentNetwork.getSimpleName())
-                    .add(sbox.getLabel());
-              }
-              matcher.deleteLuts();
             }
           }
         }
@@ -746,11 +753,9 @@ public class EmpiricMerger extends Merger {
         new HashSet<String>()); // instantiate a new network instance set
 
     for (Vertex candidate : currentNetwork.getChildren()) {
-      // DEBUG: Log the candidate vertex details
 
       String vertexType = "Vertex";
-      String vertexName =
-          candidate.getLabel(); // General label (works for most cases)
+      String vertexName = candidate.getLabel();
       Instance inst = candidate.getAdapter(Instance.class);
       Port port = candidate.getAdapter(Port.class);
       if (inst != null) {
@@ -836,7 +841,15 @@ public class EmpiricMerger extends Merger {
         networkSectionVertices.add(nextChild);
       }
     }
+    if (!mergedBefore) {
+      // save the number of sections of the network (useful for future works
+      // about networks internal reconfiguration)
+      sectionMap.put(currentNetwork, currentSection);
 
+      // complete sbox LUTs (useful for future works about networks internal
+      // reconfiguration)
+      sboxLutManager.completeLutsMultiple(sectionMap);
+    }
     // all fetures of sbox there is not in xdf file, I should check the above to
     // add required features to the following
     String[] networkName = {null, null};
@@ -872,8 +885,6 @@ public class EmpiricMerger extends Merger {
                 if (attr.getStringValue() != null)
                   if (attr.getStringValue().startsWith("{")) {
 
-                    OrccLogger.traceln("  Attribute: " + attr.getName() +
-                                       " = " + attr.getStringValue());
                     networkName[attr_num] =
                         attr.getName().replace("baseline.", "");
                     cnfgTable[attr_num] =
@@ -892,37 +903,29 @@ public class EmpiricMerger extends Merger {
                 networkName[0] = networkName[1];
                 networkName[1] = tmp;
               }
+              // recover original networks and Sboxes
+              if (networkName[0] != null) {
+                networksInstances.put(networkName[0], new HashSet<String>());
+                Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
+                virtualNetwork.setName(networkName[0]);
+                Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
+                virtualNetwork2.setName(networkName[1]);
+
+                sboxLutManager.setLutValue(sboxInstance, virtualNetwork,
+                                           ALL_SECTIONS);
+                networksInstances.get(networkName[0])
+                    .add(sboxInstance.getLabel());
+
+                sectionMap.put(virtualNetwork2, currentSection);
+                sboxLutManager.resetLutValue(sboxInstance, virtualNetwork2,
+                                             ALL_SECTIONS);
+              }
             }
           }
         }
       }
     }
-    // recover original networks and Sboxes
-    if (networkName[0] != null) {
-      networksInstances.put(networkName[0], new HashSet<String>());
-      Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
-      virtualNetwork.setName(networkName[0]);
-      Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
-      virtualNetwork2.setName(networkName[1]);
 
-      sboxLutManager.setLutValue(sboxInstance, virtualNetwork, ALL_SECTIONS);
-      networksInstances.get(networkName[0]).add(sboxInstance.getLabel());
-
-      sectionMap.put(virtualNetwork2, currentSection);
-      sboxLutManager.getLut(sboxInstance)
-          .setLutValue(virtualNetwork2, ALL_SECTIONS, false);
-    } else {
-      // save the number of sections of the network (useful for future works
-      // about networks internal reconfiguration)
-      sectionMap.put(currentNetwork, currentSection);
-      sboxLutManager.completeLutsMultiple(sectionMap);
-    }
-
-    int lutIndex = 0;
-    for (SboxLut lut : sboxLutManager.getLuts()) {
-      OrccLogger.traceln("DBG: SboxLut2[" + lutIndex++ +
-                         "]: " + lut.toString());
-    }
     /// </ul>
   }
 
@@ -1049,10 +1052,7 @@ public class EmpiricMerger extends Merger {
 
     // update sbox lut
     sboxLutManager.setLutValue(sboxInstance, currentNetwork, ALL_SECTIONS);
-    OrccLogger.traceln("Debug: number luts=" + sboxActorManager.getSboxCount() +
-                       ", currentNetwork=" + currentNetwork.getSimpleName());
-    OrccLogger.traceln("Debug: sbox instance: '" + sboxInstance.getLabel() +
-                       "' in network '" + currentNetwork.getSimpleName() + "'");
+
     networksInstances.get(currentNetwork.getSimpleName())
         .add(sboxInstance.getLabel());
 
