@@ -328,10 +328,10 @@ public class EmpiricMerger extends Merger {
 
     /// <ul> <li> set the name of the result network
     multiDataflow.setName("multi_dataflow");
+    OrccLogger.traceln("DBG: mergingNetworks = " + mergingNetworks.size());
 
     /// <li> loop on the input set of networks
     for (int i = 0; i < mergingNetworks.size(); i++) {
-      OrccLogger.traceln("DBG: mergingNetworks = " + mergingNetworks.size());
       /// <ol> <li> set current network to be combined
       if (mergingNetworks.get(i) != null)
         currentNetwork = mergingNetworks.get(i);
@@ -839,14 +839,14 @@ public class EmpiricMerger extends Merger {
 
     // all fetures of sbox there is not in xdf file, I should check the above to
     // add required features to the following
+    String[] networkName = {null, null};
+    boolean[] cnfgTable = {true, false};
+    Instance sboxInstance = null;
     if (mergedBefore) {
-      String[] networkName = {null, null};
-      boolean[] cnfgTable = {true, false};
       for (Vertex candidate2 : currentNetwork.getChildren()) {
         String vertexName = candidate2.getLabel();
-        OrccLogger.severeln("vertexName: " + vertexName);
         if (vertexName.startsWith("sbox")) {
-          Instance sboxInstance = candidate2.getAdapter(Instance.class);
+          sboxInstance = candidate2.getAdapter(Instance.class);
           if (sboxInstance != null) {
             Actor actor = sboxInstance.getAdapter(Actor.class);
             // Explicitly set "sbox" attribute on both Instance and Actor
@@ -892,58 +892,32 @@ public class EmpiricMerger extends Merger {
                 networkName[0] = networkName[1];
                 networkName[1] = tmp;
               }
-              if (networkName[0] != null) {
-                networksInstances.put(networkName[0], new HashSet<String>());
-                Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
-                virtualNetwork.setName(networkName[0]);
-                sboxLutManager.setLutValue(sboxInstance, virtualNetwork,
-                                           ALL_SECTIONS);
-                networksInstances.get(networkName[0])
-                    .add(sboxInstance.getLabel());
-
-                Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
-                virtualNetwork2.setName(networkName[1]);
-                sectionMap.put(virtualNetwork2, currentSection);
-                Map<Integer, Boolean> valueMap =
-                    new HashMap<Integer, Boolean>();
-                sboxLutManager.getLut(sboxInstance)
-                    .setLutValue(virtualNetwork2, ALL_SECTIONS, false);
-
-              } else {
-                sboxLutManager.setLutValue(sboxInstance, currentNetwork,
-                                           ALL_SECTIONS);
-                networksInstances.get(currentNetwork.getSimpleName())
-                    .add(sboxInstance.getLabel());
-                sectionMap.put(currentNetwork, currentSection);
-              }
             }
           }
-          OrccLogger.traceln("Debug: Actor2=" + vertexName +
-                             ", IsSbox=" + candidate2.hasAttribute("sbox"));
-          OrccLogger.traceln("Debug: sboxInstance=" + vertexName +
-                             ", IsSbox=" + sboxInstance.hasAttribute("sbox"));
-          OrccLogger.traceln(
-              "Debug: Actor=" + vertexName + ", IsSbox=" +
-              sboxInstance.getAdapter(Actor.class).hasAttribute("sbox"));
-          OrccLogger.traceln("Debug0: sbox instance: '" + vertexName +
-                             "' in network '" + currentNetwork.getSimpleName() +
-                             "'");
-        } else {
-          OrccLogger.traceln("Skipping sbox instance: '" + vertexName +
-                             "' in network '" + currentNetwork.getSimpleName() +
-                             "'");
         }
       }
     }
+    // recover original networks and Sboxes
+    if (networkName[0] != null) {
+      networksInstances.put(networkName[0], new HashSet<String>());
+      Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
+      virtualNetwork.setName(networkName[0]);
+      Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
+      virtualNetwork2.setName(networkName[1]);
 
-    // save the number of sections of the network (useful for future works about
-    // networks internal reconfiguration)
-    if (!mergedBefore) {
+      sboxLutManager.setLutValue(sboxInstance, virtualNetwork, ALL_SECTIONS);
+      networksInstances.get(networkName[0]).add(sboxInstance.getLabel());
+
+      sectionMap.put(virtualNetwork2, currentSection);
+      sboxLutManager.getLut(sboxInstance)
+          .setLutValue(virtualNetwork2, ALL_SECTIONS, false);
+    } else {
+      // save the number of sections of the network (useful for future works
+      // about networks internal reconfiguration)
       sectionMap.put(currentNetwork, currentSection);
       sboxLutManager.completeLutsMultiple(sectionMap);
     }
-    // complete sbox LUTs (useful for future works about networks internal
-    // reconfiguration)
+
     int lutIndex = 0;
     for (SboxLut lut : sboxLutManager.getLuts()) {
       OrccLogger.traceln("DBG: SboxLut2[" + lutIndex++ +

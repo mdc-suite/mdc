@@ -21,13 +21,16 @@ import it.mdc.tool.profiling.Profiler;
 import it.mdc.tool.utility.*;
 import it.mdc.tool.utility.FileCopier;
 import it.mdc.tool.utility.Printer;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +63,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
@@ -296,7 +300,8 @@ public class MDCBackend extends AbstractBackend {
     for (Network net : netMap.keySet()) {
       for (Vertex vertex : net.getChildren()) {
         if (netMap.get(net).equals(DONT_MERGE)) {
-          // vertex.getAdapter(Instance.class).setAttribute("don't merge", "");
+          if (!enPreMerge)
+            vertex.getAdapter(Instance.class).setAttribute("don't merge", "");
         }
       }
     }
@@ -356,7 +361,7 @@ public class MDCBackend extends AbstractBackend {
 
     /// <li> Declare input networks list
     List<Network> networks = new ArrayList<Network>();
-
+    List<Network> orgNetworks = new ArrayList<Network>();
     /// <li> Parse input list of networks
 
     for (IFile fileIN : inputFileList) {
@@ -364,6 +369,7 @@ public class MDCBackend extends AbstractBackend {
       if (fileIN == null) {
         throw new OrccRuntimeException("The input XDF file does not exist.");
       }
+
       Network currNet = (Network)EcoreHelper.getEObject(set, fileIN);
 
       /// <ol> <li> validate current network (check if the input network is
@@ -372,11 +378,47 @@ public class MDCBackend extends AbstractBackend {
 
       /// <li> add current network to the input network list </ol>
       networks.add(currNet);
+      if (enPreMerge) {
+        // if pre-merging is enabled, extract the original networks names from
+        // the XDF file
+        try (BufferedReader reader = new BufferedReader(
+                 new InputStreamReader(fileIN.getContents()))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            // Look for the XDF opening tag
+            if (line.contains("<XDF") && line.contains("name=")) {
+              // Extract the name attribute
+              int nameStart = line.indexOf("name=\"") + 6;
+              int nameEnd = line.indexOf("\"", nameStart);
+              if (nameStart > 5 && nameEnd > nameStart) {
+                String label = line.substring(nameStart, nameEnd);
+                if (label != null) {
+                  String[] networkNames = label.split(",");
+                  for (String name : networkNames) {
+                    // making network with only name
+                    Network emptyNetwork = DfFactory.eINSTANCE.createNetwork();
+                    emptyNetwork.setName(name.trim());
+                    // adding to the original networks list
+                    orgNetworks.add(emptyNetwork);
+                  }
+                }
+                break;
+              }
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
     }
 
     /// <li> Set configuration manager with the input networks list:
     /// ConfigManager.setNetworkList()
-    configManager.setNetworkList(networks);
+
+    if (enPreMerge)
+      configManager.setNetworkList(orgNetworks);
+    else
+      configManager.setNetworkList(networks);
 
     /// <li> Check the input networks number, to verify it matches with the
     /// specified value of networks to be merged
@@ -392,9 +434,9 @@ public class MDCBackend extends AbstractBackend {
 
     /// <li> Generate the list of maps of input networks
     List<Map<Network, Integer>> netMapList = getNetMapList(networks);
-
     // <li> Extract size map and progress (for profiling purposes)
     int sizeMap = netMapList.size();
+    OrccLogger.traceln("* Number of combinations to be analyzed: " + sizeMap);
     int progress = 0;
 
     if (profileEn) {
@@ -648,6 +690,7 @@ public class MDCBackend extends AbstractBackend {
         /// <ol><li> generate top module
         hdlWriter.initClockDomains(clockDomains);
         OrccLogger.traceln("call generateTop2");
+        OrccLogger.traceln("*\t\tLUTs to be generated2: " + lutsToGen.size());
 
         hdlWriter.generateTop(lutsToGen, getOptions());
 
@@ -1150,9 +1193,10 @@ public class MDCBackend extends AbstractBackend {
 
       /// <ol> <li> keep trace of the don't merge flags </ol>
       List<Network> currentList = new ArrayList<Network>();
+
       String id = "";
       for (int i = 0; i <= netMap.size(); i++) {
-        for (Network net : netMap.keySet())
+        for (Network net : netMap.keySet()) {
           if (netMap.get(net) == i) {
             if (i != DONT_MERGE)
               id += net.getSimpleName() + "1";
@@ -1160,8 +1204,8 @@ public class MDCBackend extends AbstractBackend {
               id += net.getSimpleName() + "0";
             currentList.add(net);
           }
+        }
       }
-      OrccLogger.traceln("[DBG]\t ID: " + id);
 
       /// <li> merge networks
       resultNetwork = merger.merge(currentList, outputPath, enPreMerge);
@@ -1340,6 +1384,7 @@ public class MDCBackend extends AbstractBackend {
           // the subset is identified through a heuristic method basing on the
           // percentage of the networks shared actors
           Network resultNetwork = doMergingProcess(copyMap(map), true);
+
           int numInstances = 0;
           for (Vertex v : resultNetwork.getChildren())
             if (!v.getAdapter(Actor.class).hasAttribute("sbox"))

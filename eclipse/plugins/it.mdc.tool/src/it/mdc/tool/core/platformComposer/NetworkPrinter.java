@@ -429,6 +429,7 @@ public class NetworkPrinter extends PlatformComposer {
     String tbFile = dir.getPath() + File.separator + "tb_multi_dataflow.v";
 
     Map<Integer, String> ConfigMap;
+
     if (enPreMerge) {
       Map<String, Network> originalNetworks = new LinkedHashMap<>();
       // Collect all unique networks from all SBox LUTs
@@ -447,6 +448,8 @@ public class NetworkPrinter extends PlatformComposer {
     } else {
       ConfigMap = configManager.getConfigMap();
     }
+    ConfigMap = configManager.getConfigMap();
+
     TestBenchPrinterGeneric testBenchPrinter = new TestBenchPrinterGeneric();
     CharSequence tbSequence = testBenchPrinter.printTestBench(
         network, luts, protocolManager, ConfigMap);

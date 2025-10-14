@@ -284,22 +284,20 @@ public abstract class PlatformComposer {
 
         // Actually remove duplicates from the LUT
         for (Network n : toRemove) {
-          lut.clearNetworkValues(n);
+          lut.removeNetwork(n);
           OrccLogger.traceln("DBG: Removed empty/duplicate network " +
                              n.getSimpleName() + " from LUT " +
                              lut.getSboxInstance().getLabel());
         }
       }
 
-      ConfigManager configManager2 = new ConfigManager(
-          configManager.getOutPath(), configManager.getRvcCalOutputFolder());
       configManager.setNetworkList(new ArrayList<>(originalNetworks.values()));
       int idCounter = 1;
       for (Network net : configManager.getNetworkList()) {
         configManager.getConfigMap().put(idCounter++, net.getSimpleName());
-        OrccLogger.severeln("Network in config2: " + net.getName() + " - " +
+        OrccLogger.severeln("Network in config: " + net.getName() + " - " +
                             luts.get(0).getNetworkByName(net.getSimpleName()));
-        OrccLogger.severeln("Network in lut: " +
+        OrccLogger.severeln("Network ID: " +
                             configManager.getNetworkId(net.getSimpleName()));
         for (SboxLut lut : luts) {
           OrccLogger.traceln("lut2: " + lut);

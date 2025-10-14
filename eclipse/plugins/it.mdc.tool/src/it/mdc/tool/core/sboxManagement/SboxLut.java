@@ -189,6 +189,14 @@ public class SboxLut {
   }
 
   /**
+   * cleanup all LUT values of the given network.
+   *
+   * @param network
+   * 		the given network
+   */
+  public void removeNetwork(Network network) { lutMap.remove(network); }
+
+  /**
    * Complete the LUT of the given networks, for all the sections before
    * the given current ones, setting the missing LUT values to false.
    *
