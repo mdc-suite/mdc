@@ -103,6 +103,8 @@ class ConfigPrinter {
 		this.luts = luts; 
 		this.configManager = configManager;
 		networks = new ArrayList<Network>();
+
+		computeNets();
  
 		'''
 		«headerComments()»

@@ -577,9 +577,13 @@ public class ConfigManager {
    */
   public void setNetworkList(List<Network> inputNetworks) {
     this.networks = inputNetworks;
+    OrccLogger.traceln("*  0 configuration size: " + configMap.size() +
+                       ", networks size: " + networks.size());
     for (Network net : this.networks) {
       configMap.put(configMap.size() + 1, net.getSimpleName());
     }
+    OrccLogger.traceln("*  1 configuration size: " + configMap.size() +
+                       ", networks size: " + networks.size());
   }
 
   /**

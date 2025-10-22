@@ -414,11 +414,15 @@ public class MDCBackend extends AbstractBackend {
 
     /// <li> Set configuration manager with the input networks list:
     /// ConfigManager.setNetworkList()
+    OrccLogger.traceln("*  B0 configuration size: " +
+                       configManager.getConfigMap().size());
 
     if (enPreMerge)
       configManager.setNetworkList(orgNetworks);
     else
       configManager.setNetworkList(networks);
+    OrccLogger.traceln("*  B1 configuration size: " +
+                       configManager.getConfigMap().size());
 
     /// <li> Check the input networks number, to verify it matches with the
     /// specified value of networks to be merged
