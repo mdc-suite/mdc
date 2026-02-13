@@ -229,21 +229,21 @@ public abstract class PlatformComposer {
       }
 
       // STEP 3 — Update ConfigManager with canonical networks
-      OrccLogger.traceln("*  A0 configuration size: " +
-                         configManager.getConfigMap().size());
+      /*OrccLogger.traceln("*  A0 configuration size: " +
+                         configManager.getConfigMap().size());*/
       configManager.getConfigMap().clear();
       configManager.setNetworkList(new ArrayList<>(canonicalNetworks.values()));
-      OrccLogger.traceln("*  A1 configuration size: " +
-                         configManager.getConfigMap().size());
+      /*OrccLogger.traceln("*  A1 configuration size: " +
+                         configManager.getConfigMap().size());*/
 
       int idCounter = 1;
       for (Network net : configManager.getNetworkList()) {
-        OrccLogger.traceln("network " + net.getSimpleName() +
-                           " assigned to ID " + idCounter);
+        /*OrccLogger.traceln("network " + net.getSimpleName() +
+                           " assigned to ID " + idCounter);*/
         configManager.getConfigMap().put(idCounter++, net.getSimpleName());
       }
-      OrccLogger.traceln("*  A2 configuration size: " +
-                         configManager.getConfigMap().size());
+      /*OrccLogger.traceln("*  A2 configuration size: " +
+                         configManager.getConfigMap().size());*/
     }
 
     sequence = new ConfigPrinter().printConfig(network, luts, configManager);

@@ -770,12 +770,11 @@ public class EmpiricMerger extends Merger {
                          currentNetwork.getSimpleName() + "': '" + vertexName +
                          "' (Label: '" + candidate.getLabel() + "')");
     }
-
     for (Vertex candidate : currentNetwork.getChildren()) {
       String vertexName = candidate.getLabel();
       mergeVertex(candidate, mergedBefore);
     }
-
+    
     Map<String, String> newMap = new HashMap<String, String>();
     for (Vertex vertex : verticesMap.keySet()) {
       newMap.put(vertex.getLabel(), verticesMap.get(vertex).getLabel());
@@ -785,7 +784,7 @@ public class EmpiricMerger extends Merger {
 
     // assign broadcast attribute to the connections
     assignBroadcastAttribute(currentNetwork);
-
+    
     // create virtual general root for the Breadth-First Search algorithm
     Port root = DfFactory.eINSTANCE.createPort(null, "root");
     currentNetwork.addInput(root);
@@ -851,79 +850,175 @@ public class EmpiricMerger extends Merger {
       sboxLutManager.completeLutsMultiple(sectionMap);
     }
     // all fetures of sbox there is not in xdf file, I should check the above to
-    // add required features to the following
-    String[] networkName = {null, null};
-    boolean[] cnfgTable = {true, false};
+    //String[] networkName = {null, null};
+    //boolean[] cnfgTable = {true, false};
+    List<String> networkName = new ArrayList<>();
+    List<Boolean> cnfgTable = new ArrayList<>();
     Instance sboxInstance = null;
     if (mergedBefore) {
+      //OrccLogger.traceln("DEBUG: Starting sbox processing for merged network");
+      
       for (Vertex candidate2 : currentNetwork.getChildren()) {
         String vertexName = candidate2.getLabel();
+       // OrccLogger.traceln("DEBUG: Processing vertex: " + vertexName);
+        
         if (vertexName.startsWith("sbox")) {
           sboxInstance = candidate2.getAdapter(Instance.class);
           if (sboxInstance != null) {
+           // OrccLogger.traceln("DEBUG: Found sbox instance: " + sboxInstance.getLabel());
+            
             Actor actor = sboxInstance.getAdapter(Actor.class);
             // Explicitly set "sbox" attribute on both Instance and Actor
             sboxInstance.setAttribute("sbox", true);
             actor.setAttribute("sbox", true);
+            
             boolean isSbox = false;
-            if (actor.getName().contains("1x2")) {
+            String actorName = actor.getName();
+            //OrccLogger.traceln("DEBUG: Actor name: " + actorName);
+            
+            if (actorName.contains("1x2")) {
               isSbox = true;
               sboxInstance.setAttribute("type", "1x2");
               actor.setAttribute("type", "1x2");
-            } else if (actor.getName().contains("2x1")) {
+             // OrccLogger.traceln("DEBUG: Identified as 1x2 sbox");
+            } else if (actorName.contains("2x1")) {
               isSbox = true;
               sboxInstance.setAttribute("type", "2x1");
               actor.setAttribute("type", "2x1");
+              //OrccLogger.traceln("DEBUG: Identified as 2x1 sbox");
             }
+            
             if (isSbox) {
-              sboxInstance.setAttribute("count",
-                                        sboxActorManager.getSboxCount());
-              actor.setAttribute("count", sboxActorManager.getSboxCount());
+              int currentCount = sboxActorManager.getSboxCount();
+              sboxInstance.setAttribute("count", currentCount);
+              actor.setAttribute("count", currentCount);
               sboxActorManager.incrementSboxCount();
+              //OrccLogger.traceln("DEBUG: Assigned sbox count: " + currentCount);
+              networkName.clear();
+              cnfgTable.clear();
               int attr_num = 0;
+            //  OrccLogger.traceln("DEBUG: Starting attribute parsing for sbox: " + sboxInstance.getLabel());
+              
               for (Attribute attr : sboxInstance.getAttributes()) {
-                if (attr.getStringValue() != null)
-                  if (attr.getStringValue().startsWith("{")) {
-
-                    networkName[attr_num] =
-                        attr.getName().replace("baseline.", "");
-                    cnfgTable[attr_num] =
-                        attr.getStringValue().contains("true");
+                String attrName = attr.getName();
+                String attrValue = attr.getStringValue();
+                
+                //OrccLogger.traceln("DEBUG: Attribute [" + attr_num + "]: " + attrName + " = " + attrValue);
+                
+                if (attrValue != null && attrValue.startsWith("{")) {
+                  //if (attr_num < 2) { // Add bounds check
+                	  String netName = attrName.replace("baseline.", "");
+                	  boolean ctable = attrValue.contains("true");                    
+                    //OrccLogger.traceln("DEBUG: Parsed network config: " + netName + " = " + ctable);
+                    networkName.add(netName);
+                    cnfgTable.add(ctable);
                     attr_num++;
-                    if (attr_num > 2) {
-                      OrccLogger.traceln(
-                          " ERROR: Attribute networks numbers is over: " +
-                          attr_num);
-                      break;
-                    }
-                  }
+                  //} else {
+                   // OrccLogger.traceln("ERROR: Too many baseline attributes found. Max is 2.");
+                   // break;
+                 // }
+                }
               }
+              
+           //   OrccLogger.traceln("DEBUG: Total baseline attributes found: " + attr_num);
+           //   OrccLogger.traceln("DEBUG: networkNames = " + networkName);
+             // OrccLogger.traceln("DEBUG: networkName[1] = " + networkName[1]);
+              //OrccLogger.traceln("DEBUG: cnfgTable[0] = " + cnfgTable[0]);
+            //  OrccLogger.traceln("DEBUG: cnfgTables = " + cnfgTable);
+             
+              /*
+              // SAFETY CHECK before swap
               if (!cnfgTable[0] && cnfgTable[1]) {
-                String tmp = networkName[0];
-                networkName[0] = networkName[1];
-                networkName[1] = tmp;
-              }
+                if (networkName[0] != null && networkName[1] != null) {
+                  OrccLogger.traceln("DEBUG: Swapping networks: " + networkName[0] + " <-> " + networkName[1]);
+                  String tmp = networkName[0];
+                  networkName[0] = networkName[1];
+                  networkName[1] = tmp;
+                  
+                  // Also swap cnfgTable values to keep consistency
+                  boolean tmpBool = cnfgTable[0];
+                  cnfgTable[0] = cnfgTable[1];
+                  cnfgTable[1] = tmpBool;
+                } else {
+                  OrccLogger.traceln("ERROR: Cannot swap - one or both network names are null");
+                }
+              }*/
+              
               // recover original networks and Sboxes
-              if (networkName[0] != null) {
+            //  OrccLogger.traceln("DEBUG: Processing " + networkName.size() + " networks for sbox");
+             /* if (networkName[0] != null) {
+                OrccLogger.traceln("DEBUG: Processing network 0: " + networkName[0]);
+                
                 networksInstances.put(networkName[0], new HashSet<String>());
                 Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
                 virtualNetwork.setName(networkName[0]);
-                Network virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
-                virtualNetwork2.setName(networkName[1]);
-
-                sboxLutManager.setLutValue(sboxInstance, virtualNetwork,
-                                           ALL_SECTIONS);
-                networksInstances.get(networkName[0])
-                    .add(sboxInstance.getLabel());
-
-                sectionMap.put(virtualNetwork2, currentSection);
-                sboxLutManager.resetLutValue(sboxInstance, virtualNetwork2,
-                                             ALL_SECTIONS);
-              }
+                
+                Network virtualNetwork2 = null;
+                if (networkName[1] != null) {
+                  OrccLogger.traceln("DEBUG: Processing network 1: " + networkName[1]);
+                  virtualNetwork2 = DfFactory.eINSTANCE.createNetwork();
+                  virtualNetwork2.setName(networkName[1]);
+                } else {
+                  OrccLogger.traceln("WARNING: networkName[1] is null, skipping virtualNetwork2 creation");
+                }
+                
+                sboxLutManager.setLutValue(sboxInstance, virtualNetwork, ALL_SECTIONS);
+                networksInstances.get(networkName[0]).add(sboxInstance.getLabel());
+                
+                if (virtualNetwork2 != null) {
+                  sectionMap.put(virtualNetwork2, currentSection);
+                  sboxLutManager.resetLutValue(sboxInstance, virtualNetwork2, ALL_SECTIONS);
+                }
+              } else {
+                OrccLogger.traceln("ERROR: networkName[0] is null - cannot process sbox");
+              }*/
+              
+              for (int i = 0; i < networkName.size(); i++) {
+          	    String networkName1 = networkName.get(i);
+          	    boolean configValue = cnfgTable.get(i);
+          	   // OrccLogger.traceln("DEBUG: Network [" + i + "]: " + networkName + " = " + configValue);
+          	    if (networkName1 != null) {
+          	        // Ensure the network exists in our instances map
+          	        if (!networksInstances.containsKey(networkName1)) {
+          	          networksInstances.put(networkName1, new HashSet<String>());
+          	         // OrccLogger.traceln("DEBUG: Created entry for network: " + networkName1);
+          	        }
+          	        
+          	        // Create virtual network
+          	        Network virtualNetwork = DfFactory.eINSTANCE.createNetwork();
+          	        virtualNetwork.setName(networkName1);
+          	        
+          	        // Add sbox to this network's instances
+          	        networksInstances.get(networkName1).add(sboxInstance.getLabel());
+          	        // Apply LUT operations based on config value
+          	        if (configValue) {
+          	          // For true configs: set LUT value
+          	          sboxLutManager.setLutValue(sboxInstance, virtualNetwork, ALL_SECTIONS);
+          	         // OrccLogger.traceln("DEBUG: Set LUT value for network: " + networkName1);
+          	        } else {
+          	          // For false configs: reset LUT value
+          	          sboxLutManager.resetLutValue(sboxInstance, virtualNetwork, ALL_SECTIONS);
+          	         // OrccLogger.traceln("DEBUG: Reset LUT value for network: " + networkName1);
+          	        }   
+          	        
+          	        // For special handling of certain networks
+          	        if (i < networkName.size() - 1) {
+          	          // Add to section map (except maybe the last one)
+          	          sectionMap.put(virtualNetwork, currentSection);
+          	        }
+          	    }
+            	}  
+              
+            } else {
+              OrccLogger.traceln("warning: Vertex is not a recognized sbox type");
             }
+          } else {
+            OrccLogger.traceln("warning: Could not get Instance adapter from vertex");
           }
         }
       }
+    } else {
+      OrccLogger.traceln("warning: mergedBefore is false, skipping sbox processing");
     }
 
     /// </ul>
@@ -978,7 +1073,7 @@ public class EmpiricMerger extends Merger {
     List<Vertex> unifiables = new ArrayList<Vertex>();
     if (!mergedBefore) {
       if (!(candidate.getAdapter(Instance.class).hasAttribute("don't merge"))) {
-
+    	  
         /// <li> search all the sharable vertices
         for (Vertex existing : multiDataflow.getChildren()) {
           if (unifier.canUnifyMultiple(candidate, existing) &&
