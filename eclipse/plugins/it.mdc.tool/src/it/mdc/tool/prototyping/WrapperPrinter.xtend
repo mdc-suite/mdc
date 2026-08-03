@@ -1317,15 +1317,15 @@ class WrapperPrinter {
 		«FOR input :inputMap.keySet»
 		assign s«getLongId(inputMap.get(input))»_axis_tready = «IF !protocolManager.isNegMatchingWrapMapping(protocolManager.getFullChannelWrapCommSignalID())»!«ENDIF»«input.getName()»_full;
 		assign «input.getName()»_data = s«getLongId(inputMap.get(input))»_axis_tdata«IF protocolManager.getDataSize(input)<32» [«protocolManager.getDataSize(input)-1» : 0]«ENDIF»;
-		//assign = s«getLongId(inputMap.get(input))»_axis_tstrb;
+		//assign = s«getLongId(inputMap.get(input))»_axis_tkeep;
 		//assign = s«getLongId(inputMap.get(input))»_axis_tlast;
-		assign «input.getName()»_push = s«getLongId(inputMap.get(input))»_axis_tvalid;
+		assign «input.getName()»_push = s«getLongId(inputMap.get(input))»_axis_tvalid & s«getLongId(inputMap.get(input))»_axis_tready;
 		//assign = s«getLongId(inputMap.get(input))»_axis_data_count;
 		«ENDFOR»
 		«FOR output : outputMap.keySet()»
 		assign m«getLongId(outputMap.get(output))»_axis_tvalid = «output.getName()»_push;
 		assign m«getLongId(outputMap.get(output))»_axis_tdata = «IF protocolManager.getDataSize(output)<32»{{«32-protocolManager.getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF protocolManager.getDataSize(output)<32»}«ENDIF»;
-		assign m«getLongId(outputMap.get(output))»_axis_tstrb = 4'b111;
+		assign m«getLongId(outputMap.get(output))»_axis_tkeep = 4'b1111;
 		//assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
 		assign «output.getName()»_full = !m«getLongId(outputMap.get(output))»_axis_tready;
 		«ENDFOR»
@@ -1598,7 +1598,7 @@ class WrapperPrinter {
 			input wire  s«getLongId(inputMap.get(input))»_axis_aresetn,
 			output wire  s«getLongId(inputMap.get(input))»_axis_tready,
 			input wire [C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH-1 : 0] s«getLongId(inputMap.get(input))»_axis_tdata,
-			input wire [(C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH/8)-1 : 0] s«getLongId(inputMap.get(input))»_axis_tstrb,
+			input wire [(C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH/8)-1 : 0] s«getLongId(inputMap.get(input))»_axis_tkeep,
 			input wire  s«getLongId(inputMap.get(input))»_axis_tlast,
 			input wire  s«getLongId(inputMap.get(input))»_axis_tvalid,
 			input wire [31 : 0] s«getLongId(inputMap.get(input))»_axis_data_count,
@@ -1608,7 +1608,7 @@ class WrapperPrinter {
 			input wire  m«getLongId(outputMap.get(output))»_axis_aresetn,
 			output wire  m«getLongId(outputMap.get(output))»_axis_tvalid,
 			output wire [C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH-1 : 0] m«getLongId(outputMap.get(output))»_axis_tdata,
-			output wire [(C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH/8)-1 : 0] m«getLongId(outputMap.get(output))»_axis_tstrb,
+			output wire [(C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH/8)-1 : 0] m«getLongId(outputMap.get(output))»_axis_tkeep,
 			output wire  m«getLongId(outputMap.get(output))»_axis_tlast,
 			input wire  m«getLongId(outputMap.get(output))»_axis_tready,
 			«ENDFOR»

@@ -365,7 +365,8 @@ class ScriptPrinter {
 		set root "."
 		set iproot $root/«coupling»_accelerator
 		set ipdir $iproot/project_ip
-		
+		set acc_ip_dir $ipdir/acc_ip
+
 		set hdl_files_path $root/«coupling»_accelerator/hdl
 		
 		set bd_pkg_dir «coupling»_accelerator/bd
@@ -425,7 +426,7 @@ class ScriptPrinter {
 		
 		set_property top $ip_name [current_fileset]
 		
-		ipx::package_project -root_dir $ipdir -vendor user.org -library user -taxonomy AXI_Peripheral
+		ipx::package_project -root_dir $acc_ip_dir -vendor user.org -library user -taxonomy AXI_Peripheral -import_files -set_current true
 		
 		ipx::remove_address_block reg0 [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]
 		ipx::add_address_block s00_axi_reg [ipx::get_memory_maps s00_axi -of_objects [ipx::current_core]]
@@ -462,7 +463,7 @@ class ScriptPrinter {
 		ipx::add_file $bd_pkg_dir/bd.tcl $bd_group		
 		«ENDIF»
 		
-		file copy -force $iproot/drivers $ipdir
+		file copy -force $iproot/drivers $acc_ip_dir
 		set drivers_dir drivers
 		ipx::add_file_group -type software_driver {} [ipx::current_core]
 		ipx::add_file $drivers_dir/src/«coupling»_accelerator.c [ipx::get_file_groups xilinx_softwaredriver -of_objects [ipx::current_core]]
