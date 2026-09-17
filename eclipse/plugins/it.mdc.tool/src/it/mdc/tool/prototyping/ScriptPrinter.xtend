@@ -62,7 +62,7 @@ class ScriptPrinter {
 	}
 	
 	def isUS() {
-		if(partname.contains("xczu")) {
+		if(partname != null && (partname.contains("xczu") || partname.startsWith("xck26"))) {
 			return true
 		} else {
 			return false
@@ -80,8 +80,8 @@ class ScriptPrinter {
 		
 		# paths
 		
-		# user should properly set root path
-		set root "."
+		# Resolve the output root from scripts/generate_*.tcl, not the caller CWD.
+		set root [file normalize [file join [file dirname [info script]] ..]]
 		set projdir $root/project_top
 		set ipdir $root/«coupling»_accelerator/project_ip
 		
@@ -286,7 +286,7 @@ class ScriptPrinter {
 								apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config {Slave "/processing_system7_0/S_AXI_HP«i»" intc_ip "/axi_smc" Clk_xbar "Auto" Clk_master "Auto" Clk_slave "Auto" }  [get_bd_intf_pins axi_dma_«i»/M_AXI_S2MM]
 							«ENDIF»
 						«ELSE»
-							set_property -dict [CONFIG.c_include_s2mm {0}] [get_bd_cells axi_dma_«i»]
+							set_property -dict [list CONFIG.c_include_s2mm {0}] [get_bd_cells axi_dma_«i»]
 						«ENDIF»
 					«ENDFOR»
 				«ELSE»
@@ -361,8 +361,8 @@ class ScriptPrinter {
 		
 		# paths
 		
-		# user should properly set root path
-		set root "."
+		# Resolve the output root from scripts/generate_*.tcl, not the caller CWD.
+		set root [file normalize [file join [file dirname [info script]] ..]]
 		set iproot $root/«coupling»_accelerator
 		set ipdir $iproot/project_ip
 		set acc_ip_dir $ipdir/acc_ip

@@ -1325,7 +1325,7 @@ class WrapperPrinter {
 		«FOR output : outputMap.keySet()»
 		assign m«getLongId(outputMap.get(output))»_axis_tvalid = «output.getName()»_push;
 		assign m«getLongId(outputMap.get(output))»_axis_tdata = «IF protocolManager.getDataSize(output)<32»{{«32-protocolManager.getDataSize(output)»{1'b0}},«ENDIF»«output.getName()»_data«IF protocolManager.getDataSize(output)<32»}«ENDIF»;
-		assign m«getLongId(outputMap.get(output))»_axis_tkeep = 4'b1111;
+		assign m«getLongId(outputMap.get(output))»_axis_tkeep = {(C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH/8){1'b1}};
 		//assign m«getLongId(outputMap.get(output))»_axis_tlast = 1'b0;
 		assign «output.getName()»_full = !m«getLongId(outputMap.get(output))»_axis_tready;
 		«ENDFOR»
@@ -1379,7 +1379,8 @@ class WrapperPrinter {
 			.aclk(s00_axi_aclk),
 			.aresetn(s00_axi_aresetn),
 			.clr(slv_reg0[2]),
-			.en(«output.getName()»_push),
+			// Advance the packet counter only on an accepted AXI-Stream beat.
+			.en(m«getLongId(outputMap.get(output))»_axis_tvalid & m«getLongId(outputMap.get(output))»_axis_tready),
 			.max(slv_reg«outputMap.get(output)+1»[SIZE_COUNT_«portMap.get(output)+1»-1:0]),
 			.count(),
 			.last(m«getLongId(outputMap.get(output))»_axis_tlast)

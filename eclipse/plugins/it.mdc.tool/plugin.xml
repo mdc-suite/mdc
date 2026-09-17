@@ -28,24 +28,20 @@
    <extension
          point="net.sf.orcc.core.options">
     
-    <option
+     <option
           description="Whether Orcc should compile the given hierarchical list of XDF networks."
           id="net.sf.orcc.plugins.compileXDFlist"
           name="List of Networks to be Compiled and Merged">
         <checkBox>
+            <optionRef
+                id="it.unica.diee.mdc.acceptMergedNetwork">
+            </optionRef>
             <optionRef
                 id="it.unica.diee.mdc.xdfNum">
             </optionRef>
             <optionRef
                 id="it.unica.diee.mdc.xdfList">
             </optionRef>
-	        <option
-	            defaultValue="false"
-	            description="Accept the merged network"
-	            id="it.unica.diee.mdc.acceptMergedNetwork"
-	            name="Accept Merged Network">
-	            <checkBox></checkBox>
-	        </option>           
             <optionRef
                 id="it.unica.diee.mdc.mergingAlgorithm">
             </optionRef>
@@ -85,8 +81,20 @@
             </option>
         </checkBox>
     </option>
+
+    <!-- Standalone definition of Accept Merged Network (only ONE definition allowed) -->
     <option
-        defaultValue="2"
+	    defaultValue="false"
+	    description="Accept the merged network configuration"
+	    id="it.unica.diee.mdc.acceptMergedNetwork"
+	    name="Accept Merged Network">
+	    <checkBox>
+	        checkBox body text
+	    </checkBox>
+	</option>
+
+    <option
+        defaultValue="1"
         description="Number of networks to be compiled and merged"
         id="it.unica.diee.mdc.xdfNum"
         name="Number of Networks">
@@ -194,29 +202,21 @@
             </comboBoxItem>
         </comboBox>
      </option>
-	<option
-	    defaultValue="false"
-	    description="Accept the merged network configuration"
-	    id="it.unica.diee.mdc.acceptMergedNetwork"
-	    name="Accept Merged Network">
-	    <checkBox>
-	        checkBox body text
-	    </checkBox>
-	</option>
+
     <option
-        defaultValue="EMPIRIC"
+        defaultValue="MOREANO"
         description="Algorithm adopted for the dataflow networks merging process."
         id="it.unica.diee.mdc.mergingAlgorithm"
         name="Merging Algorithm">
         <comboBox>
-        	<comboBoxItem
+            <comboBoxItem
                 id="EMPIRIC">
             </comboBoxItem>
             <comboBoxItem
                 id="MOREANO">
             </comboBoxItem>
         </comboBox>
-     </option>
+    </option>
     
     <option
         defaultValue="false"
