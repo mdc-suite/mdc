@@ -33,6 +33,13 @@ class WrapperPrinter {
 	List <SboxLut> luts;
 	int portSize;
 	int dataSize = 32;
+    int outputCounterBits = CoprocessorSpec.LEGACY_OUTPUT_COUNTER_BITS;
+    int controlAddressBits = 0;
+
+    def setKv260Profile() {
+        outputCounterBits = CoprocessorSpec.OUTPUT_COUNTER_BITS;
+        controlAddressBits = 16;
+    }	
 	Map<String,List<Port>> netPorts;
 	
 	boolean dedicatedInterfaces = false
@@ -1479,18 +1486,18 @@ class WrapperPrinter {
 			«ENDIF»
 			«ELSE»
 			«FOR input : inputMap.keySet»// Parameters of Axi Slave Bus Interface S«getLongId(inputMap.get(input))»_AXIS
-			parameter integer C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH	= 32,
+			parameter integer C_S«getLongId(inputMap.get(input))»_AXIS_TDATA_WIDTH	= «CoprocessorSpec.STREAM_WORD_BITS»,
 			«ENDFOR»
 
 			«FOR output : outputMap.keySet»// Parameters of Axi Master Bus Interface M«getLongId(outputMap.get(output))»_AXIS
-			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH	= 32,
+			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_TDATA_WIDTH	= «CoprocessorSpec.STREAM_WORD_BITS»,
 			parameter integer C_M«getLongId(outputMap.get(output))»_AXIS_START_COUNT	= 32,
 			«ENDFOR»
 			«ENDIF»
 			
 			// Parameters of Axi Slave Bus Interface S00_AXI
 			parameter integer C_S00_AXI_DATA_WIDTH	= 32,
-			parameter integer C_S00_AXI_ADDR_WIDTH	= «computeSizePointer+2»
+			parameter integer C_S00_AXI_ADDR_WIDTH	= «IF controlAddressBits > 0»«controlAddressBits»«ELSE»«computeSizePointer+2»«ENDIF»
 		)
 		(
 			«IF coupling.equals("mm")»
@@ -1668,7 +1675,7 @@ class WrapperPrinter {
 		«ENDFOR»
 		«ELSE»
 		«FOR output : outputMap.keySet»// output counter «portMap.get(output)+1» («output.name») for tlast
-		parameter SIZE_COUNT_«portMap.get(output)+1» = 8;
+		parameter SIZE_COUNT_«portMap.get(output)+1» = «outputCounterBits»;
 		«ENDFOR»
 		«ENDIF»
 		

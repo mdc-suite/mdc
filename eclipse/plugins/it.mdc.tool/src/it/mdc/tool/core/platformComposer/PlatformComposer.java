@@ -5,6 +5,7 @@ import it.mdc.tool.core.platformComposer.ConfigPrinter;
 import it.mdc.tool.core.sboxManagement.SboxLut;
 import it.mdc.tool.powerSaving.CgCellPrinter;
 import it.mdc.tool.powerSaving.EnGenPrinter;
+import it.mdc.tool.prototyping.AcceleratorManifestPrinter;
 import it.mdc.tool.prototyping.ArticoPrinter;
 import it.mdc.tool.prototyping.DriverPrinter;
 import it.mdc.tool.prototyping.PulpPrinter;
@@ -34,6 +35,7 @@ import net.sf.orcc.graph.Vertex;
 import net.sf.orcc.ir.Expression;
 import net.sf.orcc.ir.util.ExpressionEvaluator;
 import net.sf.orcc.util.OrccLogger;
+
 
 /**
  *
@@ -247,6 +249,13 @@ public abstract class PlatformComposer {
     }
 
     sequence = new ConfigPrinter().printConfig(network, luts, configManager);
+    // Reject incomplete LUT output instead of packaging broken hardware.
+    if (!luts.isEmpty() &&
+        (sequence == null || sequence.toString().contains("// ERROR:") ||
+         !sequence.toString().contains("case(ID)"))) {
+      throw new IOException(
+          "Incomplete configurator: check merged network LUTs");
+    }
 
     try {
       PrintStream ps = new PrintStream(new FileOutputStream(file));
@@ -566,6 +575,13 @@ public abstract class PlatformComposer {
     ((WrapperPrinter)wrapperPrinter)
         .initWrapperPrinter(prefix, enableMonitoring, monList, luts,
                             protocolManager);
+    boolean kv260Profile =
+        AcceleratorManifestPrinter.supports(partname, processor, prefix, enDma);
+    if (kv260Profile) {
+      if (boardpart == null || !boardpart.contains(":kv260_som:"))
+        throw new IOException("KV260 profile requires a kv260_som board part");
+      wrapperPrinter.setKv260Profile();
+    }
 
     ////////////////////////
     /// <li> HDL sources
@@ -653,24 +669,26 @@ public abstract class PlatformComposer {
       scriptDir.mkdirs();
     }
 
-    file = scriptDir.getPath() + File.separator + "generate_ip.tcl";
-    sequence = scriptPrinter.printIpScript();
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-    }
-    file = scriptDir.getPath() + File.separator + File.separator +
-           "generate_top.tcl";
-    sequence = scriptPrinter.printTopScript(network);
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+    if (!kv260Profile) {
+      file = scriptDir.getPath() + File.separator + "generate_ip.tcl";
+      sequence = scriptPrinter.printIpScript();
+      try {
+        PrintStream ps = new PrintStream(new FileOutputStream(file));
+        ps.print(sequence.toString());
+        ps.close();
+      } catch (FileNotFoundException e) {
+        OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+      }
+      file = scriptDir.getPath() + File.separator + File.separator +
+             "generate_top.tcl";
+      sequence = scriptPrinter.printTopScript(network);
+      try {
+        PrintStream ps = new PrintStream(new FileOutputStream(file));
+        ps.print(sequence.toString());
+        ps.close();
+      } catch (FileNotFoundException e) {
+        OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+      }
     }
 
     //////////////////////////
@@ -741,6 +759,21 @@ public abstract class PlatformComposer {
       ps.close();
     } catch (FileNotFoundException e) {
       OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+    }
+
+    // Shared description, based on the actual wrapper maps and final mode IDs.
+    // KV260 Tcl consumes this same spec; Linux drivers are the next stage.
+
+    File manifestRoot =
+        hdlDir.getAbsoluteFile().getParentFile().getParentFile();
+    if (kv260Profile) {
+      AcceleratorManifestPrinter.write(
+          manifestRoot.toPath(), network, partname, boardpart,
+          wrapperPrinter.getInputMap(), wrapperPrinter.getOutputMap(),
+          networkVertexMap, configManager, protocolManager, !luts.isEmpty());
+    } else {
+      java.nio.file.Files.deleteIfExists(
+          manifestRoot.toPath().resolve("accelerator.json"));
     }
 
     /// </ol> </ul>

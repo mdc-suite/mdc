@@ -604,6 +604,58 @@ public class MDCBackend extends AbstractBackend {
       hdlDir = new File(outputPath + File.separator + "hdl");
     }
 
+    // KV260_STABLE_INTERFACE_V1
+    // Canonical external ABI before ANY printer assigns positional channels.
+    // ECollections.sort uses moves, preserving EMF containment/references.
+    if (genCopr && "STREAM".equals(coprType) &&
+        it.mdc.tool.prototyping.AcceleratorManifestPrinter.supports(
+            (String)getOptions().get("it.mdc.tool.ipTgtPart"),
+            (String)getOptions().get("it.mdc.tool.ipProc"), "s",
+            (Boolean)getOptions().get("it.mdc.tool.ipEnDma"))) {
+      java.util.Comparator<net.sf.orcc.df.Port> byName =
+          new java.util.Comparator<net.sf.orcc.df.Port>() {
+            @Override
+            public int compare(net.sf.orcc.df.Port a, net.sf.orcc.df.Port b) {
+              return a.getName().compareTo(b.getName());
+            }
+          };
+      org.eclipse.emf.common.util.ECollections.sort(network.getInputs(),
+                                                    byName);
+      org.eclipse.emf.common.util.ECollections.sort(network.getOutputs(),
+                                                    byName);
+    }
+
+    // Import actor HDL FIRST; generated network HDL must win collisions.
+    // TODO fix folder
+    String subfolder = "hdl";
+    if (genCopr) {
+      if (coprType.equals("MEMORY-MAPPED")) {
+        subfolder = "mm_accelerator" + File.separator + "hdl";
+      } else if (coprType.equals("STREAM")) {
+        subfolder = "s_accelerator" + File.separator + "hdl";
+      } else {
+        // TODO hybrid
+      }
+    } else if (enArtico && !genCopr) {
+      subfolder = "src" + File.separator + "a3_cgr_accelerator" +
+                  File.separator + "verilog";
+    } else if (enPulp && !genCopr) {
+      subfolder = "rtl";
+    }
+    try {
+      if (enArtico && !genCopr) {
+        copier.copyOnlyFiles(hdlCompLib,
+                             outputPath + File.separator + subfolder);
+      } else if (enPulp && !genCopr) {
+        copier.copyOnlyFiles(hdlCompLib,
+                             outputPath + File.separator + subfolder);
+      } else {
+        copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("HDL component import failed", e);
+    }
+
     // if directory doesn't exist, create it
     if (!hdlDir.exists()) {
       hdlDir.mkdirs();
@@ -693,7 +745,7 @@ public class MDCBackend extends AbstractBackend {
 
         /// <ol><li> generate top module
         hdlWriter.initClockDomains(clockDomains);
-        //OrccLogger.traceln("call generateTop2");
+        // OrccLogger.traceln("call generateTop2");
 
         hdlWriter.generateTop(lutsToGen, getOptions());
 
@@ -813,7 +865,7 @@ public class MDCBackend extends AbstractBackend {
       if (genCopr) {
         // TODO  to uniform the networks name for the config id (currently they
         // include the path)
-        hdlWriter.generateCopr(luts, networkVertexMap, getOptions());
+        hdlWriter.generateCopr(lutsToGen, networkVertexMap, getOptions());
       }
 
       if (!genCopr && enArtico) {
@@ -825,41 +877,8 @@ public class MDCBackend extends AbstractBackend {
       }
 
     } catch (Exception e) {
-      System.out.println("Exception catched on HDLwriter operations!\n\t" + e);
-      for (StackTraceElement se : e.getStackTrace())
-        System.out.println("" + se);
-    }
-
-    // HDL component library import
-    // TODO fix folder
-    String subfolder = "hdl";
-    if (genCopr) {
-      if (coprType.equals("MEMORY-MAPPED")) {
-        subfolder = "mm_accelerator" + File.separator + "hdl";
-      } else if (coprType.equals("STREAM")) {
-        subfolder = "s_accelerator" + File.separator + "hdl";
-      } else {
-        // TODO hybrid
-      }
-    } else if (enArtico && !genCopr) {
-      subfolder = "src" + File.separator + "a3_cgr_accelerator" +
-                  File.separator + "verilog";
-    } else if (enPulp && !genCopr) {
-      subfolder = "rtl";
-    }
-    try {
-      if (enArtico && !genCopr) {
-        copier.copyOnlyFiles(hdlCompLib,
-                             outputPath + File.separator + subfolder);
-      } else if (enPulp && !genCopr) {
-        copier.copyOnlyFiles(hdlCompLib,
-                             outputPath + File.separator + subfolder);
-      } else {
-        copier.copy(hdlCompLib, outputPath + File.separator + subfolder);
-      }
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      throw new IllegalStateException(
+          "HDL generation failed; do not build this output", e);
     }
 
     // -----------------------------------------------------
@@ -1160,7 +1179,7 @@ public class MDCBackend extends AbstractBackend {
   protected Network doMergingProcess(Map<Network, Integer> netMap,
                                      boolean profileThisCase) {
     /// Start merging process
-	  OrccLogger.traceln("*\tfind erre place ...");
+    OrccLogger.traceln("*\tfind erre place ...");
     if (!profileEn)
       OrccLogger.traceln("*\tStart merging process...");
 
@@ -1169,7 +1188,13 @@ public class MDCBackend extends AbstractBackend {
     /// <ol><li> Moreano algorithm
     /// it.mdc.tool.core.multiDataflowGenerator.MoreanoMerger(); <li> Empiric
     /// algorithm it.mdc.tool.core.multiDataflowGenerator.EmpiricMerger()</ol>
-    if (mergingAlgorithm.equals("MOREANO")) {
+    // Pre-merged inputs need metadata recovery, not another graph merge.
+    if (enPreMerge) {
+          if (netMap.size() != 1)
+            throw new IllegalArgumentException("Pre-merged import requires one XDF");
+    merger = new EmpiricMerger();
+    OrccLogger.traceln("* Pre-merged import: using Sbox recovery path");
+    } else if (mergingAlgorithm.equals("MOREANO")) {
       merger = new MoreanoMerger();
     } else if (mergingAlgorithm.equals("EMPIRIC")) {
       merger = new EmpiricMerger();
@@ -1263,6 +1288,8 @@ public class MDCBackend extends AbstractBackend {
       }
 
     } catch (Exception e) {
+    	if (enPreMerge)
+    		        throw new IllegalStateException("Pre-merged Sbox recovery failed", e);
       System.out.println("Exception on merging process! " + e);
       for (StackTraceElement se : e.getStackTrace())
         System.out.println("" + se);

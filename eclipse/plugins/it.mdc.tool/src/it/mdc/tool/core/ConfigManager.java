@@ -462,6 +462,12 @@ public class ConfigManager {
 
     // close writer
     writer.close();
+      }
+  
+    /** Snapshot assigned IDs without getConfigMap()'s lazy ID allocation.
+     * Used by hardware/software descriptions after configurator generation. */
+    public Map<Integer, String> snapshotAssignedConfigMap() {
+      return new LinkedHashMap<Integer, String>(configMap);
   }
 
   public Map<Integer, String> getConfigMap() {

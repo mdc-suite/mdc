@@ -862,8 +862,15 @@ public class EmpiricMerger extends Merger {
         String vertexName = candidate2.getLabel();
        // OrccLogger.traceln("DEBUG: Processing vertex: " + vertexName);
         
-        if (vertexName.startsWith("sbox")) {
-          sboxInstance = candidate2.getAdapter(Instance.class);
+        Instance imported = candidate2.getAdapter(Instance.class);
+        if (imported != null && (imported.hasAttribute("sbox")
+               || vertexName.startsWith("sbox_"))) {
+             // mergeVertex already copied this instance into multiDataflow.
+             // Attributes and LUTs must refer to THAT output instance.
+             Vertex mapped = verticesMap.get(candidate2);
+             if (mapped == null)
+               throw new IllegalStateException("Unmapped pre-merged Sbox: " + vertexName);
+             sboxInstance = mapped.getAdapter(Instance.class);
           if (sboxInstance != null) {
            // OrccLogger.traceln("DEBUG: Found sbox instance: " + sboxInstance.getLabel());
             
@@ -892,6 +899,10 @@ public class EmpiricMerger extends Merger {
               int currentCount = sboxActorManager.getSboxCount();
               sboxInstance.setAttribute("count", currentCount);
               actor.setAttribute("count", currentCount);
+              // The HDL printer derives sel[n] from the flattened sbox_n name.
+              sboxInstance.setName("sbox_" + currentCount);
+              networkVertexMap.get(currentNetwork.getSimpleName())
+                  .put(candidate2.getLabel(), sboxInstance.getLabel());
               sboxActorManager.incrementSboxCount();
               //OrccLogger.traceln("DEBUG: Assigned sbox count: " + currentCount);
               networkName.clear();
@@ -905,7 +916,10 @@ public class EmpiricMerger extends Merger {
                 
                 //OrccLogger.traceln("DEBUG: Attribute [" + attr_num + "]: " + attrName + " = " + attrValue);
                 
-                if (attrValue != null && attrValue.startsWith("{")) {
+                if (attrName.startsWith("baseline.")) {
+                	                  if (attrValue == null || !attrValue.matches("\\{0=(true|false)\\}"))
+                	                    throw new IllegalArgumentException(
+                	                        "Expected {0=true} or {0=false} for " + vertexName + ":" + attrName);
                   //if (attr_num < 2) { // Add bounds check
                 	  String netName = attrName.replace("baseline.", "");
                 	  boolean ctable = attrValue.contains("true");                    
@@ -972,7 +986,8 @@ public class EmpiricMerger extends Merger {
               } else {
                 OrccLogger.traceln("ERROR: networkName[0] is null - cannot process sbox");
               }*/
-              
+              if (networkName.isEmpty())
+            	  throw new IllegalArgumentException("Missing baseline LUTs for " + vertexName);
               for (int i = 0; i < networkName.size(); i++) {
           	    String networkName1 = networkName.get(i);
           	    boolean configValue = cnfgTable.get(i);
@@ -1013,7 +1028,8 @@ public class EmpiricMerger extends Merger {
               OrccLogger.traceln("warning: Vertex is not a recognized sbox type");
             }
           } else {
-            OrccLogger.traceln("warning: Could not get Instance adapter from vertex");
+        	  throw new IllegalArgumentException(
+        			    "Unknown imported Sbox type at vertex: " + vertexName);
           }
         }
       }
