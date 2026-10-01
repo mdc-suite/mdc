@@ -32,7 +32,8 @@ public final class AcceleratorManifestPrinter {
     public static void write(Path outputRoot, Network network, String part, String board,
             Map<Port,Integer> inputs, Map<Port,Integer> outputs,
             Map<String,Map<String,String>> vertexMaps, ConfigManager configs,
-            ProtocolManager protocol, boolean hasSwitches) throws IOException {
+            ProtocolManager protocol, boolean hasSwitches, boolean preMerged)
+            throws IOException {
         Path destination = outputRoot.resolve("accelerator.json");
         // Remove an earlier run's manifest so a failed extraction cannot leave
         // apparently valid metadata beside newly generated hardware.
@@ -68,9 +69,21 @@ public final class AcceleratorManifestPrinter {
                           : "unavailable"));
             }
             Set<String> configuredNames = new HashSet<>(finalIds.values());
-            if (vertexMaps != null) for (String name : vertexMaps.keySet())
-                if (!configuredNames.contains(name))
-                    throw new IllegalArgumentException("vertex-map mode has no final configuration ID: " + name);
+            if (vertexMaps != null) {
+                for (String name : vertexMaps.keySet()) {
+                    if (!configuredNames.contains(name)) {
+                        if (preMerged) {
+                            // In the pre-merged path this is the physical XDF
+                            // network name (for example top18), not a runtime mode.
+                            warnings.add(
+                                "Physical pre-merged network is not a mode: " + name);
+                        } else {
+                            throw new IllegalArgumentException(
+                                "vertex-map mode has no final configuration ID: " + name);
+                        }
+                    }
+                }
+            }
             CoprocessorSpec spec = new CoprocessorSpec(network.getSimpleName(), part, board,
                 hasSwitches, ports, modes, warnings);
             Files.createDirectories(outputRoot);

@@ -379,37 +379,37 @@ public class MDCBackend extends AbstractBackend {
       /// <li> add current network to the input network list </ol>
       networks.add(currNet);
       if (enPreMerge) {
-        // if pre-merging is enabled, extract the original networks names from
-        // the XDF file
-        try (BufferedReader reader = new BufferedReader(
-                 new InputStreamReader(fileIN.getContents()))) {
-          String line;
-          while ((line = reader.readLine()) != null) {
-            // Look for the XDF opening tag
-            if (line.contains("<XDF") && line.contains("name=")) {
-              // Extract the name attribute
-              int nameStart = line.indexOf("name=\"") + 6;
-              int nameEnd = line.indexOf("\"", nameStart);
-              if (nameStart > 5 && nameEnd > nameStart) {
-                String label = line.substring(nameStart, nameEnd);
-                if (label != null) {
-                  String[] networkNames = label.split(",");
-                  for (String name : networkNames) {
-                    // making network with only name
-                    Network emptyNetwork = DfFactory.eINSTANCE.createNetwork();
-                    emptyNetwork.setName(name.trim());
-                    // adding to the original networks list
-                    orgNetworks.add(emptyNetwork);
+          // if pre-merging is enabled, extract the original networks names from
+          // the XDF file
+          try (BufferedReader reader = new BufferedReader(
+                   new InputStreamReader(fileIN.getContents()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+              // Look for the XDF opening tag
+              if (line.contains("<XDF") && line.contains("name=")) {
+                // Extract the name attribute
+                int nameStart = line.indexOf("name=\"") + 6;
+                int nameEnd = line.indexOf("\"", nameStart);
+                if (nameStart > 5 && nameEnd > nameStart) {
+                  String label = line.substring(nameStart, nameEnd);
+                  if (label != null) {
+                    String[] networkNames = label.split(",");
+                    for (String name : networkNames) {
+                      // making network with only name
+                      Network emptyNetwork = DfFactory.eINSTANCE.createNetwork();
+                      emptyNetwork.setName(name.trim());
+                      // adding to the original networks list
+                      orgNetworks.add(emptyNetwork);
+                    }
                   }
+                  break;
                 }
-                break;
               }
             }
+          } catch (Exception e) {
+            e.printStackTrace();
           }
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
+        }     
     }
 
     /// <li> Set configuration manager with the input networks list:
@@ -865,7 +865,7 @@ public class MDCBackend extends AbstractBackend {
       if (genCopr) {
         // TODO  to uniform the networks name for the config id (currently they
         // include the path)
-        hdlWriter.generateCopr(lutsToGen, networkVertexMap, getOptions());
+        hdlWriter.generateCopr(lutsToGen, networkVertexMap, getOptions(), enPreMerge);
       }
 
       if (!genCopr && enArtico) {

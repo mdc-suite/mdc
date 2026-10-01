@@ -582,14 +582,58 @@ public class ConfigManager {
    * 			List of input networks
    */
   public void setNetworkList(List<Network> inputNetworks) {
-    this.networks = inputNetworks;
-    /*OrccLogger.traceln("*  0 configuration size: " + configMap.size() +
-                       ", networks size: " + networks.size());*/
-    for (Network net : this.networks) {
-      configMap.put(configMap.size() + 1, net.getSimpleName());
-    }
-    /*OrccLogger.traceln("*  1 configuration size: " + configMap.size() +
-                       ", networks size: " + networks.size());*/
+
+	    /*
+	     * A new authoritative network list defines a new configuration table.
+	     * Do not retain IDs from a previous reconstruction.
+	     */
+	    this.networks =
+	        new ArrayList<Network>(inputNetworks);
+
+	    configMap.clear();
+	    count = 1;
+
+	    for (Network net : this.networks) {
+
+	        if (net == null)
+	            throw new IllegalArgumentException(
+	                "Null network in configuration list");
+
+	        String name = net.getSimpleName();
+
+	        if (name == null || name.isEmpty())
+	            throw new IllegalArgumentException(
+	                "Configuration network has no name");
+
+	        configMap.put(count, name);
+
+	        OrccLogger.traceln(
+	            "[CONFIG] assigned " +
+	            count + " -> " + name);
+
+	        count++;
+	    }
+	}
+ 
+  /**
+   * Return an already assigned configuration ID.
+   *
+   * Unlike getNetworkId(), this method NEVER creates a new
+   * configuration and therefore is safe for printers/generators.
+   */
+  public Integer getAssignedNetworkId(String networkName) {
+
+      if (networkName == null)
+          return null;
+
+      for (Map.Entry<Integer, String> entry :
+           configMap.entrySet()) {
+
+          if (networkName.equals(entry.getValue()))
+              return entry.getKey();
+      }
+
+      return null;
   }
 
   /**

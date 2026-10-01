@@ -203,50 +203,135 @@ public abstract class PlatformComposer {
     }
     CharSequence sequence;
     String file = dir.getPath() + File.separator + "configurator.v";
+    
     if (enPreMerge) {
 
-      // STEP 1 — Build canonical map of networks by name
-      Map<String, Network> canonicalNetworks = new LinkedHashMap<>();
-      for (SboxLut lut : luts) {
-        for (Network net : lut.getNetworks()) {
-          canonicalNetworks.putIfAbsent(net.getSimpleName(), net);
-        }
-      }
+    	  /*
+    	   * The authoritative configuration names and ordering were already
+    	   * recovered by MDCBackend from:
+    	   *
+    	   *     <XDF name="Roberts,Sobel">
+    	   *
+    	   * Therefore DO NOT reconstruct the configuration list from the
+    	   * Network objects stored inside the Sbox LUTs.  Those Network
+    	   * objects originate from the loaded pre-merged XDF and may carry
+    	   * the XDF filename (e.g. "top18") as their simple name.
+    	   */
+    	  List<Network> originalNetworks =
+    	      new ArrayList<Network>(configManager.getNetworkList());
 
-      // STEP 2 — Normalize all LUTs to reuse canonical networks
-      for (SboxLut lut : luts) {
-        for (Network net : new ArrayList<>(lut.getNetworks())) {
-          Network canonical = canonicalNetworks.get(net.getSimpleName());
-          if (canonical == null || canonical == net)
-            continue;
+    	  if (originalNetworks.isEmpty()) {
+    	    throw new IOException(
+    	        "Pre-merged configuration list is empty");
+    	  }
 
-          Map<Integer, Boolean> values = lut.getAllNetworkValues(net);
-          if (values != null && !values.isEmpty()) {
-            for (Map.Entry<Integer, Boolean> e : values.entrySet())
-              lut.setLutValue(canonical, e.getKey(), e.getValue());
-          }
+    	  OrccLogger.traceln(
+    	      "[PREMERGE] authoritative configurations:");
 
-          lut.removeNetwork(net); // remove the non-canonical one
-        }
-      }
+    	  for (int i = 0; i < originalNetworks.size(); ++i) {
+    	    OrccLogger.traceln(
+    	        "[PREMERGE]   ID " + (i + 1) +
+    	        " -> " + originalNetworks.get(i).getSimpleName());
+    	  }
 
-      // STEP 3 — Update ConfigManager with canonical networks
-      /*OrccLogger.traceln("*  A0 configuration size: " +
-                         configManager.getConfigMap().size());*/
-      configManager.getConfigMap().clear();
-      configManager.setNetworkList(new ArrayList<>(canonicalNetworks.values()));
-      /*OrccLogger.traceln("*  A1 configuration size: " +
-                         configManager.getConfigMap().size());*/
+    	  /*
+    	   * Each Sbox LUT was reconstructed from the baseline.* attributes
+    	   * of the pre-merged XDF.
+    	   *
+    	   * The insertion order of SboxLut is significant and follows the
+    	   * configuration order in the XDF:
+    	   *
+    	   *     baseline.Roberts
+    	   *     baseline.Sobel
+    	   *
+    	   * Replace the temporary LUT Network keys with the canonical
+    	   * Network objects from ConfigManager.
+    	   */
+    	  for (SboxLut lut : luts) {
 
-      int idCounter = 1;
-      for (Network net : configManager.getNetworkList()) {
-        /*OrccLogger.traceln("network " + net.getSimpleName() +
-                           " assigned to ID " + idCounter);*/
-        configManager.getConfigMap().put(idCounter++, net.getSimpleName());
-      }
-      /*OrccLogger.traceln("*  A2 configuration size: " +
-                         configManager.getConfigMap().size());*/
-    }
+    	    List<Network> lutNetworks =
+    	        new ArrayList<Network>(lut.getNetworks());
+
+    	    if (lutNetworks.size() != originalNetworks.size()) {
+    	      throw new IOException(
+    	          "Pre-merged LUT/configuration mismatch for Sbox " +
+    	          lut.getCount() +
+    	          ": LUT has " + lutNetworks.size() +
+    	          " configurations, but XDF declares " +
+    	          originalNetworks.size());
+    	    }
+
+    	    for (int i = 0; i < originalNetworks.size(); ++i) {
+
+    	      Network oldNetwork = lutNetworks.get(i);
+    	      Network canonicalNetwork = originalNetworks.get(i);
+
+    	      String oldName =
+    	          oldNetwork != null
+    	              ? oldNetwork.getSimpleName()
+    	              : "<null>";
+
+    	      String canonicalName =
+    	          canonicalNetwork.getSimpleName();
+
+    	      OrccLogger.traceln(
+    	          "[PREMERGE] Sbox " + lut.getCount() +
+    	          ": LUT network '" + oldName +
+    	          "' -> canonical '" + canonicalName + "'");
+
+    	      /*
+    	       * Preserve the selector value before removing the temporary
+    	       * Network object from the LUT.
+    	       */
+    	      Map<Integer, Boolean> oldValues =
+    	          lut.getAllNetworkValues(oldNetwork);
+
+    	      Map<Integer, Boolean> valuesCopy =
+    	          new LinkedHashMap<Integer, Boolean>();
+
+    	      if (oldValues != null) {
+    	        valuesCopy.putAll(oldValues);
+    	      }
+
+    	      /*
+    	       * Replace the temporary object with the authoritative one.
+    	       * SboxLut keys Network objects by identity, so this step is
+    	       * necessary even when their textual names happen to match.
+    	       */
+    	      if (oldNetwork != canonicalNetwork) {
+
+    	        lut.removeNetwork(oldNetwork);
+
+    	        for (Map.Entry<Integer, Boolean> value :
+    	             valuesCopy.entrySet()) {
+
+    	          lut.setLutValue(
+    	              canonicalNetwork,
+    	              value.getKey(),
+    	              value.getValue());
+    	        }
+    	      }
+    	    }
+    	  }
+
+    	  /*
+    	   * Rebuild only the numeric configuration map.
+    	   * Keep the authoritative Network list recovered by MDCBackend.
+    	   */
+    	  configManager.getConfigMap().clear();
+    	  configManager.setNetworkList(originalNetworks);
+
+    	  OrccLogger.traceln(
+    	      "[PREMERGE] final configuration map:");
+
+    	  for (Map.Entry<Integer, String> entry :
+    	       configManager.getConfigMap().entrySet()) {
+
+    	    OrccLogger.traceln(
+    	        "[PREMERGE]   " + entry.getKey() +
+    	        " -> " + entry.getValue());
+    	  }
+    	}
 
     sequence = new ConfigPrinter().printConfig(network, luts, configManager);
     // Reject incomplete LUT output instead of packaging broken hardware.
@@ -523,7 +608,8 @@ public abstract class PlatformComposer {
    */
   public void generateCopr(List<SboxLut> luts,
                            Map<String, Map<String, String>> networkVertexMap,
-                           Map<String, Object> options) throws IOException {
+                           Map<String, Object> options,
+                           boolean enPreMerge) throws IOException {
 
     String hdlCompLib = (String)options.get("it.mdc.tool.hdlCompLib");
     String type = (String)options.get("it.unica.diee.mdc.tilType");
@@ -692,73 +778,89 @@ public abstract class PlatformComposer {
     }
 
     //////////////////////////
-    /// <li> SW drivers
-    DriverPrinter driverPrinter = new DriverPrinter();
-    driverPrinter.initDriverPrinter(
-        prefix, processor, enDma, wrapperPrinter.getPortMap(),
-        wrapperPrinter.getInputMap(), wrapperPrinter.getOutputMap());
+    /// <li> Legacy Xilinx BSP software driver
+    ///
+    /// A pre-merged XDF has one physical network key (for example top18),
+    /// while ConfigManager contains the logical runtime modes (Roberts, Sobel).
+    /// DriverPrinter is keyed by networkVertexMap and therefore cannot represent
+    /// that pre-merged distinction safely.  The KV260 Linux driver is generated
+    /// later from CoprocessorSpec by LinuxDriverPrinter and is NOT disabled here.
+    if (!enPreMerge) {
+        DriverPrinter driverPrinter = new DriverPrinter();
+        driverPrinter.initDriverPrinter(
+            prefix, processor, enDma, wrapperPrinter.getPortMap(),
+            wrapperPrinter.getInputMap(), wrapperPrinter.getOutputMap());
 
-    File srcDir =
-        new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
-    // If directory doesn't exist, create it
-    if (!srcDir.exists()) {
-      srcDir.mkdirs();
-    }
+        File srcDir =
+            new File(hdlPath.replace("hdl", "drivers") + File.separator + "src");
+        // If directory doesn't exist, create it
+        if (!srcDir.exists()) {
+          srcDir.mkdirs();
+        }
 
-    /// <ol> <li> Generate Driver Header
-    file = srcDir.getPath() + File.separator + prefix + "_accelerator.h";
-    sequence = driverPrinter.printDriverHeader(network, networkVertexMap);
+        /// <ol> <li> Generate Driver Header
+        file = srcDir.getPath() + File.separator + prefix + "_accelerator.h";
+        sequence = driverPrinter.printDriverHeader(network, networkVertexMap);
 
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-    }
+        try {
+          PrintStream ps = new PrintStream(new FileOutputStream(file));
+          ps.print(sequence.toString());
+          ps.close();
+        } catch (FileNotFoundException e) {
+          OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+        }
 
-    /// <li> Generate Driver Source
-    file = srcDir.getPath() + File.separator + prefix + "_accelerator.c";
-    sequence = driverPrinter.printDriverSource(network, networkVertexMap,
-                                               configManager);
+        /// <li> Generate Driver Source
+        file = srcDir.getPath() + File.separator + prefix + "_accelerator.c";
+        sequence = driverPrinter.printDriverSource(network, networkVertexMap,
+                                                   configManager);
 
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-    }
+        try {
+          PrintStream ps = new PrintStream(new FileOutputStream(file));
+          ps.print(sequence.toString());
+          ps.close();
+        } catch (FileNotFoundException e) {
+          OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+        }
 
-    srcDir =
-        new File(hdlPath.replace("hdl", "drivers") + File.separator + "data");
-    // If directory doesn't exist, create it
-    if (!srcDir.exists()) {
-      srcDir.mkdirs();
-    }
+        srcDir =
+            new File(hdlPath.replace("hdl", "drivers") + File.separator + "data");
+        // If directory doesn't exist, create it
+        if (!srcDir.exists()) {
+          srcDir.mkdirs();
+        }
 
-    /// <ol> <li> Generate Driver Tcl
-    file = srcDir.getPath() + File.separator + prefix + "_accelerator.tcl";
-    sequence = driverPrinter.printDriverTcl();
+        /// <ol> <li> Generate Driver Tcl
+        file = srcDir.getPath() + File.separator + prefix + "_accelerator.tcl";
+        sequence = driverPrinter.printDriverTcl();
 
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
-    }
+        try {
+          PrintStream ps = new PrintStream(new FileOutputStream(file));
+          ps.print(sequence.toString());
+          ps.close();
+        } catch (FileNotFoundException e) {
+          OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+        }
 
-    /// <li> Generate Driver Mdd
-    file = srcDir.getPath() + File.separator + prefix + "_accelerator.mdd";
-    sequence = driverPrinter.printDriverMdd();
+        /// <li> Generate Driver Mdd
+        file = srcDir.getPath() + File.separator + prefix + "_accelerator.mdd";
+        sequence = driverPrinter.printDriverMdd();
 
-    try {
-      PrintStream ps = new PrintStream(new FileOutputStream(file));
-      ps.print(sequence.toString());
-      ps.close();
-    } catch (FileNotFoundException e) {
-      OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+        try {
+          PrintStream ps = new PrintStream(new FileOutputStream(file));
+          ps.print(sequence.toString());
+          ps.close();
+        } catch (FileNotFoundException e) {
+          OrccLogger.severeln("File Not Found Exception: " + e.getMessage());
+        }
+
+    } else if (!kv260Profile) {
+      throw new IOException(
+          "Legacy DriverPrinter does not support pre-merged XDF mode identities");
+    } else {
+      OrccLogger.traceln(
+          "* Pre-merged KV260: skipping legacy BSP DriverPrinter; " +
+          "Linux driver will be emitted from CoprocessorSpec");
     }
 
     // Shared description, based on the actual wrapper maps and final mode IDs.
@@ -770,7 +872,8 @@ public abstract class PlatformComposer {
       AcceleratorManifestPrinter.write(
           manifestRoot.toPath(), network, partname, boardpart,
           wrapperPrinter.getInputMap(), wrapperPrinter.getOutputMap(),
-          networkVertexMap, configManager, protocolManager, !luts.isEmpty());
+          networkVertexMap, configManager, protocolManager, !luts.isEmpty(),
+          enPreMerge);
     } else {
       java.nio.file.Files.deleteIfExists(
           manifestRoot.toPath().resolve("accelerator.json"));

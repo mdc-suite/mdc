@@ -921,7 +921,7 @@ public class EmpiricMerger extends Merger {
                 	                    throw new IllegalArgumentException(
                 	                        "Expected {0=true} or {0=false} for " + vertexName + ":" + attrName);
                   //if (attr_num < 2) { // Add bounds check
-                	  String netName = attrName.replace("baseline.", "");
+                	  String netName = attrName.substring("baseline.".length());
                 	  boolean ctable = attrValue.contains("true");                    
                     //OrccLogger.traceln("DEBUG: Parsed network config: " + netName + " = " + ctable);
                     networkName.add(netName);

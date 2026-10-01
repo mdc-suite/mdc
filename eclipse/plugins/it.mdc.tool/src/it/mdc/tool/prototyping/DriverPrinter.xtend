@@ -134,7 +134,7 @@ class DriverPrinter {
 			«ENDIF»
 			
 			// start execution
-			*(config) = 0x«Integer.toHexString((configManager.getNetworkId(net)<<24)+1)»;
+			*(config) = 0x«Integer.toHexString((configManager.getAssignedNetworkId(net)<<24)+1)»;
 			
 			«IF !isMemoryMapped»
 				«FOR input : inputMap.keySet»
