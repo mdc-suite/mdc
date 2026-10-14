@@ -32,7 +32,7 @@ public class ProtocolManager {
 	public static final String SUCC = "successor";
 	public static final String WRAP = "wrapper";
 	//TODO add broadcast
-
+	public static final String BROADCAST_REDUCE = "broadcast_reduce";
 	public static final String NAME = "name";
 	
 	public static final String SYS = "sys_signals";
@@ -176,6 +176,23 @@ public class ProtocolManager {
 							if (reader.getAttributeValue("",INV) != null) {
 								elemMap.put(INV,reader.getAttributeValue("",INV));
 							}
+							String broadcastReduce =
+							        reader.getAttributeValue("", BROADCAST_REDUCE);
+
+							if (broadcastReduce != null) {
+							    broadcastReduce = broadcastReduce.trim();
+
+							    if (!"and".equals(broadcastReduce)
+							            && !"or".equals(broadcastReduce)) {
+							        throw new IllegalArgumentException(
+							                "Invalid broadcast_reduce=\"" + broadcastReduce
+							                + "\" for signal " + elemId
+							                + " in module " + module
+							                + "; expected \"and\" or \"or\".");
+							    }
+
+							    elemMap.put(BROADCAST_REDUCE, broadcastReduce);
+							}							
 							
 							if(module.equals("net")) {
 								netSysSignals.put(elemId, elemMap);
@@ -236,7 +253,38 @@ public class ProtocolManager {
 		}
 
 	}
-	
+
+	public String getBroadcastSeparator(String module, String commSigId) {
+	    Map<String, Map<String, String>> signals = modCommSignals.get(module);
+
+	    if (signals == null) {
+	        throw new IllegalArgumentException(
+	                "No communication signals defined for module: " + module);
+	    }
+
+	    Map<String, String> signal = signals.get(commSigId);
+
+	    if (signal == null) {
+	        throw new IllegalArgumentException(
+	                "Unknown communication signal " + commSigId
+	                + " in module " + module);
+	    }
+
+	    String reduction = signal.get(BROADCAST_REDUCE);
+
+	    if (reduction == null || "or".equals(reduction)) {
+	        return " ||";
+	    }
+
+	    if ("and".equals(reduction)) {
+	        return " &&";
+	    }
+
+	    throw new IllegalArgumentException(
+	            "Unsupported broadcast reduction \"" + reduction
+	            + "\" for signal " + commSigId
+	            + " in module " + module);
+	}
 	/**
 	 * Initializer of the ProtocolManager (maps instantiation and initialization)
 	 * 
