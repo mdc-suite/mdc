@@ -1007,7 +1007,13 @@ public class MDCBackend extends AbstractBackend {
       protocolFile = getOption("it.unica.diee.mdc.protocolFile", "<unknown>");
       hdlCompLib = getOption("it.mdc.tool.hdlCompLib", "");
       lrEn = getOption("it.unica.diee.mdc.computeLogicRegions", false);
-      genCopr = getOption("it.unica.diee.mdc.genCopr", false);
+      boolean systemGeneration =
+    		    getOption("it.mdc.tool.sysGen", false);
+
+    		boolean acceleratorIpGeneration =
+    		    getOption("it.unica.diee.mdc.genCopr", false);
+
+    		genCopr = systemGeneration && acceleratorIpGeneration;
       if (genCopr) {
         coprType = getOption("it.unica.diee.mdc.tilType", "<unknown>");
       }
