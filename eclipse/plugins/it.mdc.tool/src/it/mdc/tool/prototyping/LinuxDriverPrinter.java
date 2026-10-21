@@ -25,7 +25,7 @@ public final class LinuxDriverPrinter {
             !Integer.valueOf(23).equals(plan.get("dma_length_bits")) ||
             !"0x80000000".equals(plan.get("ddr_low_range")) ||
             !"0x00000000".equals(plan.get("ddr_low_base")))
-            throw new IOException("Linux ABI 1 requires the Step-3 low-DDR/simple-DMA profile");
+            throw new IOException("Linux ABI 1 requires the low-DDR/simple-DMA profile");
         Map<?,?> software = map(doc.get("linux_driver"));
         if (!Integer.valueOf(1).equals(software.get("abi_version")) ||
             !Integer.valueOf(32).equals(software.get("dma_mask_bits")) ||
@@ -66,7 +66,11 @@ public final class LinuxDriverPrinter {
         String[] names={"mdc_dma.c","mdc_uapi.h","mdc_user.h","mdc_probe.c","mdc_run.c","Makefile","README.md"};
         String[] dest={"driver/mdc_dma.c","include/mdc_uapi.h","include/mdc_user.h","userspace/mdc_probe.c","userspace/mdc_run.c","Makefile","README.md"};
         String[] content=new String[names.length];
-        for(int i=0;i<names.length;i++)content[i]=resource(names[i]);
+        for(int i=0;i<names.length;i++) {
+            content[i]=resource(names[i]);
+            if("README.md".equals(names[i]))
+                content[i]=renderReadme(content[i], software, dmas, modes, outputs, bufferBytes);
+        }
         Path linux=outputRoot.resolve("linux");
         for(int i=0;i<names.length;i++)replace(linux.resolve(dest[i]),content[i]);
         replace(linux.resolve("driver/Makefile"),"obj-m += mdc_dma.o\nccflags-y += -I$(src)/../include\n");
@@ -76,6 +80,30 @@ public final class LinuxDriverPrinter {
         replace(linux.resolve("software.json"),"{\n  \"abi_version\": 1,\n  \"device\": \"/dev/mdc_accel0\",\n  \"compatible\": \"mdc,kv260-stream-v1\",\n  \"generation_stage\": \"linux_sources_emitted\",\n  \"deployment_verified\": false,\n  \"legacy_uniss_abi_compatible\": false,\n  \"buffer_bytes_per_channel\": "+bufferBytes+",\n  \"dma_mask_bits\": 32,\n  \"completion\": \"polling\"\n}\n");
         // Emit the named, file-driven C test from the same shared specification.
         LinuxTestPrinter.write(outputRoot, spec);
+    }
+    private static String renderReadme(String template, Map<?,?> software,
+            List<?> dmas, List<?> modes, int outputs, int bufferBytes) throws IOException {
+        String marker="<!-- MDC_GENERATED_CONFIGURATION -->";
+        if(!template.contains(marker))
+            throw new IOException("Linux README template is missing configuration marker");
+        StringBuilder text=new StringBuilder("## Generated configuration\n\n");
+        text.append("Device: `").append(software.get("device")).append("`. Buffer capacity: **")
+            .append(bufferBytes).append(" bytes per channel**. DMA channels: **")
+            .append(dmas.size()).append("**. Outputs: **").append(outputs).append("**.\n\n");
+        text.append("| Channel | Transfer direction |\n| --- | --- |\n");
+        for(int i=0;i<dmas.size();i++)
+            text.append("| ").append(i).append(" | ")
+                .append("MM2S".equals(map(dmas.get(i)).get("direction"))
+                    ? "MM2S (input)" : "S2MM (output)").append(" |\n");
+        text.append("\nGenerated numeric mode IDs: ");
+        if(modes.isEmpty()) text.append("none; no runnable mode is defined");
+        for(int i=0;i<modes.size();i++) {
+            if(i>0) text.append(", ");
+            text.append('`').append(map(modes.get(i)).get("id")).append('`');
+        }
+        text.append(". Use `./userspace/mdc_test --describe` for exact mode names, port names, "
+            +"token widths, and per-mode active ports.\n");
+        return template.replace(marker,text.toString());
     }
     private static String resource(String name) throws IOException {
         try(InputStream in=LinuxDriverPrinter.class.getResourceAsStream("/bundle/copr/linux/"+name)) {

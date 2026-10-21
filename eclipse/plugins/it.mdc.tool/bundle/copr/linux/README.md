@@ -1,6 +1,8 @@
 # Generated MDC Linux interface — ABI 1
 
-This folder contains Linux driver source, a device-tree overlay source, UAPI/userspace headers, a metadata probe and a generic one-output binary-stream runner. It targets the Step-3 KV260 simple-mode polling hardware with the auxiliary-reset correction. There are no hardware/Tcl changes in Step 4. The initial board target is Ubuntu arm64 with Linux 6.8; build the module against the exact running kernel's configured headers. Source generation does not assert successful module build or board validation.
+This folder contains the generated Linux driver, device-tree overlay source, UAPI/userspace headers, metadata probe, binary-stream runner, and named-port test utility. It targets the KV260 simple-mode polling hardware profile. Build the module against the exact running kernel's configured headers. Generating these files does not establish successful compilation or on-board validation.
+
+<!-- MDC_GENERATED_CONFIGURATION -->
 
 `accelerator.json` is the shared specification snapshot. `include/mdc_config.h` and `device-tree/pl_mdc.dts` derive channel order, direction, register addresses, output count and mode IDs from that model. `software.json` records the software interface. The device is `/dev/mdc_accel0`, with exclusive-open ownership. The old `/dev/uniss_dma` interface is not supported by this module. Recompile/migrate clients to `mdc_uapi.h` and `mdc_user.h` rather than mixing the ioctl definitions.
 
@@ -13,18 +15,26 @@ make userspace overlay
 make module KDIR=/lib/modules/$(uname -r)/build
 ```
 
-The build produces `userspace/mdc_probe`, `userspace/mdc_run`, `device-tree/pl_mdc.dtbo`, and `driver/mdc_dma.ko`. It requires a C compiler, make, dtc and matching configured kernel headers. Do not substitute headers for a different kernel release. For a prepared cross-compilation environment, pass `ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KDIR=/path/to/configured/target/kernel` to `make module`, and `CC=aarch64-linux-gnu-gcc` to the userspace target. The generated file extension is `.dts`, not `.dist`; `.dtbo` is the compiled overlay.
+The build produces `userspace/mdc_probe`, `userspace/mdc_run`, `userspace/mdc_test`, `device-tree/pl_mdc.dtbo`, and `driver/mdc_dma.ko`. It requires a C compiler, make, dtc and matching configured kernel headers. Do not substitute headers for a different kernel release. For a prepared cross-compilation environment, pass `ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KDIR=/path/to/configured/target/kernel` to `make module`, and `CC=aarch64-linux-gnu-gcc` to the userspace target. The generated file extension is `.dts`, not `.dist`; `.dtbo` is the compiled overlay.
 
 ## Load with the existing working KV260 deployment flow
 
 Stop the old application and unload its driver before replacing its device overlay. The new overlay owns the control aperture and every DMA register aperture in one node; do not keep the old `pl_acc`/`uniss` DMA device nodes or another DMA driver bound to those addresses. Region reservation rejects competing ownership rather than silently mapping it twice.
 
-Use the known-working board loader to program the corrected Step-3 fabric and establish its clocks/resets. Then apply `device-tree/pl_mdc.dtbo` instead of the old device-description overlay, using that loader's overlay mechanism, and load:
+From this `linux/` directory, use the following deployment sequence. Replace the bitstream path with the file from the matching hardware build. The tested KV260 setup accepts `.bit` directly; no `.bin` conversion is required.
+
+If `mdc_dma` is already loaded, close its clients and run `sudo rmmod mdc_dma` first. Then execute each command only after the previous command succeeds:
 
 ```bash
+sudo fpgautil -R
+sudo fpgautil -b /absolute/path/to/design_1_wrapper.bit
+sudo fpgautil -o device-tree/pl_mdc.dtbo
 sudo insmod driver/mdc_dma.ko
+ls -l /dev/mdc_accel0
 sudo ./userspace/mdc_probe
 ```
+
+Keep the bitstream, overlay, driver configuration, and userspace utilities from the same hardware build together.
 
 The overlay is only the Linux device description: it does not contain a firmware filename, FPGA-manager region, clock-provider references or instructions to program hardware. These belong to the already-working board deployment flow. Do not apply it to unprogrammed or reset-held fabric: an MMIO transaction itself can stall and software polling cannot time out such a bus stall. This initial profile assumes KV260's root has two address cells and two size cells, a direct low-DDR DMA path without a newly introduced IOMMU mapping, and one accelerator instance. The overlay deliberately does not claim `dma-coherent` merely because the port is HPC0.
 
@@ -32,7 +42,7 @@ On shutdown, close clients, unload `mdc_dma`, remove its overlay, then reconfigu
 
 ## Transfer API
 
-All transfer commands carry a channel ID explicitly. `MDC_SUBMIT` carries its byte length before copying MM2S input. It accepts positive multiples of four up to the generated buffer capacity (65,536 bytes by default). S2MM submission passes a zero userspace pointer and arms its destination buffer. The driver uses coherent DMA allocations with a 31-bit mask and checks that the entire allocation lies below `0x80000000`, matching the fabric's DDR_LOW-only map. Allocation can fail when suitable low memory is unavailable; it does not silently use unreachable memory.
+All transfer commands carry a channel ID explicitly. `MDC_SUBMIT` carries its byte length before copying MM2S input. It accepts positive multiples of four up to the generated buffer capacity (65,536 bytes by default). S2MM submission passes a zero userspace pointer and arms its destination buffer. The driver uses coherent DMA allocations with a 32-bit DMA mask and separately checks that the entire allocation lies below `0x80000000`, matching the fabric's DDR_LOW-only map. Allocation can fail when suitable low memory is unavailable; it does not silently use unreachable memory.
 
 The usual sequence is: open; GET_INFO; RESET_ALL; configure output beat counts and mode; submit all output channels; submit all input channels; WAIT on every active channel; FETCH each completed output; close. Queue all streams before waiting so that an input cannot deadlock behind an unarmed consumer. Configuration writes are blocked while transfers are active. `MDC_WAIT` polls completion/error status for 1–60,000 ms and reports the actual received byte count; errors/timeouts reset all DMAs. FETCH is allowed only after successful completion and never copies more than the actual received length. Resetting DMA does not flush/reset the actor network; after an aborted partial job, reload/reset the complete accelerator through the board flow before retrying.
 
@@ -40,17 +50,37 @@ The usual sequence is: open; GET_INFO; RESET_ALL; configure output beat counts a
 
 REG0 contains mode ID in bits 31:24, counter clear in bit 2 and start in bit 0. Output j's beat count is at byte offset `4*(j+1)`. The software interface restricts finite counts to its own buffer capacity. It does not expose the wrapper's disabled-TLAST sentinel or arbitrary physical-register writes. Modes must be present in the generated mode list; incomplete upstream mode identity needs correction before running jobs.
 
-## Generic test application
+## Named-port testing
 
-For a one-output network:
+Run all commands below from this `linux/` directory. Inspect the generated names, mode IDs, channel mappings, token widths, and active ports before running a test:
+
+```bash
+./userspace/mdc_test --describe
+```
+
+Use the exact names reported by `--describe`. The following is a template: replace `MODE_NAME`, `INPUT_PORT`, `OUTPUT_PORT`, and file paths, and repeat input/output options for all active ports as required by the generated configuration.
+
+```bash
+sudo ./userspace/mdc_test \
+  --mode MODE_NAME \
+  --input "INPUT_PORT=/path/to/input.mem" \
+  --output "OUTPUT_PORT=/path/to/actual.mem" \
+  --expect "OUTPUT_PORT=/path/to/reference.mem"
+```
+
+`mdc_test` reads text token files and compares received outputs with references. See the generated `TESTING.md` for supported formats, output-count options, and application-specific usage. Input data, reference files, and a bitstream are not created by this Linux source exporter. Quote arguments containing spaces. Numerical correctness requires a successful reference comparison; DMA completion alone is insufficient.
+
+## Binary-stream runner
+
+For a one-output network, `MODE` is a numeric configuration ID:
 
 ```bash
 sudo ./userspace/mdc_run MODE OUTPUT_BEATS INPUT0.bin [INPUT1.bin ...] OUTPUT.bin
 ```
 
-Input order follows `accelerator.json`; files contain one little-endian 32-bit word per token, with the token in the low bits. The application validates lengths, queues RX first, queues all TX channels, and verifies the received byte count. It does not infer image dimensions, cropping, per-mode active ports or network-specific token schedules. For your edge example, input 0 is pixels and input 1 is size, but those meanings must be supplied by the application; prepare files and output counts using your existing working edge-detection semantics. PGM/image conversion and automatic semantic-role generation are the next application step. Multi-output networks can use the same driver API but need an application that submits all their outputs; this runner deliberately supports one output only.
+Input order follows `accelerator.json`; files contain one little-endian 32-bit word per token, with the token in the low bits. The application validates lengths, queues RX first, queues all TX channels, and verifies the received byte count. It does not infer image dimensions, cropping, per-mode active ports or network-specific token schedules. Prepare binary files and output counts according to the application semantics. Do not pass the text `.mem` files used by `mdc_test` directly to this binary runner. Multi-output networks can use the same driver API but need an application that submits all their outputs; this runner deliberately supports one output only.
 
-`mdc_probe` reads software metadata without starting a transfer; closing the device resets the DMAs. The driver is restricted to one owner, polling mode, 32-bit transport words and a 64-KiB buffer per channel. It does not route interrupts, implement scatter-gather, expose mmap, handle live FPGA reconfiguration or act as an upstream DMAengine provider.
+`mdc_probe` reads software metadata without starting a transfer; closing the device resets the DMAs. The driver is restricted to one owner, polling mode, 32-bit transport words and the generated buffer capacity per channel (64 KiB by default). It does not route interrupts, implement scatter-gather, expose mmap, handle live FPGA reconfiguration or act as an upstream DMAengine provider.
 
 ## Technical references
 
