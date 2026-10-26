@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "mdc_config.h"
@@ -634,11 +635,19 @@ static int configure(struct options *options, int fd, uint32_t mode_id)
     return 0;
 }
 
+static double elapsed_ms(struct timespec begin, struct timespec end)
+{
+    return (end.tv_sec - begin.tv_sec) * 1e3
+           + (end.tv_nsec - begin.tv_nsec) / 1e6;
+}
+
 static int run_hardware(struct options *options, int fd, uint32_t mode_id)
 {
     unsigned i;
     struct mdc_info info;
     struct mdc_transfer result;
+    struct mdc_transfer completed[MDC_TEST_CHANNELS];
+    struct timespec begin, end;
     int mode = mode_index(mode_id);
     uint32_t active_mask = mdc_test_mode_membership_known[mode] ?
                            mdc_test_mode_active_masks[mode] : UINT32_MAX;
@@ -670,6 +679,14 @@ static int run_hardware(struct options *options, int fd, uint32_t mode_id)
     if (configure(options, fd, mode_id) != 0)
         return -1;
 
+    /* Time DMA submission and completion, excluding configuration, file I/O,
+     * output fetching and verification. This includes driver/transfer overhead.
+     */
+    if (clock_gettime(CLOCK_MONOTONIC_RAW, &begin) != 0) {
+        perror("clock_gettime begin");
+        return -1;
+    }
+
     /* Arm all receive channels before transmitting any input token. */
     for (i = 0; i < MDC_TEST_CHANNELS; ++i) {
         const struct mdc_test_port *p = &mdc_test_ports[i];
@@ -699,9 +716,6 @@ static int run_hardware(struct options *options, int fd, uint32_t mode_id)
             return -1;
         }
     }
-    printf("DMA transfers submitted for mode %s (id=%u)\n",
-           mdc_test_modes[mode].name, mode_id);
-
     for (i = 0; i < MDC_TEST_CHANNELS; ++i) {
         const struct mdc_test_port *p = &mdc_test_ports[i];
         if ((active_mask & (UINT32_C(1) << i)) == 0u)
@@ -713,8 +727,19 @@ static int run_hardware(struct options *options, int fd, uint32_t mode_id)
                     result.actual);
             return -1;
         }
+        completed[i] = result;
+    }
+    if (clock_gettime(CLOCK_MONOTONIC_RAW, &end) != 0) {
+        perror("clock_gettime end");
+        return -1;
+    }
+    printf("Mode %s (id=%u): DMA submission-to-completion time = %.6f ms\n",
+           mdc_test_modes[mode].name, mode_id, elapsed_ms(begin, end));
+    for (i = 0; i < MDC_TEST_CHANNELS; ++i) {
+        if ((active_mask & (UINT32_C(1) << i)) == 0u)
+            continue;
         printf("%s completed: status=0x%08" PRIX32 " bytes=%u\n",
-               p->name, result.status, result.actual);
+               mdc_test_ports[i].name, completed[i].status, completed[i].actual);
     }
     for (i = 0; i < MDC_TEST_CHANNELS; ++i) {
         const struct mdc_test_port *p = &mdc_test_ports[i];
